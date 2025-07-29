@@ -16,15 +16,10 @@ async def get_product_details_route(
     """
     Récupère le détail d'une ou plusieurs références produits.
     """
-    # Normalisation du payload
-    if payload.cod_pro_list and len(payload.cod_pro_list) > 0:
-        req = payload
-    elif payload.cod_pro is not None:
-        req = ProductIdentifierRequest(cod_pro_list=[payload.cod_pro])
-    else:
-        req = payload
-
-    details = await get_product_details(req, db)
+    # ✅ CORRECTION: Pas de normalisation qui casse le grouping_crn
+    # On passe directement le payload tel quel au service
+    details = await get_product_details(payload, db)
+    
     if not details.products:
         raise HTTPException(status_code=404, detail="Aucun produit trouvé")
     return details
@@ -36,7 +31,9 @@ async def get_single_product_detail(
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Récupère le détail d’un produit unique par cod_pro.
+    Récupère le détail d'un produit unique par cod_pro.
     """
-    details = await get_product_details(ProductIdentifierRequest(cod_pro_list=[cod_pro]), db)
+    # ✅ Pour ce endpoint GET, on crée un payload simple sans grouping
+    payload = ProductIdentifierRequest(cod_pro_list=[cod_pro])
+    details = await get_product_details(payload, db)
     return details.products[0] if details.products else None

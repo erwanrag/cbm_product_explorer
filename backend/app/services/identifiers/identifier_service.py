@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 from app.common.redis_client import redis_client
 from app.cache.cache_keys import resolve_codpro_key
 from app.schemas.identifiers.identifier_schema import ProductIdentifierRequest, CodProListResponse
@@ -55,6 +56,9 @@ async def get_codpro_list_from_identifier(payload: ProductIdentifierRequest, db:
         if getattr(payload, "single_cod_pro", False):
             resolved = [resolved[0]] if resolved else []
 
+    except SQLAlchemyError as e:
+        logger.error(f"❌ Erreur SQL résolution identifiant: {e}")
+        resolved = []
     except Exception as e:
         logger.error(f"❌ Erreur résolution identifiant: {e}")
         resolved = []
@@ -74,6 +78,7 @@ async def get_codpro_list_from_identifier(payload: ProductIdentifierRequest, db:
 async def _resolve_grouping_from_codpro(db: AsyncSession, cod_pro: int, qualite: str | None) -> list[int]:
     """
     Résolution grouping_crn depuis cod_pro en une seule requête optimisée.
+    Version sécurisée sans injection SQL.
     """
     query = text("""
         WITH GroupingCTE AS (
@@ -90,19 +95,26 @@ async def _resolve_grouping_from_codpro(db: AsyncSession, cod_pro: int, qualite:
     """)
     
     try:
-        result = await db.execute(query, {"cod_pro": cod_pro, "qualite": qualite})
+        result = await db.execute(query, {
+            "cod_pro": int(cod_pro),  # Force le type
+            "qualite": qualite if qualite else None
+        })
         rows = result.fetchall()
-        resolved = [r[0] for r in rows]
+        resolved = [int(r[0]) for r in rows]
         logger.debug(f"🎯 Grouping depuis cod_pro {cod_pro}: {len(resolved)} résultats")
         return resolved if resolved else [cod_pro]
+    except SQLAlchemyError as e:
+        logger.error(f"❌ Erreur SQL grouping depuis cod_pro {cod_pro}: {e}")
+        return [cod_pro]
     except Exception as e:
-        logger.error(f"❌ Erreur grouping depuis cod_pro: {e}")
+        logger.error(f"❌ Erreur inattendue grouping depuis cod_pro {cod_pro}: {e}")
         return [cod_pro]
 
 
 async def _resolve_grouping_from_ref_crn(db: AsyncSession, ref_crn: str, qualite: str | None) -> list[int]:
     """
     Résolution grouping_crn depuis ref_crn en une seule requête optimisée.
+    Version sécurisée sans injection SQL.
     """
     query = text("""
         WITH GroupingCTE AS (
@@ -119,19 +131,26 @@ async def _resolve_grouping_from_ref_crn(db: AsyncSession, ref_crn: str, qualite
     """)
     
     try:
-        result = await db.execute(query, {"ref_crn": ref_crn, "qualite": qualite})
+        result = await db.execute(query, {
+            "ref_crn": str(ref_crn),  # Force le type
+            "qualite": qualite if qualite else None
+        })
         rows = result.fetchall()
-        resolved = [r[0] for r in rows]
+        resolved = [int(r[0]) for r in rows]
         logger.debug(f"🎯 Grouping depuis ref_crn {ref_crn}: {len(resolved)} résultats")
         return resolved
+    except SQLAlchemyError as e:
+        logger.error(f"❌ Erreur SQL grouping depuis ref_crn {ref_crn}: {e}")
+        return []
     except Exception as e:
-        logger.error(f"❌ Erreur grouping depuis ref_crn: {e}")
+        logger.error(f"❌ Erreur inattendue grouping depuis ref_crn {ref_crn}: {e}")
         return []
 
 
 async def _resolve_from_ref_ext(db: AsyncSession, ref_ext: str) -> list[int]:
     """
     Résolution optimisée depuis ref_ext avec stratégie de recherche progressive.
+    Version sécurisée sans injection SQL.
     """
     # 1) Recherche exacte d'abord (plus rapide)
     query_exact = text("""
@@ -141,36 +160,47 @@ async def _resolve_from_ref_ext(db: AsyncSession, ref_ext: str) -> list[int]:
     """)
     
     try:
-        result = await db.execute(query_exact, {"ref_ext_upper": ref_ext.upper()})
+        result = await db.execute(query_exact, {
+            "ref_ext_upper": str(ref_ext).upper()
+        })
         rows = result.fetchall()
         if rows:
-            logger.debug(f"✅ Match exact ref_ext: {len(rows)} résultats")
-            return [r[0] for r in rows]
+            resolved = [int(r[0]) for r in rows]
+            logger.debug(f"✅ Match exact ref_ext: {len(resolved)} résultats")
+            return resolved
+    except SQLAlchemyError as e:
+        logger.error(f"❌ Erreur SQL recherche exacte ref_ext {ref_ext}: {e}")
     except Exception as e:
-        logger.error(f"❌ Erreur recherche exacte ref_ext: {e}")
+        logger.error(f"❌ Erreur inattendue recherche exacte ref_ext {ref_ext}: {e}")
 
     # 2) Si pas de match exact, recherche normalisée
-    normalized_ref_ext = normalize_ref_ext(ref_ext)
-    query_normalized = text("""
-        SELECT TOP 10 cod_pro
-        FROM CBM_DATA.dm.Dim_Produit WITH (NOLOCK)
-        WHERE REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(UPPER(refext), '.', ''), '-', ''), '/', ''), '(', ''), ')', '') = :normalized_ref_ext
-    """)
-    
     try:
-        result = await db.execute(query_normalized, {"normalized_ref_ext": normalized_ref_ext})
+        normalized_ref_ext = normalize_ref_ext(ref_ext)
+        query_normalized = text("""
+            SELECT TOP 10 cod_pro
+            FROM CBM_DATA.dm.Dim_Produit WITH (NOLOCK)
+            WHERE REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(UPPER(refext), '.', ''), '-', ''), '/', ''), '(', ''), ')', '') = :normalized_ref_ext
+        """)
+        
+        result = await db.execute(query_normalized, {
+            "normalized_ref_ext": str(normalized_ref_ext)
+        })
         rows = result.fetchall()
-        logger.debug(f"🔍 Match normalisé ref_ext: {len(rows)} résultats")
-        return [r[0] for r in rows]
+        resolved = [int(r[0]) for r in rows]
+        logger.debug(f"🔍 Match normalisé ref_ext: {len(resolved)} résultats")
+        return resolved
+    except SQLAlchemyError as e:
+        logger.error(f"❌ Erreur SQL recherche normalisée ref_ext {ref_ext}: {e}")
+        return []
     except Exception as e:
-        logger.error(f"❌ Erreur recherche normalisée ref_ext: {e}")
+        logger.error(f"❌ Erreur inattendue recherche normalisée ref_ext {ref_ext}: {e}")
         return []
 
 
 async def _get_codpro_from_cle(db: AsyncSession, type_cle: int, valeur_crn: str, qualite: str | None) -> list[int]:
     """
     Appel optimisé à la procédure stockée Pricing.sp_Get_CodPro_From_Cle.
-    Retourne une liste plate d'entiers.
+    Version sécurisée sans injection SQL.
     """
     proc = text("""
         EXEC CBM_DATA.Pricing.sp_Get_CodPro_From_Cle
@@ -183,14 +213,17 @@ async def _get_codpro_from_cle(db: AsyncSession, type_cle: int, valeur_crn: str,
     
     try:
         result = await db.execute(proc, {
-            "type_cle": type_cle,
+            "type_cle": int(type_cle),
             "valeur_crn": str(valeur_crn),
-            "qualite": qualite
+            "qualite": qualite if qualite else None
         })
         rows = result.fetchall()
-        resolved = [r[0] for r in rows]
+        resolved = [int(r[0]) for r in rows]
         logger.debug(f"✅ SP résolu: {len(resolved)} lignes")
         return resolved
+    except SQLAlchemyError as e:
+        logger.error(f"❌ Erreur SQL appel SP type_cle={type_cle}, valeur_crn={valeur_crn}: {e}")
+        return []
     except Exception as e:
-        logger.error(f"❌ Erreur appel SP: {e}")
+        logger.error(f"❌ Erreur inattendue appel SP type_cle={type_cle}, valeur_crn={valeur_crn}: {e}")
         return []
