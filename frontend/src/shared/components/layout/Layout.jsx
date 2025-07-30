@@ -1,7 +1,6 @@
-// frontend/src/shared/components/layout/Layout.jsx - LAYOUT PRINCIPAL
-import React from 'react';
+// src/shared/components/layout/Layout.jsx - VERSION CORRIGÉE
+import React, { useState } from 'react';
 import { Box, useMediaQuery, useTheme } from '@mui/material';
-import { useLayout } from '@/store/hooks/useLayout';
 
 // Composants layout
 import Header from '@/shared/components/layout/Header';
@@ -9,35 +8,40 @@ import Sidebar from '@/shared/components/layout/Sidebar';
 import ContentContainer from '@/shared/components/layout/ContentContainer';
 
 /**
- * Layout principal de l'application CBM
- * Gère la structure générale avec header, sidebar et contenu
+ * Layout principal CBM - Version qui fonctionne
  */
 const Layout = ({ children }) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const { sidebarOpen, sidebarMobileOpen } = useLayout();
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  // Largeur de la sidebar
-  const sidebarWidth = 280;
+    // État local simple pour la sidebar
+    const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [sidebarMobileOpen, setSidebarMobileOpen] = useState(false);
 
-  return (
-    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-      {/* Header fixe en haut */}
-      <Header />
+    // Largeur de la sidebar
+    const sidebarWidth = 280;
 
-      {/* Sidebar */}
-      <Sidebar
-        width={sidebarWidth}
-        open={isMobile ? sidebarMobileOpen : sidebarOpen}
-        variant={isMobile ? 'temporary' : 'persistent'}
-      />
+    return (
+        <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+            {/* Header fixe en haut */}
+            <Header />
 
-      {/* Zone de contenu principal */}
-      <ContentContainer sidebarWidth={sidebarWidth} sidebarOpen={isMobile ? false : sidebarOpen}>
-        {children}
-      </ContentContainer>
-    </Box>
-  );
+            {/* Sidebar */}
+            <Sidebar
+                width={sidebarWidth}
+                open={isMobile ? sidebarMobileOpen : sidebarOpen}
+                variant={isMobile ? 'temporary' : 'persistent'}
+            />
+
+            {/* Zone de contenu principal */}
+            <ContentContainer
+                sidebarWidth={sidebarWidth}
+                sidebarOpen={isMobile ? false : sidebarOpen}
+            >
+                {children}
+            </ContentContainer>
+        </Box>
+    );
 };
 
 export default Layout;

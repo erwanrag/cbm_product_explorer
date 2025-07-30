@@ -3,10 +3,10 @@ import React from 'react';
 import { Grid, Box } from '@mui/material';
 import { motion } from 'framer-motion';
 import EnterpriseChart from '@/shared/components/ui/Charts/EnterpriseChart';
-import RevenueChart from './charts/RevenueChart';
-import MarginChart from './charts/MarginChart';
-import DistributionChart from './charts/DistributionChart';
-import TrendChart from './charts/TrendChart';
+import RevenueChart from '@/features/dashboard/components/charts/RevenueChart';
+import MarginChart from '@/features/dashboard/components/charts/MarginChart';
+import DistributionChart from '@/features/dashboard/components/charts/DistributionChart';
+import TrendChart from '@/features/dashboard/components/charts/TrendChart';
 
 /**
  * Section graphiques du dashboard - Composant focalisé

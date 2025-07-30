@@ -2,7 +2,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from '@/app/App';
-
+import { AppStateProvider } from '@/store/contexts/AppStateContext';
 // Styles globaux
 import '@/styles/global.css';
 
@@ -15,11 +15,13 @@ if (!window.fetch || !window.Promise) {
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
 try {
-  root.render(
-    <React.StrictMode>
-      <App />
-    </React.StrictMode>
-  );
+    root.render(
+        <React.StrictMode>
+            <AppStateProvider>
+                <App />
+            </AppStateProvider>
+        </React.StrictMode>
+    );
 } catch (error) {
   console.error('❌ Erreur fatale au démarrage:', error);
 

@@ -95,12 +95,15 @@ const FiltersPanel = () => {
 
   const handleSubmit = () => {
     const payload = {
-      cod_pro: localFilters.cod_pro || null,
-      ref_crn: localFilters.ref_crn || null,
-      ref_ext: localFilters.ref_ext || null,
-      grouping_crn: localFilters.use_grouping ? 1 : 0,
-      qualite: localFilters.qualite || null,
-      _forceRefresh: Date.now(), // Force refresh des données
+        cod_pro:
+            typeof localFilters.cod_pro === 'object'
+                ? localFilters.cod_pro.cod_pro
+                : localFilters.cod_pro || null,
+        ref_crn: localFilters.ref_crn || null,
+        ref_ext: localFilters.ref_ext || null,
+        grouping_crn: localFilters.use_grouping ? 1 : 0,
+        qualite: localFilters.qualite || null,
+        _forceRefresh: Date.now(),
     };
 
     // Nettoyer les valeurs nulles
@@ -233,12 +236,26 @@ const FiltersPanel = () => {
           size="small"
         />
 
-        <AutocompleteRefCrn
-          value={localFilters.ref_crn}
-          onChange={(value) => setLocalFilters((prev) => ({ ...prev, ref_crn: value }))}
-          resetCount={resetCount}
-          size="small"
-        />
+        {/* Ref CRN - n'afficher que si use_grouping = false */}
+        {!localFilters.use_grouping && (
+          localFilters.cod_pro ? (
+            <AutocompleteRefCrnFromCodpro
+              cod_pro={localFilters.cod_pro}
+              value={localFilters.ref_crn}
+              onChange={(value) => setLocalFilters((prev) => ({ ...prev, ref_crn: value }))}
+              resetCount={resetCount}
+              size="small"
+            />
+          ) : (
+            <AutocompleteRefCrn
+              value={localFilters.ref_crn}
+              onChange={(value) => setLocalFilters((prev) => ({ ...prev, ref_crn: value }))}
+              resetCount={resetCount}
+              size="small"
+            />
+          )
+        )}
+
 
         <AutocompleteRefExt
           value={localFilters.ref_ext}
@@ -256,22 +273,24 @@ const FiltersPanel = () => {
 
         {/* Checkbox grouping */}
         <Tooltip title="Groupe les produits par référence CRN">
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={localFilters.use_grouping}
-                onChange={(e) =>
-                  setLocalFilters((prev) => ({
-                    ...prev,
-                    use_grouping: e.target.checked,
-                  }))
-                }
-                size="small"
-                disabled={!localFilters.ref_crn}
-              />
-            }
-            label={<Typography variant="body2">Grouper par CRN</Typography>}
-          />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={localFilters.use_grouping}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setLocalFilters((prev) => ({
+                      ...prev,
+                      use_grouping: checked,
+                      ref_crn: checked ? null : prev.ref_crn, // Reset ref_crn si on coche
+                    }));
+                  }}
+                  size="small"
+                />
+              }
+              label={<Typography variant="body2">Grouper par CRN</Typography>}
+            />
+
         </Tooltip>
 
         <Divider sx={{ my: 2 }} />

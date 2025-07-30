@@ -1,7 +1,7 @@
 // frontend/src/features/dashboard/components/charts/DistributionChart.jsx
 import React, { useMemo } from 'react';
 import { useTheme } from '@mui/material/styles';
-import EnterpriseChart from '@/components/ui/Charts/EnterpriseChart';
+import EnterpriseChart from '@/shared/components/ui/Charts/EnterpriseChart';
 
 /**
  * Graphique de distribution (camembert) - Composant spécialisé

@@ -1,7 +1,7 @@
 // frontend/src/features/dashboard/components/charts/TrendChart.jsx
 import React from 'react';
 import { useTheme } from '@mui/material/styles';
-import EnterpriseChart from '@/components/ui/Charts/EnterpriseChart';
+import EnterpriseChart from '@/shared/components/ui/Charts/EnterpriseChart';
 
 /**
  * Graphique de tendance CA/Marge - Composant spécialisé

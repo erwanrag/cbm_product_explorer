@@ -1,37 +1,29 @@
-// ===================================
-// 📁 frontend/src/store/hooks/useLayout.js - MODERNE
-// ===================================
-
-import { useAppState } from '@store/contexts/AppStateContext';
+// src/store/hooks/useLayout.js - VERSION CORRIGÉE FINALE
+import { useContext } from 'react';
+import { LayoutContext } from '@/store/contexts/LayoutContext';
 
 /**
- * Hook pour la gestion du layout et sidebar
- * Remplace useSidebar.js
+ * Hook useLayout - Version qui fonctionne
  */
-export function useLayout() {
-  const { state, actions } = useAppState();
+export const useLayout = () => {
+    const context = useContext(LayoutContext);
 
-  return {
-    // Sidebar state
-    isSidebarOpen: state.sidebar.isOpen,
-    isSidebarPinned: state.sidebar.isPinned,
+    // Si pas de contexte, retourner des valeurs par défaut
+    if (!context) {
+        console.warn('useLayout utilisé en dehors de LayoutProvider');
+        return {
+            sidebarOpen: true,
+            sidebarMobileOpen: false,
+            toggleSidebar: () => { },
+            toggleMobileSidebar: () => { },
+            filters: {},
+            setFilters: () => { },
+            clearFilters: () => { },
+        };
+    }
 
-    // Sidebar actions
-    openSidebar: () => actions.setSidebarOpen(true),
-    closeSidebar: () => actions.setSidebarOpen(false),
-    toggleSidebar: actions.toggleSidebar,
-    pinSidebar: () => actions.setSidebarPinned(true),
-    unpinSidebar: () => actions.setSidebarPinned(false),
-    togglePin: () => actions.setSidebarPinned(!state.sidebar.isPinned),
+    // Retourner directement le contexte
+    return context;
+};
 
-    // Filtres (pour compatibilité)
-    filters: state.filters.active,
-    filterType: state.filters.type,
-    setFilters: actions.setFilters,
-    setFilterType: actions.setFilterType,
-    clearFilters: actions.clearFilters,
-  };
-}
-
-// Alias pour compatibilité avec l'ancien code
-export const useSidebar = useLayout;
+export default useLayout;

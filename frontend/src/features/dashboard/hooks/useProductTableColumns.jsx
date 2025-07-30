@@ -1,7 +1,7 @@
 // frontend/src/features/dashboard/hooks/useProductTableColumns.js
 import { useMemo } from 'react';
 import { Box, Chip } from '@mui/material';
-import { formatCurrency } from '@/lib/format';
+import { formatCurrency } from '@/lib/formatUtils';
 
 /**
  * Hook pour les colonnes du tableau produits - Logique réutilisable

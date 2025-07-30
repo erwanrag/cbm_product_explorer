@@ -1,4 +1,4 @@
-// frontend/src/components/ui/DataGrid/EnterpriseDataGrid.jsx
+// frontend/src/shared/components/ui/DataGrid/EnterpriseDataGrid.jsx
 import React, { useMemo, useState, useCallback } from 'react';
 import { DataGrid, GridToolbar, GridActionsCellItem, useGridApiRef } from '@mui/x-data-grid';
 import {

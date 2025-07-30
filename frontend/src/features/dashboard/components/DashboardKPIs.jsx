@@ -4,7 +4,7 @@ import EuroIcon from '@mui/icons-material/Euro';
 import ShowChartIcon from '@mui/icons-material/ShowChart';
 import CategoryIcon from '@mui/icons-material/Category';
 import StoreIcon from '@mui/icons-material/Store';
-import { formatPrix, formatPourcentage } from '@/lib/format';
+import { formatPrix, formatPercentage } from '@/lib/format';
 
 export default function DashboardKPIs({ data }) {
   if (!data) return null;
@@ -38,7 +38,7 @@ export default function DashboardKPIs({ data }) {
     },
     {
       label: 'Marge Moyenne (%)',
-      value: formatPourcentage(margeMoyenne),
+      value: formatPercentage(margeMoyenne),
       icon: (
         <ShowChartIcon
           sx={{

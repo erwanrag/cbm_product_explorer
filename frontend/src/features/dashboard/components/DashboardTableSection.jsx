@@ -2,8 +2,8 @@
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Analytics, TrendingUp } from '@mui/icons-material';
-import EnterpriseDataGrid from '@/components/ui/DataGrid/EnterpriseDataGrid';
-import { useProductTableColumns } from '@/hooks/useProductTableColumns';
+import EnterpriseDataGrid from '@/shared/components/ui/DataGrid/EnterpriseDataGrid';
+import { useProductTableColumns } from '@/features/dashboard/hooks/useProductTableColumns';
 
 /**
  * Section tableau du dashboard - Composant focalisé

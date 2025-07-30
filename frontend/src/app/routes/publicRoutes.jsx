@@ -1,8 +1,8 @@
 // Pages avec lazy loading moderne et error boundaries
-const DashboardPage = createLazyPage(() => import('@/features/dashboard/DashboardPage'));
-const MatrixPage = createLazyPage(() => import('@/features/matrix/MatrixPage'));
-const OptimizationPage = createLazyPage(() => import('@/features/optimization/OptimizationPage'));
-const AnalyticsPage = createLazyPage(() => import('@/features/analytics/AnalyticsPage'));
+const DashboardPage = createLazyPage(() => import('@/features/dashboard/pages/DashboardPage'));
+const MatrixPage = createLazyPage(() => import('@/features/matrix/pages/MatrixPage'));
+const OptimizationPage = createLazyPage(() => import('@/features/optimization/pages/OptimizationPage'));
+//const AnalyticsPage = createLazyPage(() => import('@/features/analytics/AnalyticsPage'));
 
 /**
  * Routes publiques de l'application CBM GRC Matcher
@@ -33,12 +33,12 @@ export const publicRoutes = [
     title: 'Optimisation',
     description: 'Analyses et optimisations business',
   },
-  {
-    path: 'analytics',
-    element: AnalyticsPage,
-    title: 'Analytics',
-    description: 'Tableaux de bord et métriques',
-  },
+  //{
+  //  path: 'analytics',
+  //  element: AnalyticsPage,
+  //  title: 'Analytics',
+  //  description: 'Tableaux de bord et métriques',
+  //},
 ];
 
 export default publicRoutes;

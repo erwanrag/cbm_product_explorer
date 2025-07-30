@@ -2,8 +2,8 @@
 import React from 'react';
 import { Grid, Card, CardContent, Typography, Box, Skeleton } from '@mui/material';
 import { motion } from 'framer-motion';
-import { formatCurrency, formatPercentage } from '@/lib/format';
-import KPICard from './ui/KPICard';
+import { formatCurrency, formatPercentage } from '@/lib/formatUtils.js';
+import KPICard from '@/features/dashboard/ui/KPICard';
 
 /**
  * Section KPI du dashboard - Composant focalisé

@@ -5,10 +5,10 @@ import { Close } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Panneaux spécialisés
-import ProductOverviewPanel from './analysis/ProductOverviewPanel';
-import ProductSalesPanel from './analysis/ProductSalesPanel';
-import ProductStockPanel from './analysis/ProductStockPanel';
-import ProductOptimizationPanel from './analysis/ProductOptimizationPanel';
+import ProductOverviewPanel from '@/features/dashboard/components/analysis/ProductOverviewPanel';
+import ProductSalesPanel from '@/features/dashboard/components/analysis/ProductSalesPanel';
+import ProductStockPanel from '@/features/dashboard/components/analysis/ProductStockPanel';
+import ProductOptimizationPanel from '@/features/dashboard/components/analysis/ProductOptimizationPanel';
 
 /**
  * Drawer d'analyse produit - Composant focalisé

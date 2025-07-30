@@ -125,7 +125,9 @@ export default defineConfig(({ mode }) => {
         esbuild: {
             // Supprime console.log en production
             drop: mode === 'production' ? ['console', 'debugger'] : [],
-            logOverride: { 'this-is-undefined-in-esm': 'silent' }
+            logOverride: { 'this-is-undefined-in-esm': 'silent' },
+            loader: 'jsx',
+            include: /src\/.*\.[jt]sx?$/
         }
     };
 });
