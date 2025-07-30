@@ -3,22 +3,25 @@
 // ===================================
 
 import React from 'react';
+import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { BrowserRouter } from 'react-router-dom';
-import { ThemeProvider } from '@mui/material/styles';
-import { CssBaseline } from '@mui/material';
+import { ThemeProvider, CssBaseline } from '@mui/material';
 import { ToastContainer } from 'react-toastify';
 
-// Configuration et providers
+// Configuration
 import { config } from '@/config/environment';
-import { theme } from '@/shared/theme';
+import { createAppTheme } from '@/shared/theme';
+
+// Providers et Layout
 import { AppStateProvider } from '@/store/contexts/AppStateContext';
+import { LayoutProvider } from '@/store/contexts/LayoutContext';
+import Layout from '@/shared/components/layout/Layout';
 
-// Router principal
-import AppRouter from './router';
+// Routes
+import AppRoutes from '@/app/routes/AppRoutes';
 
-// Styles globaux
+// Styles
 import 'react-toastify/dist/ReactToastify.css';
 
 /**
@@ -28,10 +31,10 @@ const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
             staleTime: config.performance.cacheTimeout,
-            cacheTime: config.performance.longCacheTimeout,
             retry: config.performance.retryAttempts,
+            retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
             refetchOnWindowFocus: false,
-            refetchOnReconnect: true,
+            refetchOnMount: true,
         },
         mutations: {
             retry: 1,
@@ -40,38 +43,45 @@ const queryClient = new QueryClient({
 });
 
 /**
- * Composant App principal - Orchestration des providers
+ * Application principale CBM GRC Matcher
  */
 function App() {
+    // Thème dynamique
+    const theme = createAppTheme(config.ui.theme);
+
     return (
         <QueryClientProvider client={queryClient}>
-            <BrowserRouter>
-                <ThemeProvider theme={theme}>
-                    <CssBaseline />
+            <ThemeProvider theme={theme}>
+                <CssBaseline />
+                <BrowserRouter>
                     <AppStateProvider>
-                        <AppRouter />
-
-                        {/* Toast notifications */}
-                        <ToastContainer
-                            position={config.ui.notificationPosition}
-                            autoClose={config.ui.notificationDuration}
-                            hideProgressBar={false}
-                            newestOnTop
-                            closeOnClick
-                            rtl={false}
-                            pauseOnFocusLoss
-                            draggable
-                            pauseOnHover
-                            theme={config.ui.theme}
-                        />
+                        <LayoutProvider>
+                            <Layout>
+                                <AppRoutes />
+                            </Layout>
+                        </LayoutProvider>
                     </AppStateProvider>
-                </ThemeProvider>
-            </BrowserRouter>
+                </BrowserRouter>
 
-            {/* DevTools en développement uniquement */}
-            {config.features.enableReactQueryDevTools && (
-                <ReactQueryDevtools initialIsOpen={false} />
-            )}
+                {/* Toast Notifications */}
+                <ToastContainer
+                    position="top-right"
+                    autoClose={5000}
+                    hideProgressBar={false}
+                    newestOnTop
+                    closeOnClick
+                    rtl={false}
+                    pauseOnFocusLoss
+                    draggable
+                    pauseOnHover
+                    theme={config.ui.theme}
+                />
+
+                {/* React Query DevTools (dev only) */}
+                {config.features.enableDevTools && (
+                    <ReactQueryDevtools initialIsOpen={false} />
+                )}
+            </ThemeProvider>
         </QueryClientProvider>
     );
 }

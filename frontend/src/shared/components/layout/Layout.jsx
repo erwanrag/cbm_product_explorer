@@ -1,65 +1,45 @@
-// ===================================
-// 📁 frontend/src/shared/layout/Layout.jsx - CORRIGER LES IMPORTS
-// ===================================
-
-import React from "react";
-import { Box } from "@mui/material";
-import { Outlet } from "react-router-dom";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-
-import { useLayout } from "@/store/hooks/useLayout";
-import { LayoutProvider } from "@/store/contexts/LayoutContext";
-import { LAYOUT } from "@/constants/ui";
+// frontend/src/shared/components/layout/Layout.jsx - LAYOUT PRINCIPAL
+import React from 'react';
+import { Box, useMediaQuery, useTheme } from '@mui/material';
+import { useLayout } from '@/store/hooks/useLayout';
 
 // Composants layout
-import Sidebar from "./Sidebar";
-import Header from "./Header";
-import ContentContainer from "./ContentContainer";
+import Header from './Header';
+import Sidebar from './Sidebar';
+import ContentContainer from './ContentContainer';
 
 /**
- * Layout principal CBM - Version corrigée avec nouvelle architecture
+ * Layout principal de l'application CBM
+ * Gère la structure générale avec header, sidebar et contenu
  */
-const Layout = () => {
+const Layout = ({ children }) => {
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+    const { sidebarOpen, sidebarMobileOpen } = useLayout();
+
+    // Largeur de la sidebar
+    const sidebarWidth = 280;
+
     return (
-        <LayoutProvider>
-            <Box sx={{ display: "flex", height: "100vh", bgcolor: "background.default" }}>
-                {/* Sidebar Navigation */}
-                <Box component="nav" aria-label="Navigation principale">
-                    <Sidebar />
-                </Box>
+        <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+            {/* Header fixe en haut */}
+            <Header />
 
-                {/* Main Content Area */}
-                <Box
-                    component="main"
-                    role="main"
-                    id="main-content"
-                    sx={{
-                        flexGrow: 1,
-                        overflowY: "auto",
-                        display: "flex",
-                        flexDirection: "column",
-                    }}
-                >
-                    <Header />
-                    <ContentContainer>
-                        <Outlet />
-                    </ContentContainer>
-                </Box>
-            </Box>
-
-            {/* Toast Notifications */}
-            <ToastContainer
-                position="bottom-right"
-                role="status"
-                aria-live="polite"
-                closeOnClick
-                pauseOnHover
-                draggable
-                theme="light"
-                limit={5}
+            {/* Sidebar */}
+            <Sidebar
+                width={sidebarWidth}
+                open={isMobile ? sidebarMobileOpen : sidebarOpen}
+                variant={isMobile ? 'temporary' : 'persistent'}
             />
-        </LayoutProvider>
+
+            {/* Zone de contenu principal */}
+            <ContentContainer
+                sidebarWidth={sidebarWidth}
+                sidebarOpen={isMobile ? false : sidebarOpen}
+            >
+                {children}
+            </ContentContainer>
+        </Box>
     );
 };
 

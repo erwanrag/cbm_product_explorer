@@ -1,47 +1,307 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* frontend/src/styles/global.css - STYLES GLOBAUX CBM */
+
+/* ===== RESET ET BASE ===== */
+* {
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
 
 body {
-  @apply bg-gray-50 text-gray-900 font-sans;
-}
-.editable-cell {
-  background-color: #fff8dc; /* jaune clair pro */
-  font-weight: bold;
-}
-.modified-row {
-  background-color: #e0f7fa !important;
-}
-.highlighted-row {
-  background-color: #fff8dc !important;
-  border-left: 4px solid #1976d2 !important;
+    margin: 0;
+    padding: 0;
+    font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
+    background-color: #fafafa;
+    color: #333;
+    overflow-x: hidden;
 }
 
-/* ✅ Met en gras la ligne sélectionnée */
-.MuiDataGrid-row.highlighted-row {
-  font-weight: bold !important;
-}
-.MuiDataGrid-root.striped-columns .MuiDataGrid-cell:nth-child(-n + 5),
-.MuiDataGrid-root.striped-columns .MuiDataGrid-columnHeader:nth-child(-n + 5) {
-  background-color: #ffffff !important;
+#root {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
-.MuiDataGrid-root.striped-columns .MuiDataGrid-cell:nth-child(n + 6):nth-child(-n + 8),
-.MuiDataGrid-root.striped-columns .MuiDataGrid-columnHeader:nth-child(n + 6):nth-child(-n + 8) {
-  background-color: #e3f2fd !important;
+/* ===== SCROLLBARS PERSONNALISÉES ===== */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
 }
 
-.MuiDataGrid-root.striped-columns .MuiDataGrid-cell:nth-child(n + 9):nth-child(-n + 12),
-.MuiDataGrid-root.striped-columns .MuiDataGrid-columnHeader:nth-child(n + 9):nth-child(-n + 12) {
-  background-color: #ffffff !important;
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
 }
 
-.MuiDataGrid-root.striped-columns .MuiDataGrid-cell:nth-child(n + 13):nth-child(-n + 16),
-.MuiDataGrid-root.striped-columns .MuiDataGrid-columnHeader:nth-child(n + 13):nth-child(-n + 16) {
-  background-color: #e3f2fd !important;
+::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+    transition: background 0.3s ease;
 }
 
-.MuiDataGrid-root.striped-columns .MuiDataGrid-cell:nth-child(17),
-.MuiDataGrid-root.striped-columns .MuiDataGrid-columnHeader:nth-child(17) {
-  background-color: #ffffff !important;
+    ::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+    }
+
+/* ===== LAYOUT UTILITAIRES ===== */
+.cbm-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 16px;
+}
+
+.cbm-flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cbm-flex-between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.cbm-full-height {
+    height: 100vh;
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.cbm-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.cbm-slide-up {
+    animation: slideInUp 0.4s ease-out;
+}
+
+.cbm-spin {
+    animation: spin 1s linear infinite;
+}
+
+/* ===== COMPOSANTS GLOBAUX ===== */
+
+/* Loading States */
+.cbm-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    min-height: 200px;
+}
+
+.cbm-loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #1976d2;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Error States */
+.cbm-error {
+    text-align: center;
+    padding: 2rem;
+    color: #d32f2f;
+}
+
+.cbm-error-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+/* Cards */
+.cbm-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease;
+}
+
+    .cbm-card:hover {
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    }
+
+/* Badges */
+.cbm-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.cbm-badge--success {
+    background-color: #e8f5e8;
+    color: #2e7d32;
+}
+
+.cbm-badge--warning {
+    background-color: #fff3e0;
+    color: #f57c00;
+}
+
+.cbm-badge--error {
+    background-color: #ffebee;
+    color: #d32f2f;
+}
+
+.cbm-badge--info {
+    background-color: #e3f2fd;
+    color: #1976d2;
+}
+
+/* ===== MATERIAL-UI OVERRIDES ===== */
+
+/* DataGrid customizations */
+.MuiDataGrid-root {
+    border: none;
+    background: white;
+}
+
+.MuiDataGrid-columnHeaders {
+    background-color: #f5f5f5;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.MuiDataGrid-columnHeaderTitle {
+    font-weight: 600;
+    color: #333;
+}
+
+.MuiDataGrid-row:hover {
+    background-color: #f8f9fa;
+}
+
+.MuiDataGrid-cell {
+    border-bottom: 1px solid #f0f0f0;
+}
+
+/* Toast customizations */
+.Toastify__toast {
+    border-radius: 8px;
+    font-family: 'Roboto', sans-serif;
+}
+
+.Toastify__toast--success {
+    background: linear-gradient(135deg, #4caf50, #45a049);
+}
+
+.Toastify__toast--error {
+    background: linear-gradient(135deg, #f44336, #d32f2f);
+}
+
+.Toastify__toast--warning {
+    background: linear-gradient(135deg, #ff9800, #f57c00);
+}
+
+.Toastify__toast--info {
+    background: linear-gradient(135deg, #2196f3, #1976d2);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    .cbm-container {
+        padding: 0 12px;
+    }
+
+    .cbm-card {
+        margin: 8px 0;
+    }
+}
+
+@media (max-width: 480px) {
+    html {
+        font-size: 14px;
+    }
+
+    .cbm-container {
+        padding: 0 8px;
+    }
+}
+
+/* ===== PRINT STYLES ===== */
+@media print {
+    body {
+        background: white;
+        color: black;
+    }
+
+    .cbm-no-print,
+    .MuiAppBar-root,
+    .MuiDrawer-root,
+    .Toastify__toast-container {
+        display: none !important;
+    }
+}
+
+/* ===== ACCESSIBILITÉ ===== */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Focus visible pour l'accessibilité */
+.focus-visible {
+    outline: 2px solid #1976d2;
+    outline-offset: 2px;
 }

@@ -1,4 +1,4 @@
-// frontend/vite.config.js - CONFIGURATION FINALE CONSOLIDÉE
+// frontend/vite.config.js - CONFIGURATION VITE CORRIGÉE
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
@@ -12,11 +12,9 @@ export default defineConfig(({ mode }) => {
             react({
                 // Fast Refresh pour le développement
                 fastRefresh: true,
+                // Configuration Babel simplifiée (sans plugin manquant)
                 babel: {
-                    plugins: mode === 'development' ? [] : [
-                        // Supprime les data-testid en production
-                        ['babel-plugin-react-remove-properties', { properties: ['data-testid'] }]
-                    ]
+                    plugins: mode === 'development' ? [] : []
                 }
             })
         ],

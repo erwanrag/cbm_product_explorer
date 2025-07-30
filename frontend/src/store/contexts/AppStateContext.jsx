@@ -2,198 +2,266 @@
 // 📁 frontend/src/store/contexts/AppStateContext.jsx - NOUVEAU
 // ===================================
 
-import React, { createContext, useContext, useReducer } from 'react';
+import React, { createContext, useContext, useReducer, useCallback } from 'react';
 
-// État initial global
+/**
+ * État initial de l'application
+ */
 const initialState = {
-    // UI State
-    sidebar: {
-        isOpen: false,
-        isPinned: false,
+    // État utilisateur (si applicable)
+    user: null,
+    isAuthenticated: false,
+
+    // Configuration application
+    config: {
+        theme: 'light',
+        language: 'fr',
+        animations: true,
     },
 
-    // Filtres globaux
-    filters: {
-        active: {},
-        history: [],
-        type: 'none' // 'dashboard', 'matrix', 'optimization', 'none'
+    // Cache applicatif
+    cache: {
+        products: new Map(),
+        sales: new Map(),
+        lastUpdate: null,
     },
 
-    // État de l'application
-    app: {
-        isLoading: false,
-        currentPage: 'dashboard',
-        lastRefresh: null,
-    },
+    // État global
+    isOnline: navigator.onLine,
+    lastSync: null,
 
-    // Sélection produits
-    selection: {
-        selectedProducts: [],
-        currentProduct: null,
-        activeView: 'table' // 'table', 'grid', 'chart'
-    }
+    // Performance
+    performance: {
+        requestCount: 0,
+        averageResponseTime: 0,
+        errors: [],
+    },
 };
 
-// Actions
-const actionTypes = {
-    // Sidebar
-    SET_SIDEBAR_OPEN: 'SET_SIDEBAR_OPEN',
-    SET_SIDEBAR_PINNED: 'SET_SIDEBAR_PINNED',
-    TOGGLE_SIDEBAR: 'TOGGLE_SIDEBAR',
-
-    // Filtres
-    SET_FILTERS: 'SET_FILTERS',
-    SET_FILTER_TYPE: 'SET_FILTER_TYPE',
-    CLEAR_FILTERS: 'CLEAR_FILTERS',
-    ADD_TO_FILTER_HISTORY: 'ADD_TO_FILTER_HISTORY',
-
-    // App
-    SET_LOADING: 'SET_LOADING',
-    SET_CURRENT_PAGE: 'SET_CURRENT_PAGE',
-    SET_LAST_REFRESH: 'SET_LAST_REFRESH',
-
-    // Sélection
-    SET_SELECTED_PRODUCTS: 'SET_SELECTED_PRODUCTS',
-    SET_CURRENT_PRODUCT: 'SET_CURRENT_PRODUCT',
-    SET_ACTIVE_VIEW: 'SET_ACTIVE_VIEW',
+/**
+ * Actions disponibles
+ */
+const ACTIONS = {
+    SET_USER: 'SET_USER',
+    SET_CONFIG: 'SET_CONFIG',
+    UPDATE_CACHE: 'UPDATE_CACHE',
+    CLEAR_CACHE: 'CLEAR_CACHE',
+    SET_ONLINE_STATUS: 'SET_ONLINE_STATUS',
+    SET_LAST_SYNC: 'SET_LAST_SYNC',
+    UPDATE_PERFORMANCE: 'UPDATE_PERFORMANCE',
+    ADD_ERROR: 'ADD_ERROR',
+    CLEAR_ERRORS: 'CLEAR_ERRORS',
 };
 
-// Reducer
-function appStateReducer(state, action) {
+/**
+ * Reducer pour gérer l'état global
+ */
+const appStateReducer = (state, action) => {
     switch (action.type) {
-        case actionTypes.SET_SIDEBAR_OPEN:
+        case ACTIONS.SET_USER:
             return {
                 ...state,
-                sidebar: { ...state.sidebar, isOpen: action.payload }
+                user: action.payload,
+                isAuthenticated: !!action.payload,
             };
 
-        case actionTypes.SET_SIDEBAR_PINNED:
+        case ACTIONS.SET_CONFIG:
             return {
                 ...state,
-                sidebar: { ...state.sidebar, isPinned: action.payload }
+                config: {
+                    ...state.config,
+                    ...action.payload,
+                },
             };
 
-        case actionTypes.TOGGLE_SIDEBAR:
+        case ACTIONS.UPDATE_CACHE:
+            const { key, data } = action.payload;
             return {
                 ...state,
-                sidebar: { ...state.sidebar, isOpen: !state.sidebar.isOpen }
+                cache: {
+                    ...state.cache,
+                    [key]: data,
+                    lastUpdate: new Date().toISOString(),
+                },
             };
 
-        case actionTypes.SET_FILTERS:
+        case ACTIONS.CLEAR_CACHE:
             return {
                 ...state,
-                filters: { ...state.filters, active: action.payload }
+                cache: {
+                    products: new Map(),
+                    sales: new Map(),
+                    lastUpdate: null,
+                },
             };
 
-        case actionTypes.SET_FILTER_TYPE:
+        case ACTIONS.SET_ONLINE_STATUS:
             return {
                 ...state,
-                filters: { ...state.filters, type: action.payload }
+                isOnline: action.payload,
             };
 
-        case actionTypes.CLEAR_FILTERS:
+        case ACTIONS.SET_LAST_SYNC:
             return {
                 ...state,
-                filters: { ...state.filters, active: {} }
+                lastSync: action.payload,
             };
 
-        case actionTypes.ADD_TO_FILTER_HISTORY:
+        case ACTIONS.UPDATE_PERFORMANCE:
+            const { requestCount, responseTime } = action.payload;
+            const newAverage = state.performance.requestCount === 0
+                ? responseTime
+                : (state.performance.averageResponseTime * state.performance.requestCount + responseTime) / (state.performance.requestCount + 1);
+
             return {
                 ...state,
-                filters: {
-                    ...state.filters,
-                    history: [action.payload, ...state.filters.history.slice(0, 9)] // Keep last 10
-                }
+                performance: {
+                    ...state.performance,
+                    requestCount: state.performance.requestCount + (requestCount || 1),
+                    averageResponseTime: newAverage,
+                },
             };
 
-        case actionTypes.SET_LOADING:
+        case ACTIONS.ADD_ERROR:
             return {
                 ...state,
-                app: { ...state.app, isLoading: action.payload }
+                performance: {
+                    ...state.performance,
+                    errors: [...state.performance.errors, action.payload],
+                },
             };
 
-        case actionTypes.SET_CURRENT_PAGE:
+        case ACTIONS.CLEAR_ERRORS:
             return {
                 ...state,
-                app: { ...state.app, currentPage: action.payload }
-            };
-
-        case actionTypes.SET_LAST_REFRESH:
-            return {
-                ...state,
-                app: { ...state.app, lastRefresh: Date.now() }
-            };
-
-        case actionTypes.SET_CURRENT_PRODUCT:
-            return {
-                ...state,
-                selection: { ...state.selection, currentProduct: action.payload }
-            };
-
-        case actionTypes.SET_SELECTED_PRODUCTS:
-            return {
-                ...state,
-                selection: { ...state.selection, selectedProducts: action.payload }
-            };
-
-        case actionTypes.SET_ACTIVE_VIEW:
-            return {
-                ...state,
-                selection: { ...state.selection, activeView: action.payload }
+                performance: {
+                    ...state.performance,
+                    errors: [],
+                },
             };
 
         default:
             return state;
     }
-}
+};
 
-// Context
-const AppStateContext = createContext(null);
+/**
+ * Contexte AppState
+ */
+export const AppStateContext = createContext(undefined);
 
-// Provider
-export function AppStateProvider({ children }) {
+/**
+ * Provider du contexte AppState
+ */
+export const AppStateProvider = ({ children }) => {
     const [state, dispatch] = useReducer(appStateReducer, initialState);
 
-    // Actions encapsulées
-    const actions = {
-        // Sidebar
-        setSidebarOpen: (isOpen) => dispatch({ type: actionTypes.SET_SIDEBAR_OPEN, payload: isOpen }),
-        setSidebarPinned: (isPinned) => dispatch({ type: actionTypes.SET_SIDEBAR_PINNED, payload: isPinned }),
-        toggleSidebar: () => dispatch({ type: actionTypes.TOGGLE_SIDEBAR }),
+    // Actions
+    const setUser = useCallback((user) => {
+        dispatch({ type: ACTIONS.SET_USER, payload: user });
+    }, []);
 
-        // Filtres
-        setFilters: (filters) => {
-            dispatch({ type: actionTypes.SET_FILTERS, payload: filters });
-            dispatch({ type: actionTypes.ADD_TO_FILTER_HISTORY, payload: filters });
-        },
-        setFilterType: (type) => dispatch({ type: actionTypes.SET_FILTER_TYPE, payload: type }),
-        clearFilters: () => dispatch({ type: actionTypes.CLEAR_FILTERS }),
+    const updateConfig = useCallback((config) => {
+        dispatch({ type: ACTIONS.SET_CONFIG, payload: config });
 
-        // App
-        setLoading: (isLoading) => dispatch({ type: actionTypes.SET_LOADING, payload: isLoading }),
-        setCurrentPage: (page) => dispatch({ type: actionTypes.SET_CURRENT_PAGE, payload: page }),
-        refresh: () => dispatch({ type: actionTypes.SET_LAST_REFRESH }),
+        // Persister en localStorage si possible
+        try {
+            const existingConfig = JSON.parse(localStorage.getItem('cbm-config') || '{}');
+            localStorage.setItem('cbm-config', JSON.stringify({
+                ...existingConfig,
+                ...config
+            }));
+        } catch (error) {
+            console.warn('Impossible de sauvegarder la config:', error);
+        }
+    }, []);
 
-        // Sélection
-        setSelectedProducts: (products) => dispatch({ type: actionTypes.SET_SELECTED_PRODUCTS, payload: products }),
-        setCurrentProduct: (product) => dispatch({ type: actionTypes.SET_CURRENT_PRODUCT, payload: product }),
-        setActiveView: (view) => dispatch({ type: actionTypes.SET_ACTIVE_VIEW, payload: view }),
+    const updateCache = useCallback((key, data) => {
+        dispatch({ type: ACTIONS.UPDATE_CACHE, payload: { key, data } });
+    }, []);
+
+    const clearCache = useCallback(() => {
+        dispatch({ type: ACTIONS.CLEAR_CACHE });
+    }, []);
+
+    const setOnlineStatus = useCallback((isOnline) => {
+        dispatch({ type: ACTIONS.SET_ONLINE_STATUS, payload: isOnline });
+    }, []);
+
+    const updatePerformance = useCallback((metrics) => {
+        dispatch({ type: ACTIONS.UPDATE_PERFORMANCE, payload: metrics });
+    }, []);
+
+    const addError = useCallback((error) => {
+        const errorInfo = {
+            message: error.message || 'Erreur inconnue',
+            timestamp: new Date().toISOString(),
+            stack: error.stack,
+            url: window.location.href,
+        };
+        dispatch({ type: ACTIONS.ADD_ERROR, payload: errorInfo });
+    }, []);
+
+    const clearErrors = useCallback(() => {
+        dispatch({ type: ACTIONS.CLEAR_ERRORS });
+    }, []);
+
+    // Chargement de la config depuis localStorage au démarrage
+    React.useEffect(() => {
+        try {
+            const savedConfig = localStorage.getItem('cbm-config');
+            if (savedConfig) {
+                const config = JSON.parse(savedConfig);
+                dispatch({ type: ACTIONS.SET_CONFIG, payload: config });
+            }
+        } catch (error) {
+            console.warn('Impossible de charger la config:', error);
+        }
+
+        // Listeners pour l'état en ligne/hors ligne
+        const handleOnline = () => setOnlineStatus(true);
+        const handleOffline = () => setOnlineStatus(false);
+
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+
+        return () => {
+            window.removeEventListener('online', handleOnline);
+            window.removeEventListener('offline', handleOffline);
+        };
+    }, [setOnlineStatus]);
+
+    const value = {
+        // State
+        ...state,
+
+        // Actions
+        setUser,
+        updateConfig,
+        updateCache,
+        clearCache,
+        setOnlineStatus,
+        updatePerformance,
+        addError,
+        clearErrors,
     };
-
-    const value = { state, actions, dispatch };
 
     return (
         <AppStateContext.Provider value={value}>
             {children}
         </AppStateContext.Provider>
     );
-}
+};
 
-// Hook
-export function useAppState() {
+/**
+ * Hook pour utiliser le contexte AppState
+ */
+export const useAppState = () => {
     const context = useContext(AppStateContext);
+
     if (!context) {
-        throw new Error('useAppState must be used within AppStateProvider');
+        throw new Error('useAppState doit être utilisé dans un AppStateProvider');
     }
+
     return context;
-}
+};
