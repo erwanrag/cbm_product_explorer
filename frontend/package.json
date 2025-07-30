@@ -1,19 +1,34 @@
 {
   "name": "cbm-grc-matcher-frontend",
   "version": "2.0.0",
+  "description": "Frontend React pour CBM GRC Matcher - Application d'analyse et matching produits",
   "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
   "scripts": {
     "dev": "vite --mode development --port 5181 --host 0.0.0.0",
     "build": "vite build --mode production",
-    "preview": "vite preview --port 5181",
-    "lint": "eslint src --ext .js,.jsx --fix",
+    "build:staging": "vite build --mode staging",
+    "preview": "vite preview --port 5181 --host 0.0.0.0",
+    "analyze": "vite build --mode production && npx vite-bundle-analyzer dist",
+    "lint": "eslint src --ext .js,.jsx --fix --max-warnings 0",
+    "lint:check": "eslint src --ext .js,.jsx --max-warnings 0",
     "format": "prettier --write \"src/**/*.{js,jsx,json,css,md}\"",
-    "clean": "rm -rf dist node_modules/.vite"
+    "format:check": "prettier --check \"src/**/*.{js,jsx,json,css,md}\"",
+    "clean": "rimraf dist node_modules/.vite .eslintcache",
+    "clean:all": "rimraf dist node_modules package-lock.json .eslintcache && npm install",
+    "deps:check": "npx npm-check-updates",
+    "deps:update": "npx npm-check-updates -u && npm install",
+    "test": "echo \"Tests à configurer\" && exit 0",
+    "test:coverage": "echo \"Coverage à configurer\" && exit 0"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
-    "@mui/icons-material": "^7.1.1", 
+    "@mui/icons-material": "^7.1.1",
     "@mui/material": "^7.0.2",
     "@mui/x-data-grid": "^8.1.0",
     "@tanstack/react-query": "^5.81.2",
@@ -32,7 +47,36 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
     "eslint": "^8.57.0",
+    "eslint-config-react-app": "^7.0.1",
+    "eslint-plugin-react": "^7.37.0",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-react-refresh": "^0.4.12",
     "prettier": "^3.6.1",
-    "vite": "^5.2.0"
-  }
+    "rimraf": "^6.0.1",
+    "vite": "^5.2.0",
+    "vite-bundle-analyzer": "^0.11.1"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "keywords": [
+    "react",
+    "vite",
+    "cbm",
+    "grc",
+    "matcher",
+    "frontend",
+    "material-ui"
+  ],
+  "author": "CBM Team",
+  "license": "UNLICENSED"
 }

@@ -1,57 +1,59 @@
-// src/lib/colors.js
-// === Couleurs par statut produit ===
-export const STATUT_COLORS = {
-  0: "#27ae60",    // Vert
-  1: "#F59E42",    // Jaune
-  2: "#e57330",    // Orange
-  8: "#8B5CF6",    // Violet
-};
-export const STATUT_LABELS = {
-  0: "RAS",
-  1: "Interdit Achat",
-  2: "Interdit Vente",
-  8: "Interdit Achat/Vente",
-};
+// ===================================
+// 📁 frontend/src/lib/colors.js - REMPLACER VOTRE EXISTANT
+// ===================================
 
-// === Couleurs par qualité produit ===
-export const QUALITE_COLORS = {
-  OE: "#2196f3",   // Bleu
-  OEM: "#4caf50",  // Vert
-  PMQ: "#ff9800",  // Orange
-  PMV: "#9c27b0",  // Violet
-};
-export const QUALITE_LABELS = {
-  OE: "OE",
-  OEM: "OEM",
-  PMQ: "PMQ",
-  PMV: "PMV",
+// Import des constantes
+import {
+    QUALITE_COLORS,
+    STATUT_COLORS,
+    getQualiteColor,
+    getStatutColor,
+    getMargeColor
+} from '@/constants/colors';
+
+// Ré-export pour compatibilité
+export {
+    QUALITE_COLORS,
+    STATUT_COLORS,
+    getQualiteColor,
+    getStatutColor,
+    getMargeColor
 };
 
-// === Couleur de marge (%) ===
-export function getMargeColor(val) {
-  if (val == null || isNaN(val)) return "#ccc";      // Gris (N/A)
-  if (val < 10) return "#e53935";                    // Rouge vif (faible)
-  if (val <= 20) return "#ff9800";                   // Orange
-  return "#27ae60";                                  // Vert (OK)
+// Couleurs étendues pour graphiques
+export const CHART_COLORS = [
+    '#1976d2', '#dc004e', '#2e7d32', '#ed6c02',
+    '#9c27b0', '#00acc1', '#5e35b1', '#c0ca33',
+    '#6d4c41', '#546e7a', '#8d6e63', '#78909c'
+];
+
+/**
+ * Récupère une couleur de graphique par index
+ */
+export function getChartColor(index) {
+    return CHART_COLORS[index % CHART_COLORS.length];
 }
 
-export function getMargeLabel(val) {
-  if (val == null || isNaN(val)) return "N/A";
-  if (val < 10) return "Marge < 10% (faible)";
-  if (val <= 20) return "Marge 10–20% (moyenne)";
-  return "Marge > 20% (bonne)";
+/**
+ * Génère une couleur basée sur un hash de chaîne
+ */
+export function getColorFromString(str) {
+    if (!str) return '#757575';
+
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+
+    const hue = Math.abs(hash) % 360;
+    return `hsl(${hue}, 65%, 45%)`;
 }
 
-// Fonctions utilitaires
-export function getQualiteColor(qualite) {
-  return QUALITE_COLORS[qualite] || "#000";
-}
-export function getStatutColor(statut) {
-  return STATUT_COLORS[statut] || "#999";
-}
-export function getStatutLabel(statut) {
-  return STATUT_LABELS[statut] || `Code ${statut}`;
-}
-export function getQualiteLabel(qualite) {
-  return QUALITE_LABELS[qualite] || qualite || "?";
+/**
+ * Couleur de performance (0-100, rouge à vert)
+ */
+export function getPerformanceColor(value) {
+    if (value == null || isNaN(value)) return '#757575';
+    const hue = Math.max(0, Math.min(120, (value / 100) * 120));
+    return `hsl(${hue}, 70%, 45%)`;
 }

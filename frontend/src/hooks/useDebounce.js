@@ -1,14 +1,60 @@
-//src/hooks/useDebounce.js
-import { useEffect, useState } from "react";
+// frontend/src/hooks/useDebounce.js - GARDER ET AMÉLIORER
 
-// 🔁 Hook pour debounce une valeur (utile pour les filtres)
-export default function useDebounce(value, delay = 300) {
-  const [debounced, setDebounced] = useState(value);
+import { useState, useEffect } from 'react';
+import { config } from '@/config/environment';
 
-  useEffect(() => {
-    const handler = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(handler);
-  }, [value, delay]);
+/**
+ * Hook de debounce optimisé avec configuration globale
+ * @param {any} value - Valeur à debouncer
+ * @param {number} delay - Délai en ms (optionnel, utilise config par défaut)
+ * @returns {any} Valeur debouncée
+ */
+export function useDebounce(value, delay = config.performance.debounceDelay) {
+    const [debouncedValue, setDebouncedValue] = useState(value);
 
-  return debounced;
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedValue(value);
+        }, delay);
+
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [value, delay]);
+
+    return debouncedValue;
 }
+
+/**
+ * Hook de debounce pour callbacks
+ * @param {Function} callback - Fonction à debouncer
+ * @param {number} delay - Délai en ms
+ * @returns {Function} Callback debouncé
+ */
+export function useDebouncedCallback(callback, delay = config.performance.debounceDelay) {
+    const [timeoutId, setTimeoutId] = useState(null);
+
+    const debouncedCallback = (...args) => {
+        if (timeoutId) {
+            clearTimeout(timeoutId);
+        }
+
+        const newTimeoutId = setTimeout(() => {
+            callback(...args);
+        }, delay);
+
+        setTimeoutId(newTimeoutId);
+    };
+
+    useEffect(() => {
+        return () => {
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+            }
+        };
+    }, [timeoutId]);
+
+    return debouncedCallback;
+}
+
+export default useDebounce;
