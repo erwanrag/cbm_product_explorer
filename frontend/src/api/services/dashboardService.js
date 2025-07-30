@@ -1,20 +1,20 @@
-// frontend/src/api/services/dashboardService.js - NOUVEAU SERVICE
+// frontend/src/api/services/dashboardService.js
 import apiClient from '@/api/core/client';
 
-/**
- * Service pour le dashboard consolidé
- * Compatible avec DashboardFicheResponse du backend
- */
 export class DashboardService {
-  /**
-   * Récupère toutes les données pour une fiche produit
-   * @param {Object} payload - Filtres selon DashboardFilterRequest
-   * @returns {Promise<Object>} DashboardFicheResponse complète
-   */
-  async getFiche(payload) {
-    const response = await apiClient.post('/dashboard/fiche', payload);
-    return response.data;
-  }
+    async getFiche(payload) {
+        try {
+            console.log('🚀 Dashboard API call with filters:', payload);
+
+            const response = await apiClient.post('/dashboard/fiche', payload);
+
+            console.log('✅ Dashboard response:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('❌ Dashboard API error:', error);
+            throw new Error(`Erreur dashboard: ${error.message}`);
+        }
+    }
 }
 
 export const dashboardService = new DashboardService();

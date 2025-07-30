@@ -1,140 +1,138 @@
-// frontend/src/features/dashboard/DashboardPage.jsx - VERSION PROPRE
-import React, { useEffect, useState } from 'react';
-import { Box, Typography, Fab } from '@mui/material';
-import { Refresh, Analytics } from '@mui/icons-material';
-import { motion, AnimatePresence } from 'framer-motion';
+// frontend/src/features/dashboard/pages/DashboardPage.jsx
+import React, { useState } from 'react';
+import { Box, Alert, CircularProgress } from '@mui/material';
+import { motion } from 'framer-motion';
+import { useSearchParams } from 'react-router-dom';
 
-// Hooks enterprise
-import { useProductData } from '@/store/hooks/useProductData';
 import { useAppState } from '@/store/contexts/AppStateContext';
+import { useDashboardData } from '@/features/dashboard/hooks/useDashboardData';
 
-// Composants partitionnés
 import DashboardHeader from '@/features/dashboard/components/DashboardHeader';
 import DashboardKPISection from '@/features/dashboard/components/DashboardKPISection';
 import DashboardChartsSection from '@/features/dashboard/components/DashboardChartsSection';
 import DashboardTableSection from '@/features/dashboard/components/DashboardTableSection';
-import ProductAnalysisDrawer from '@/features/dashboard/components/ProductAnalysisDrawer';
 import DashboardEmptyState from '@/features/dashboard/components/DashboardEmptyState';
-import DashboardErrorState from '@/features/dashboard/components/DashboardErrorState';
+import ProductDetailPanel from '@/features/dashboard/components/ProductDetailPanel';
 
-// Hooks métier spécialisés
-import { useDashboardData } from '@/features/dashboard/hooks/useDashboardData';
-import { useDashboardActions } from '@/features/dashboard/hooks/useDashboardActions';
-
-/**
- * Page Dashboard principale - Architecture enterprise clean
- * Responsabilité unique: orchestration des composants enfants
- */
 export default function DashboardPage() {
-    const { state, actions } = useAppState();
-    const activeFilters = state.filters.active;
-    const hasActiveFilters = Object.keys(activeFilters).length > 0;
+    const { state } = useAppState();
+    const [searchParams] = useSearchParams();
+    const [selectedProduct, setSelectedProduct] = useState(null);
 
-    // Hook métier centralisé
+    const activeFilters = state?.filters?.active || {};
+    const urlFilters = Object.fromEntries(searchParams.entries());
+    const finalFilters = Object.keys(urlFilters).length > 0 ? urlFilters : activeFilters;
+    const hasActiveFilters = Object.keys(finalFilters).length > 0;
+
     const {
         dashboardData,
         isLoading,
         isError,
         error,
         refreshData
-    } = useDashboardData(activeFilters);
+    } = useDashboardData(finalFilters);
 
-    // Actions métier centralisées
-    const {
-        handleProductSelect,
-        handleExport,
-        handleViewModeChange,
-        selectedProduct,
-        viewMode
-    } = useDashboardActions();
-
-    // État local minimal
     const [refreshKey, setRefreshKey] = useState(0);
 
-    // Gestion du refresh
     const handleRefresh = async () => {
         setRefreshKey(prev => prev + 1);
         await refreshData();
     };
 
-    // Rendu conditionnel clean
+    const handleProductSelect = (product) => {
+        setSelectedProduct(product);
+    };
+
     if (!hasActiveFilters) {
         return <DashboardEmptyState />;
     }
 
     if (isError) {
-        return <DashboardErrorState error={error} onRetry={handleRefresh} />;
+        return (
+            <Box sx={{ p: 3 }}>
+                <Alert
+                    severity="error"
+                    action={
+                        <button onClick={handleRefresh} style={{ marginLeft: 10 }}>
+                            Réessayer
+                        </button>
+                    }
+                >
+                    Erreur lors du chargement: {error?.message || 'Erreur inconnue'}
+                </Alert>
+            </Box>
+        );
+    }
+
+    if (isLoading) {
+        return (
+            <Box sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                minHeight: '60vh'
+            }}>
+                <CircularProgress size={60} />
+            </Box>
+        );
     }
 
     return (
-        <motion.div
-            key={refreshKey}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-        >
-            <Box sx={{ p: 3, maxWidth: '1600px', mx: 'auto' }}>
-                {/* Header avec actions - Composant dédié */}
-                <DashboardHeader
-                    productCount={dashboardData?.details?.length || 0}
-                    onRefresh={handleRefresh}
-                    onExport={handleExport}
-                    onViewModeChange={handleViewModeChange}
-                    viewMode={viewMode}
-                    loading={isLoading}
-                />
-
-                {/* Section KPI - Composant dédié */}
-                <DashboardKPISection
-                    data={dashboardData}
-                    loading={isLoading}
-                    onKpiClick={handleViewModeChange}
-                />
-
-                {/* Section Graphiques - Composant dédié */}
-                <DashboardChartsSection
-                    data={dashboardData}
-                    loading={isLoading}
-                    viewMode={viewMode}
-                />
-
-                {/* Section Tableau - Composant dédié */}
-                <DashboardTableSection
-                    data={dashboardData}
-                    loading={isLoading}
-                    onProductSelect={handleProductSelect}
-                    onExport={handleExport}
-                    onRefresh={handleRefresh}
-                />
-
-                {/* Drawer d'analyse - Composant dédié */}
-                <AnimatePresence>
-                    {selectedProduct && (
-                        <ProductAnalysisDrawer
-                            product={selectedProduct}
-                            onClose={() => handleProductSelect(null)}
-                            viewMode={viewMode}
-                        />
-                    )}
-                </AnimatePresence>
-
-                {/* FAB de refresh */}
-                <Fab
-                    color="primary"
-                    aria-label="actualiser"
-                    sx={{ position: 'fixed', bottom: 24, right: 24, zIndex: 1000 }}
-                    onClick={handleRefresh}
-                    disabled={isLoading}
+        <Box sx={{ display: 'flex', height: '100vh' }}>
+            {/* Dashboard principal */}
+            <Box sx={{
+                flexGrow: 1,
+                overflow: 'auto',
+                transition: 'all 0.3s ease',
+                width: selectedProduct ? '70%' : '100%'
+            }}>
+                <motion.div
+                    key={refreshKey}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4 }}
                 >
-                    <Refresh sx={{
-                        animation: isLoading ? 'spin 1s linear infinite' : 'none',
-                        '@keyframes spin': {
-                            '0%': { transform: 'rotate(0deg)' },
-                            '100%': { transform: 'rotate(360deg)' }
-                        }
-                    }} />
-                </Fab>
+                    <Box sx={{ p: 3, maxWidth: '1600px', mx: 'auto' }}>
+                        <DashboardHeader
+                            data={dashboardData}
+                            filters={finalFilters}
+                            onRefresh={handleRefresh}
+                            loading={isLoading}
+                            selectedProduct={selectedProduct}
+                            onClearSelection={() => setSelectedProduct(null)}
+                        />
+
+                        <DashboardKPISection
+                            data={dashboardData}
+                            loading={isLoading}
+                            selectedProduct={selectedProduct}
+                        />
+
+                        <DashboardChartsSection
+                            data={dashboardData}
+                            loading={isLoading}
+                            selectedProduct={selectedProduct}
+                        />
+
+                        <DashboardTableSection
+                            data={dashboardData}
+                            loading={isLoading}
+                            onRefresh={handleRefresh}
+                            onProductSelect={handleProductSelect}
+                            selectedProduct={selectedProduct}
+                        />
+                    </Box>
+                </motion.div>
             </Box>
-        </motion.div>
+
+            {/* Panel détail produit */}
+            {selectedProduct && (
+                <ProductDetailPanel
+                    product={selectedProduct}
+                    data={dashboardData}
+                    onClose={() => setSelectedProduct(null)}
+                />
+            )}
+        </Box>
     );
 }
