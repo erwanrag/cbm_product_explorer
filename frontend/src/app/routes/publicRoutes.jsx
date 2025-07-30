@@ -9,36 +9,36 @@ const AnalyticsPage = createLazyPage(() => import('@/features/analytics/Analytic
  * Utilisent le lazy loading moderne avec error boundaries
  */
 export const publicRoutes = [
-    {
-        path: "",
-        element: DashboardPage,
-        title: "Dashboard",
-        description: "Vue d'ensemble des produits et KPIs"
-    },
-    {
-        path: "dashboard",
-        element: DashboardPage,
-        title: "Dashboard",
-        description: "Vue d'ensemble des produits et KPIs"
-    },
-    {
-        path: "matrix",
-        element: MatrixPage,
-        title: "Matrice",
-        description: "Matrice de correspondance produits"
-    },
-    {
-        path: "optimization",
-        element: OptimizationPage,
-        title: "Optimisation",
-        description: "Analyses et optimisations business"
-    },
-    {
-        path: "analytics",
-        element: AnalyticsPage,
-        title: "Analytics",
-        description: "Tableaux de bord et métriques"
-    }
+  {
+    path: '',
+    element: DashboardPage,
+    title: 'Dashboard',
+    description: "Vue d'ensemble des produits et KPIs",
+  },
+  {
+    path: 'dashboard',
+    element: DashboardPage,
+    title: 'Dashboard',
+    description: "Vue d'ensemble des produits et KPIs",
+  },
+  {
+    path: 'matrix',
+    element: MatrixPage,
+    title: 'Matrice',
+    description: 'Matrice de correspondance produits',
+  },
+  {
+    path: 'optimization',
+    element: OptimizationPage,
+    title: 'Optimisation',
+    description: 'Analyses et optimisations business',
+  },
+  {
+    path: 'analytics',
+    element: AnalyticsPage,
+    title: 'Analytics',
+    description: 'Tableaux de bord et métriques',
+  },
 ];
 
 export default publicRoutes;

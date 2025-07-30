@@ -3,13 +3,13 @@
 // ===================================
 
 // Export de toutes les constantes
-export * from './colors';
-export * from './routes';
-export * from './business';
-export * from './ui';
+export * from '@/constants/colors';
+export * from '@/constants/routes';
+export * from '@/constants/business';
+export * from '@/constants/ui';
 
 // Exports par défaut pour compatibilité
-export { QUALITE_COLORS, STATUT_COLORS } from './colors';
-export { ROUTES, ROUTE_TITLES } from './routes';
-export { BUSINESS_LIMITS } from './business';
-export { LAYOUT } from './ui';
+export { QUALITE_COLORS, STATUT_COLORS } from '@/constants/colors';
+export { ROUTES, ROUTE_TITLES } from '@/constants/routes';
+export { BUSINESS_LIMITS } from '@/constants/business';
+export { LAYOUT } from '@/constants/ui';

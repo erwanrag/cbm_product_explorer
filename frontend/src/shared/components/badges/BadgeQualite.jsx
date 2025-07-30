@@ -1,6 +1,6 @@
 // src/shared/components/badges/BadgeQualite.jsx
-import { Chip } from "@mui/material";
-import { getQualiteColor, getQualiteLabel } from "@/lib/colors";
+import { Chip } from '@mui/material';
+import { getQualiteColor, getQualiteLabel } from '@/lib/colors';
 
 export default function BadgeQualite({ qualite }) {
   const color = getQualiteColor(qualite);
@@ -13,7 +13,7 @@ export default function BadgeQualite({ qualite }) {
         bgcolor: `${color}33`,
         color,
         border: `1px solid ${color}`,
-        borderRadius: "8px",
+        borderRadius: '8px',
       }}
     />
   );

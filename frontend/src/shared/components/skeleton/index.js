@@ -2,4 +2,4 @@
 // 📁 frontend/src/shared/components/skeleton/index.js - CRÉER
 // ===================================
 
-export { default as GlobalSkeleton } from './GlobalSkeleton';
+export { default as GlobalSkeleton } from '@/shared/components/skeleton/GlobalSkeleton';

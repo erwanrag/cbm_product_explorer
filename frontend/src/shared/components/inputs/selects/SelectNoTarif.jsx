@@ -1,12 +1,12 @@
 // 📁 src/shared/components/inputs/selects/SelectNoTarif.jsx
-import { useEffect, useState } from "react";
-import { FormControl, InputLabel, Select, MenuItem } from "@mui/material";
-import { getTarifOptions } from "@/api";
+import { useEffect, useState } from 'react';
+import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import { getTarifOptions } from '@/api';
 
 export default function SelectNoTarif({
   value,
   onChange,
-  label = "Tarif",
+  label = 'Tarif',
   sx = {},
   fullWidth = true,
 }) {
@@ -21,14 +21,8 @@ export default function SelectNoTarif({
   return (
     <FormControl fullWidth={fullWidth} sx={sx} size="small">
       <InputLabel>{label}</InputLabel>
-      <Select
-        value={value ?? ""}
-        onChange={(e) => onChange(Number(e.target.value))}
-        label={label}
-      >
-        {!isValueInOptions && value && (
-          <MenuItem value={value}>Tarif #{value}</MenuItem>
-        )}
+      <Select value={value ?? ''} onChange={(e) => onChange(Number(e.target.value))} label={label}>
+        {!isValueInOptions && value && <MenuItem value={value}>Tarif #{value}</MenuItem>}
         {options.map((t) => (
           <MenuItem key={t.no_tarif} value={t.no_tarif}>
             {t.lib_tarif} (#{t.no_tarif})
@@ -38,4 +32,3 @@ export default function SelectNoTarif({
     </FormControl>
   );
 }
-

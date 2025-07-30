@@ -10,16 +10,16 @@ import { useAppState } from '@/store/contexts/AppStateContext';
 
 // Composants partitionnés
 import DashboardHeader from './components/DashboardHeader';
-import DashboardKPISection from './components/DashboardKPISection';
-import DashboardChartsSection from './components/DashboardChartsSection';
-import DashboardTableSection from './components/DashboardTableSection';
-import ProductAnalysisDrawer from './components/ProductAnalysisDrawer';
-import DashboardEmptyState from './components/DashboardEmptyState';
-import DashboardErrorState from './components/DashboardErrorState';
+import DashboardKPISection from '@/features/dashboard/components/DashboardKPISection';
+import DashboardChartsSection from '@/features/dashboard/components/DashboardChartsSection';
+import DashboardTableSection from '@/features/dashboard/components/DashboardTableSection';
+import ProductAnalysisDrawer from '@/features/dashboard/components/ProductAnalysisDrawer';
+import DashboardEmptyState from '@/features/dashboard/components/DashboardEmptyState';
+import DashboardErrorState from '@/features/dashboard/components/DashboardErrorState';
 
 // Hooks métier spécialisés
-import { useDashboardData } from './hooks/useDashboardData';
-import { useDashboardActions } from './hooks/useDashboardActions';
+import { useDashboardData } from '@/features/dashboard/hooks/useDashboardData';
+import { useDashboardActions } from '@/features/dashboard/hooks/useDashboardActions';
 
 /**
  * Page Dashboard principale - Architecture enterprise clean

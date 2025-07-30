@@ -1,5 +1,5 @@
 //src/shared/components/error/ErrorBoundary.jsx
-import React from "react";
+import React from 'react';
 
 // 🚧 Composant de fallback d'erreur React
 class ErrorBoundary extends React.Component {
@@ -13,7 +13,7 @@ class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, info) {
-    console.error("Erreur capturée par ErrorBoundary :", error, info);
+    console.error('Erreur capturée par ErrorBoundary :', error, info);
   }
 
   render() {

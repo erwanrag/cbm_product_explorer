@@ -1,4 +1,4 @@
 // src/assets/index.js
-import cbmLogo from "./cbm-logo.png";
+import cbmLogo from '@/assets/cbm-logo.png';
 
 export { cbmLogo };

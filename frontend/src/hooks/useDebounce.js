@@ -10,19 +10,19 @@ import { config } from '@/config/environment';
  * @returns {any} Valeur debouncée
  */
 export function useDebounce(value, delay = config.performance.debounceDelay) {
-    const [debouncedValue, setDebouncedValue] = useState(value);
+  const [debouncedValue, setDebouncedValue] = useState(value);
 
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            setDebouncedValue(value);
-        }, delay);
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
 
-        return () => {
-            clearTimeout(handler);
-        };
-    }, [value, delay]);
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
 
-    return debouncedValue;
+  return debouncedValue;
 }
 
 /**
@@ -32,29 +32,29 @@ export function useDebounce(value, delay = config.performance.debounceDelay) {
  * @returns {Function} Callback debouncé
  */
 export function useDebouncedCallback(callback, delay = config.performance.debounceDelay) {
-    const [timeoutId, setTimeoutId] = useState(null);
+  const [timeoutId, setTimeoutId] = useState(null);
 
-    const debouncedCallback = (...args) => {
-        if (timeoutId) {
-            clearTimeout(timeoutId);
-        }
+  const debouncedCallback = (...args) => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
 
-        const newTimeoutId = setTimeout(() => {
-            callback(...args);
-        }, delay);
+    const newTimeoutId = setTimeout(() => {
+      callback(...args);
+    }, delay);
 
-        setTimeoutId(newTimeoutId);
+    setTimeoutId(newTimeoutId);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
     };
+  }, [timeoutId]);
 
-    useEffect(() => {
-        return () => {
-            if (timeoutId) {
-                clearTimeout(timeoutId);
-            }
-        };
-    }, [timeoutId]);
-
-    return debouncedCallback;
+  return debouncedCallback;
 }
 
 export default useDebounce;

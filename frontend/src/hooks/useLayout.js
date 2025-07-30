@@ -7,13 +7,13 @@ import { LayoutContext } from '@/store/contexts/LayoutContext';
  * Gère les filtres, la sidebar, les notifications
  */
 export const useLayout = () => {
-    const context = useContext(LayoutContext);
+  const context = useContext(LayoutContext);
 
-    if (!context) {
-        throw new Error('useLayout doit être utilisé dans un LayoutProvider');
-    }
+  if (!context) {
+    throw new Error('useLayout doit être utilisé dans un LayoutProvider');
+  }
 
-    return context;
+  return context;
 };
 
 export default useLayout;

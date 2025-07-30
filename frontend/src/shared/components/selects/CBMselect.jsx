@@ -1,6 +1,6 @@
 //src/shared/components/selects/CBMselect.jsx
-import * as React from "react";
-import { Check, ChevronDown } from "lucide-react";
+import * as React from 'react';
+import { Check, ChevronDown } from 'lucide-react';
 
 export const Select = React.forwardRef(({ children, ...props }, ref) => (
   <div ref={ref} className="relative" {...props}>

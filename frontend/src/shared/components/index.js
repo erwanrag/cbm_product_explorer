@@ -3,29 +3,29 @@
 // ===================================
 
 // Layout Components
-export * from './layout';
+export * from '@/shared/components/layout';
 
 // UI Components
-export * from './badges';
-export * from './buttons';
-export * from './cards';
-export * from './inputs';
-export * from './tables';
+export * from '@/shared/components/badges';
+export * from '@/shared/components/buttons';
+export * from '@/shared/components/cards';
+export * from '@/shared/components/inputs';
+export * from '@/shared/components/tables';
 
 // Specialized Components
-export * from './error';
-export * from './export';
-export * from './filters';
-export * from './page';
-export * from './skeleton';
-export * from './ui';
+export * from '@/shared/components/error';
+export * from '@/shared/components/export';
+export * from '@/shared/components/filters';
+export * from '@/shared/components/page';
+export * from '@/shared/components/skeleton';
+export * from '@/shared/components/ui';
 
 // Default exports for common components
-export { default as Layout } from './layout/Layout';
-export { default as ErrorBoundary } from './error/ErrorBoundary';
-export { default as CBMButton } from './buttons/CBMButton';
-export { default as CBMCard } from './cards/CBMCard';
-export { default as PageTitle } from './page/PageTitle';
-export { default as PageWrapper } from './page/PageWrapper';
-export { default as LoadingSpinner } from './ui/LoadingSpinner';
-export { default as ExportExcelButton } from './export/ExportExcelButton';
+export { default as Layout } from '@/shared/components/layout/Layout';
+export { default as ErrorBoundary } from '@/shared/components/error/ErrorBoundary';
+export { default as CBMButton } from '@/shared/components/buttons/CBMButton';
+export { default as CBMCard } from '@/shared/components/cards/CBMCard';
+export { default as PageTitle } from '@/shared/components/page/PageTitle';
+export { default as PageWrapper } from '@/shared/components/page/PageWrapper';
+export { default as LoadingSpinner } from '@/shared/components/ui/LoadingSpinner';
+export { default as ExportExcelButton } from '@/shared/components/export/ExportExcelButton';

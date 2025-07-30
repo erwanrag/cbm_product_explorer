@@ -1,4 +1,4 @@
-/ ===================================
+// ===================================
 // 📁 frontend/src/app/App.jsx - POINT D'ENTRÉE PRINCIPAL
 // ===================================
 
@@ -28,62 +28,60 @@ import 'react-toastify/dist/ReactToastify.css';
  * Configuration React Query
  */
 const queryClient = new QueryClient({
-    defaultOptions: {
-        queries: {
-            staleTime: config.performance.cacheTimeout,
-            retry: config.performance.retryAttempts,
-            retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-            refetchOnWindowFocus: false,
-            refetchOnMount: true,
-        },
-        mutations: {
-            retry: 1,
-        },
+  defaultOptions: {
+    queries: {
+      staleTime: config.performance.cacheTimeout,
+      retry: config.performance.retryAttempts,
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      refetchOnWindowFocus: false,
+      refetchOnMount: true,
     },
+    mutations: {
+      retry: 1,
+    },
+  },
 });
 
 /**
  * Application principale CBM GRC Matcher
  */
 function App() {
-    // Thème dynamique
-    const theme = createAppTheme(config.ui.theme);
+  // Thème dynamique
+  const theme = createAppTheme(config.ui.theme);
 
-    return (
-        <QueryClientProvider client={queryClient}>
-            <ThemeProvider theme={theme}>
-                <CssBaseline />
-                <BrowserRouter>
-                    <AppStateProvider>
-                        <LayoutProvider>
-                            <Layout>
-                                <AppRoutes />
-                            </Layout>
-                        </LayoutProvider>
-                    </AppStateProvider>
-                </BrowserRouter>
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <BrowserRouter>
+          <AppStateProvider>
+            <LayoutProvider>
+              <Layout>
+                <AppRoutes />
+              </Layout>
+            </LayoutProvider>
+          </AppStateProvider>
+        </BrowserRouter>
 
-                {/* Toast Notifications */}
-                <ToastContainer
-                    position="top-right"
-                    autoClose={5000}
-                    hideProgressBar={false}
-                    newestOnTop
-                    closeOnClick
-                    rtl={false}
-                    pauseOnFocusLoss
-                    draggable
-                    pauseOnHover
-                    theme={config.ui.theme}
-                />
+        {/* Toast Notifications */}
+        <ToastContainer
+          position="top-right"
+          autoClose={5000}
+          hideProgressBar={false}
+          newestOnTop
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme={config.ui.theme}
+        />
 
-                {/* React Query DevTools (dev only) */}
-                {config.features.enableDevTools && (
-                    <ReactQueryDevtools initialIsOpen={false} />
-                )}
-            </ThemeProvider>
-        </QueryClientProvider>
-    );
+        {/* React Query DevTools (dev only) */}
+        {config.features.enableDevTools && <ReactQueryDevtools initialIsOpen={false} />}
+      </ThemeProvider>
+    </QueryClientProvider>
+  );
 }
 
 export default App;
