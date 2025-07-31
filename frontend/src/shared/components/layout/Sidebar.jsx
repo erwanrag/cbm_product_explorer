@@ -1,4 +1,3 @@
-// src/shared/components/layout/Sidebar.jsx - AJOUTER FILTERSPANEL
 import React from 'react';
 import {
     Drawer,
@@ -21,49 +20,15 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useLayout } from '@/store/hooks/useLayout';
-
-// ✅ AJOUTER L'IMPORT
 import FiltersPanel from '@/shared/components/layout/FiltersPanel';
-
-const navigationItems = [
-    {
-        text: 'Dashboard',
-        path: '/dashboard',
-        icon: <DashboardIcon />,
-        description: "Vue d'ensemble et KPIs",
-    },
-    {
-        text: 'Matrice',
-        path: '/matrix',
-        icon: <MatrixIcon />,
-        description: 'Analyse des correspondances',
-    },
-    {
-        text: 'Optimisation',
-        path: '/optimization',
-        icon: <OptimizationIcon />,
-        description: "Outils d'optimisation",
-    },
-];
-
-const secondaryItems = [
-    {
-        text: 'Paramètres',
-        path: '/settings',
-        icon: <SettingsIcon />,
-    },
-    {
-        text: 'Aide',
-        path: '/help',
-        icon: <HelpIcon />,
-    },
-];
+import { useTranslation } from 'react-i18next';
 
 const Sidebar = ({ width, open, variant = 'persistent' }) => {
     const theme = useTheme();
     const navigate = useNavigate();
     const location = useLocation();
     const { toggleMobileSidebar } = useLayout();
+    const { t } = useTranslation();
 
     const handleNavigation = (path) => {
         navigate(path);
@@ -76,110 +41,39 @@ const Sidebar = ({ width, open, variant = 'persistent' }) => {
         return location.pathname === path || (path === '/dashboard' && location.pathname === '/');
     };
 
-    const drawerContent = (
-        <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-            {/* Espace pour le header */}
-            <Box sx={{ height: theme.mixins.toolbar.minHeight }} />
+    const navigationItems = [
+        {
+            text: t('sidebar.dashboard'),
+            path: '/dashboard',
+            icon: <DashboardIcon />,
+            description: t('sidebar.dashboard_desc'),
+        },
+        {
+            text: t('sidebar.matrix'),
+            path: '/matrix',
+            icon: <MatrixIcon />,
+            description: t('sidebar.matrix_desc'),
+        },
+        {
+            text: t('sidebar.optimization'),
+            path: '/optimization',
+            icon: <OptimizationIcon />,
+            description: t('sidebar.optimization_desc'),
+        },
+    ];
 
-            {/* Logo/Titre de la sidebar */}
-            <Box sx={{ p: 2, borderBottom: `1px solid ${theme.palette.divider}` }}>
-                <Typography variant="h6" sx={{ fontWeight: 600, color: 'primary.main' }}>
-                    CBM GRC
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                    v2.0.0
-                </Typography>
-            </Box>
-
-            
-
-            {/* Navigation principale */}
-            <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
-                <List sx={{ px: 1, py: 2 }}>
-                    {navigationItems.map((item) => (
-                        <ListItem key={item.path} disablePadding sx={{ mb: 1 }}>
-                            <ListItemButton
-                                onClick={() => handleNavigation(item.path)}
-                                selected={isActivePath(item.path)}
-                                sx={{
-                                    borderRadius: 2,
-                                    mx: 1,
-                                    '&.Mui-selected': {
-                                        backgroundColor: theme.palette.primary.main,
-                                        color: 'white',
-                                        '&:hover': {
-                                            backgroundColor: theme.palette.primary.dark,
-                                        },
-                                        '& .MuiListItemIcon-root': {
-                                            color: 'white',
-                                        },
-                                    },
-                                    '&:hover': {
-                                        backgroundColor: theme.palette.primary.light + '20',
-                                    },
-                                }}
-                            >
-                                <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
-                                <ListItemText
-                                    primary={item.text}
-                                    secondary={item.description}
-                                    primaryTypographyProps={{
-                                        fontWeight: isActivePath(item.path) ? 600 : 400,
-                                        fontSize: '0.9rem',
-                                    }}
-                                    secondaryTypographyProps={{
-                                        fontSize: '0.75rem',
-                                        sx: {
-                                            display: { xs: 'none', sm: 'block' },
-                                        },
-                                    }}
-                                />
-                            </ListItemButton>
-                        </ListItem>
-                    ))}
-                </List>
-                {/* ✅ AJOUTER LE FILTERS PANEL */}
-                <Box sx={{ p: 2, borderBottom: `1px solid ${theme.palette.divider}` }}>
-                    <FiltersPanel />
-                </Box>
-                <Divider sx={{ mx: 2, my: 1 }} />
-
-                {/* Navigation secondaire */}
-                <List sx={{ px: 1 }}>
-                    {secondaryItems.map((item) => (
-                        <ListItem key={item.path} disablePadding>
-                            <ListItemButton
-                                onClick={() => handleNavigation(item.path)}
-                                selected={isActivePath(item.path)}
-                                sx={{
-                                    borderRadius: 2,
-                                    mx: 1,
-                                    '&.Mui-selected': {
-                                        backgroundColor: theme.palette.action.selected,
-                                    },
-                                }}
-                            >
-                                <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
-                                <ListItemText
-                                    primary={item.text}
-                                    primaryTypographyProps={{
-                                        fontSize: '0.9rem',
-                                    }}
-                                />
-                            </ListItemButton>
-                        </ListItem>
-                    ))}
-                </List>
-            </Box>
-
-            {/* Footer de la sidebar */}
-            <Box sx={{ p: 2, borderTop: `1px solid ${theme.palette.divider}` }}>
-                <Typography variant="caption" color="text.secondary" align="center" display="block">
-                    © 2025 CBM GRC Matcher
-                </Typography>
-            </Box>
-        </Box>
-    );
+    const secondaryItems = [
+        {
+            text: t('sidebar.settings'),
+            path: '/settings',
+            icon: <SettingsIcon />,
+        },
+        {
+            text: t('sidebar.help'),
+            path: '/help',
+            icon: <HelpIcon />,
+        },
+    ];
 
     return (
         <Drawer
@@ -195,7 +89,102 @@ const Sidebar = ({ width, open, variant = 'persistent' }) => {
                 },
             }}
         >
-            {drawerContent}
+            <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <Box sx={{ height: theme.mixins.toolbar.minHeight }} />
+
+                <Box sx={{ p: 2, borderBottom: `1px solid ${theme.palette.divider}` }}>
+                    <Typography variant="h6" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                        CBM GRC
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                        v2.0.0
+                    </Typography>
+                </Box>
+
+                <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
+                    <List sx={{ px: 1, py: 2 }}>
+                        {navigationItems.map((item) => (
+                            <ListItem key={item.path} disablePadding sx={{ mb: 1 }}>
+                                <ListItemButton
+                                    onClick={() => handleNavigation(item.path)}
+                                    selected={isActivePath(item.path)}
+                                    sx={{
+                                        borderRadius: 2,
+                                        mx: 1,
+                                        '&.Mui-selected': {
+                                            backgroundColor: theme.palette.primary.main,
+                                            color: 'white',
+                                            '&:hover': {
+                                                backgroundColor: theme.palette.primary.dark,
+                                            },
+                                            '& .MuiListItemIcon-root': {
+                                                color: 'white',
+                                            },
+                                        },
+                                        '&:hover': {
+                                            backgroundColor: theme.palette.primary.light + '20',
+                                        },
+                                    }}
+                                >
+                                    <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
+                                    <ListItemText
+                                        primary={item.text}
+                                        secondary={item.description}
+                                        primaryTypographyProps={{
+                                            fontWeight: isActivePath(item.path) ? 600 : 400,
+                                            fontSize: '0.9rem',
+                                        }}
+                                        secondaryTypographyProps={{
+                                            fontSize: '0.75rem',
+                                            sx: {
+                                                display: { xs: 'none', sm: 'block' },
+                                            },
+                                        }}
+                                    />
+                                </ListItemButton>
+                            </ListItem>
+                        ))}
+                    </List>
+
+                    <Box sx={{ p: 2, borderBottom: `1px solid ${theme.palette.divider}` }}>
+                        <FiltersPanel />
+                    </Box>
+
+                    <Divider sx={{ mx: 2, my: 1 }} />
+
+                    <List sx={{ px: 1 }}>
+                        {secondaryItems.map((item) => (
+                            <ListItem key={item.path} disablePadding>
+                                <ListItemButton
+                                    onClick={() => handleNavigation(item.path)}
+                                    selected={isActivePath(item.path)}
+                                    sx={{
+                                        borderRadius: 2,
+                                        mx: 1,
+                                        '&.Mui-selected': {
+                                            backgroundColor: theme.palette.action.selected,
+                                        },
+                                    }}
+                                >
+                                    <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
+                                    <ListItemText
+                                        primary={item.text}
+                                        primaryTypographyProps={{
+                                            fontSize: '0.9rem',
+                                        }}
+                                    />
+                                </ListItemButton>
+                            </ListItem>
+                        ))}
+                    </List>
+                </Box>
+
+                <Box sx={{ p: 2, borderTop: `1px solid ${theme.palette.divider}` }}>
+                    <Typography variant="caption" color="text.secondary" align="center" display="block">
+                        © 2025 CBM GRC Matcher
+                    </Typography>
+                </Box>
+            </Box>
         </Drawer>
     );
 };

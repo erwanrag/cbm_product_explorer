@@ -1,6 +1,8 @@
-// frontend/src/features/matrix/components/MatrixFilters.jsx
+// ===================================
+// 📁 frontend/src/features/matrix/components/MatrixFilters.jsx - AMÉLIORÉ
+// ===================================
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
     Paper,
     Grid,
@@ -9,68 +11,103 @@ import {
     InputLabel,
     Select,
     MenuItem,
-    IconButton,
+    Chip,
+    Box,
     Typography,
+    IconButton,
     Collapse,
-    Chip
+    Divider,
+    InputAdornment
 } from '@mui/material';
 import {
-    FilterList,
-    Clear,
     ExpandMore,
     ExpandLess,
-    Search
+    Search,
+    FilterList,
+    Clear,
+    Tune
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { QUALITE_OPTIONS, STATUT_OPTIONS } from '../constants/matrixConstants';
 
-/**
- * Composant de filtres pour la vue matricielle
- */
-export default function MatrixFilters({ filters, onFiltersChange, disabled = false }) {
-    const [expanded, setExpanded] = React.useState(false);
+const MatrixFilters = ({
+    filters = {},
+    onFiltersChange,
+    disabled = false,
+    showAdvancedFilters = true
+}) => {
+    const [expanded, setExpanded] = useState(false);
 
-    const handleFilterChange = (field, value) => {
+    // ===== GESTION DES FILTRES =====
+    const handleFilterChange = (filterKey, value) => {
         const newFilters = {
             ...filters,
-            [field]: value || null
+            [filterKey]: value || null
         };
         onFiltersChange(newFilters);
     };
 
     const clearAllFilters = () => {
-        onFiltersChange({
-            qualite: null,
-            famille: null,
-            statut: null,
-            search_term: null
-        });
+        onFiltersChange({});
     };
 
     const getActiveFiltersCount = () => {
         return Object.values(filters).filter(value =>
-            value !== null && value !== '' && value !== undefined
+            value !== null && value !== undefined && value !== ''
         ).length;
     };
 
     const getActiveFiltersChips = () => {
         const chips = [];
 
-        if (filters.qualite) {
-            const qualiteOption = QUALITE_OPTIONS.find(q => q.value === filters.qualite);
+        if (filters.cod_pro) {
             chips.push({
-                key: 'qualite',
-                label: `Qualité: ${qualiteOption?.label || filters.qualite}`,
+                key: 'cod_pro',
+                label: `Code: ${filters.cod_pro}`,
                 color: 'primary'
             });
         }
 
-        if (filters.statut !== null && filters.statut !== '') {
-            const statutOption = STATUT_OPTIONS.find(s => s.value === filters.statut);
+        if (filters.refint) {
             chips.push({
-                key: 'statut',
-                label: `Statut: ${statutOption?.label || filters.statut}`,
+                key: 'refint',
+                label: `Ref Int: ${filters.refint}`,
+                color: 'primary'
+            });
+        }
+
+        if (filters.ref_crn) {
+            chips.push({
+                key: 'ref_crn',
+                label: `CRN: ${filters.ref_crn}`,
                 color: 'secondary'
+            });
+        }
+
+        // NOUVEAU: Filtre ref_grc
+        if (filters.ref_grc) {
+            chips.push({
+                key: 'ref_grc',
+                label: `GRC: ${filters.ref_grc}`,
+                color: 'warning'
+            });
+        }
+
+        // NOUVEAU: Filtre ref_ext 
+        if (filters.ref_ext) {
+            chips.push({
+                key: 'ref_ext',
+                label: `Ext: ${filters.ref_ext}`,
+                color: 'info'
+            });
+        }
+
+        if (filters.qualite) {
+            const qualiteLabel = QUALITE_OPTIONS.find(q => q.value === filters.qualite)?.label || filters.qualite;
+            chips.push({
+                key: 'qualite',
+                label: `Qualité: ${qualiteLabel}`,
+                color: 'success'
             });
         }
 
@@ -82,11 +119,12 @@ export default function MatrixFilters({ filters, onFiltersChange, disabled = fal
             });
         }
 
-        if (filters.search_term) {
+        if (filters.statut !== null && filters.statut !== undefined) {
+            const statutLabel = STATUT_OPTIONS.find(s => s.value === filters.statut)?.label || filters.statut;
             chips.push({
-                key: 'search_term',
-                label: `Recherche: "${filters.search_term}"`,
-                color: 'info'
+                key: 'statut',
+                label: `Statut: ${statutLabel}`,
+                color: 'default'
             });
         }
 
@@ -119,49 +157,42 @@ export default function MatrixFilters({ filters, onFiltersChange, disabled = fal
                     container
                     spacing={2}
                     alignItems="center"
-                    sx={{ p: 2, pb: expanded ? 1 : 2 }}
+                    sx={{ p: 2, pb: expanded ? 2 : 2 }}
                 >
                     <Grid item xs>
                         <Typography
-                            variant="h6"
+                            variant="subtitle1"
                             sx={{
-                                fontSize: '1rem',
                                 fontWeight: 600,
+                                color: 'primary.main',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: 1
                             }}
                         >
                             <FilterList fontSize="small" />
-                            Filtres Matrice
+                            Filtres de Recherche
                             {activeFiltersCount > 0 && (
-                                <Typography
-                                    component="span"
-                                    variant="caption"
-                                    sx={{
-                                        bgcolor: 'primary.main',
-                                        color: 'white',
-                                        px: 1,
-                                        borderRadius: 1,
-                                        fontSize: '0.75rem',
-                                        minWidth: '20px',
-                                        textAlign: 'center'
-                                    }}
-                                >
-                                    {activeFiltersCount}
-                                </Typography>
+                                <Chip
+                                    label={activeFiltersCount}
+                                    size="small"
+                                    color="primary"
+                                    variant="filled"
+                                />
                             )}
                         </Typography>
                     </Grid>
                     <Grid item>
-                        <IconButton
-                            size="small"
-                            onClick={clearAllFilters}
-                            disabled={disabled || activeFiltersCount === 0}
-                            title="Effacer tous les filtres"
-                        >
-                            <Clear />
-                        </IconButton>
+                        {activeFiltersCount > 0 && (
+                            <IconButton
+                                size="small"
+                                onClick={clearAllFilters}
+                                disabled={disabled}
+                                title="Effacer tous les filtres"
+                            >
+                                <Clear />
+                            </IconButton>
+                        )}
                         <IconButton
                             size="small"
                             onClick={() => setExpanded(!expanded)}
@@ -174,42 +205,152 @@ export default function MatrixFilters({ filters, onFiltersChange, disabled = fal
 
                 {/* Chips des filtres actifs */}
                 {activeChips.length > 0 && (
-                    <Grid container spacing={1} sx={{ px: 2, pb: 2 }}>
-                        {activeChips.map((chip) => (
-                            <Grid item key={chip.key}>
+                    <Box sx={{ px: 2, pb: 2 }}>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                            {activeChips.map((chip) => (
                                 <Chip
+                                    key={chip.key}
                                     label={chip.label}
                                     color={chip.color}
                                     size="small"
                                     onDelete={() => handleChipDelete(chip.key)}
                                     disabled={disabled}
                                 />
-                            </Grid>
-                        ))}
-                    </Grid>
+                            ))}
+                        </Box>
+                    </Box>
                 )}
 
                 {/* Filtres détaillés */}
                 <Collapse in={expanded}>
-                    <Grid container spacing={3} sx={{ p: 2, pt: 0 }}>
-                        {/* Recherche textuelle */}
-                        <Grid item xs={12} sm={6} md={3}>
+                    <Divider />
+                    <Grid container spacing={3} sx={{ p: 3 }}>
+                        {/* Filtres de base */}
+                        <Grid item xs={12}>
+                            <Typography variant="subtitle2" gutterBottom color="primary">
+                                🔍 Identification Produit
+                            </Typography>
+                        </Grid>
+
+                        <Grid item xs={12} sm={6} md={4}>
                             <TextField
                                 fullWidth
                                 size="small"
-                                label="Recherche"
-                                placeholder="Ref interne, désignation..."
-                                value={filters.search_term || ''}
-                                onChange={(e) => handleFilterChange('search_term', e.target.value)}
+                                label="Code Produit"
+                                type="number"
+                                placeholder="Ex: 14855"
+                                value={filters.cod_pro || ''}
+                                onChange={(e) => handleFilterChange('cod_pro', e.target.value ? parseInt(e.target.value) : null)}
                                 disabled={disabled}
-                                variant="outlined"
                                 InputProps={{
-                                    startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <Search />
+                                        </InputAdornment>
+                                    )
                                 }}
                             />
                         </Grid>
 
-                        {/* Filtre Qualité */}
+                        <Grid item xs={12} sm={6} md={4}>
+                            <TextField
+                                fullWidth
+                                size="small"
+                                label="Référence Interne"
+                                placeholder="Ex: D9098273"
+                                value={filters.refint || ''}
+                                onChange={(e) => handleFilterChange('refint', e.target.value)}
+                                disabled={disabled}
+                                InputProps={{
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            CBM
+                                        </InputAdornment>
+                                    )
+                                }}
+                            />
+                        </Grid>
+
+                        <Grid item xs={12} sm={6} md={4}>
+                            <TextField
+                                fullWidth
+                                size="small"
+                                label="Référence Constructeur (CRN)"
+                                placeholder="Ex: ATS52460"
+                                value={filters.ref_crn || ''}
+                                onChange={(e) => handleFilterChange('ref_crn', e.target.value)}
+                                disabled={disabled}
+                                InputProps={{
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            CRN
+                                        </InputAdornment>
+                                    )
+                                }}
+                            />
+                        </Grid>
+
+                        {/* NOUVEAUX FILTRES : ref_grc et ref_ext */}
+                        <Grid item xs={12} sm={6} md={4}>
+                            <TextField
+                                fullWidth
+                                size="small"
+                                label="Référence GRC"
+                                placeholder="Ex: MBR5032"
+                                value={filters.ref_grc || ''}
+                                onChange={(e) => handleFilterChange('ref_grc', e.target.value)}
+                                disabled={disabled}
+                                InputProps={{
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            GRC
+                                        </InputAdornment>
+                                    )
+                                }}
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        '&:focus-within .MuiOutlinedInput-notchedOutline': {
+                                            borderColor: 'warning.main'
+                                        }
+                                    }
+                                }}
+                            />
+                        </Grid>
+
+                        <Grid item xs={12} sm={6} md={4}>
+                            <TextField
+                                fullWidth
+                                size="small"
+                                label="Référence Externe"
+                                placeholder="Ex: 09.B325.30"
+                                value={filters.ref_ext || ''}
+                                onChange={(e) => handleFilterChange('ref_ext', e.target.value)}
+                                disabled={disabled}
+                                InputProps={{
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            EXT
+                                        </InputAdornment>
+                                    )
+                                }}
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        '&:focus-within .MuiOutlinedInput-notchedOutline': {
+                                            borderColor: 'info.main'
+                                        }
+                                    }
+                                }}
+                            />
+                        </Grid>
+
+                        {/* Filtres avancés */}
+                        <Grid item xs={12}>
+                            <Divider sx={{ my: 1 }} />
+                            <Typography variant="subtitle2" gutterBottom color="primary">
+                                ⚙️ Critères Avancés
+                            </Typography>
+                        </Grid>
+
                         <Grid item xs={12} sm={6} md={3}>
                             <FormControl fullWidth size="small">
                                 <InputLabel>Qualité</InputLabel>
@@ -228,7 +369,6 @@ export default function MatrixFilters({ filters, onFiltersChange, disabled = fal
                             </FormControl>
                         </Grid>
 
-                        {/* Filtre Famille */}
                         <Grid item xs={12} sm={6} md={3}>
                             <TextField
                                 fullWidth
@@ -239,31 +379,50 @@ export default function MatrixFilters({ filters, onFiltersChange, disabled = fal
                                 value={filters.famille || ''}
                                 onChange={(e) => handleFilterChange('famille', e.target.value ? parseInt(e.target.value) : null)}
                                 disabled={disabled}
-                                variant="outlined"
                             />
                         </Grid>
 
-                        {/* Filtre Statut */}
                         <Grid item xs={12} sm={6} md={3}>
                             <FormControl fullWidth size="small">
                                 <InputLabel>Statut</InputLabel>
                                 <Select
-                                    value={filters.statut !== null ? filters.statut.toString() : ''}
+                                    value={filters.statut !== null && filters.statut !== undefined ? filters.statut.toString() : ''}
                                     onChange={(e) => handleFilterChange('statut', e.target.value !== '' ? parseInt(e.target.value) : null)}
                                     disabled={disabled}
                                     label="Statut"
                                 >
                                     {STATUT_OPTIONS.map((option) => (
-                                        <MenuItem key={option.value.toString()} value={option.value.toString()}>
+                                        <MenuItem key={option.value} value={option.value.toString()}>
                                             {option.label}
                                         </MenuItem>
                                     ))}
                                 </Select>
                             </FormControl>
                         </Grid>
+
+                        <Grid item xs={12} sm={6} md={3}>
+                            <TextField
+                                fullWidth
+                                size="small"
+                                label="Terme de recherche"
+                                placeholder="Recherche libre..."
+                                value={filters.search_term || ''}
+                                onChange={(e) => handleFilterChange('search_term', e.target.value)}
+                                disabled={disabled}
+                                InputProps={{
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <Search />
+                                        </InputAdornment>
+                                    )
+                                }}
+                            />
+                        </Grid>
                     </Grid>
                 </Collapse>
             </Paper>
         </motion.div>
     );
-}
+};
+
+export default MatrixFilters;

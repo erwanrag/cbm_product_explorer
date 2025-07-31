@@ -1,0 +1,81 @@
+{
+  "app.title": "CBM GRC Matcher",
+  "app.subtitle": "Product analysis and matching system",
+
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "dashboard_desc": "Overview and KPIs",
+    "matrix": "Matrix",
+    "matrix_desc": "Matching analysis",
+    "optimization": "Optimization",
+    "optimization_desc": "Optimization tools",
+    "settings": "Settings",
+    "help": "Help"
+  },
+
+
+
+  "filters": {
+    "title": "Search Filters",
+    "save": "Save",
+    "history": "History",
+    "saved": "Saved Filters",
+    "apply": "Apply Filters",
+    "clear": "Clear",
+    "groupingLabel": "Group by CRN",
+    "toast": {
+      "clear": "Filters cleared",
+      "apply": "Filters applied",
+      "save": "Filters saved as \"{{name}}\"",
+      "load": "Filters \"{{name}}\" loaded"
+    },
+    "labels": {
+      "refint": "Internal Ref. / Product Code",
+      "ref_crn": "Manufacturer Reference",
+      "ref_ext": "External Reference",
+      "select": "Select"
+    },
+    "qualite": {
+      "label": "Quality",
+      "oe": "OE - Original",
+      "oem": "OEM - Equipment Manufacturer",
+      "pmq": "PMQ - Pro Quality",
+      "pmv": "PMV - Internal Dev",
+      "all": "(All)"
+    }
+  },
+
+
+
+  "help": {
+    "title": "Help & Documentation",
+    "purpose.title": "🧭 What is CBM GRC Matcher for?",
+    "purpose.text": "CBM GRC Matcher is a product analysis and matching tool based on various keys (manufacturer, internal and external references). It allows grouping, filtering and comparing products by quality, CRN group, and sales or stock history.",
+
+    "features.title": "📌 Main Features",
+    "features.list": [
+      "🔎 Search by cod_pro, ref_crn, refint, ref_ext",
+      "🧩 Smart grouping via grouping_crn",
+      "📊 Full dashboard: KPIs, stock, history, turnover",
+      "📥 Excel export, combined filters",
+      "⚡ Fast resolution using Grouping_crn_table (no more slow stored procedures)"
+    ],
+
+    "filters.title": "🧪 Available Filters",
+    "filters.list": {
+      "cod_pro": "cod_pro: Unique CBM product code",
+      "ref_crn": "ref_crn: Manufacturer reference",
+      "ref_ext": "ref_ext: External (or GRC) reference",
+      "refint": "refint: Internal CBM reference",
+      "qualite": "qualite: Product quality (OE, OEM, PMQ, PMV)",
+      "grouping_crn": "grouping_crn: Enables logical grouping by product family"
+    },
+
+    "grouping.title": "🧩 Understanding grouping_crn",
+    "grouping.text1": "The grouping_crn field is a logical key that links multiple CBM products (cod_pro) together, even if they don't directly share the same ref_crn, as long as they are connected via transitive links.",
+    "grouping.text2": "Example: product A is linked to ref_crn X, product B to X and Y, and product C to Y → A, B and C are grouped under the same grouping_crn.",
+    "grouping.text3": "This grouping is automatically computed from Bridge_cod_pro_ref_crn and propagated into Grouping_crn_table (with quality, refint, and ref_ext included).",
+
+    "contact": "For technical issues, contact: e.ragueneau@cbmcompany.com"
+  }
+}

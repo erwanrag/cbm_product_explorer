@@ -1,13 +1,15 @@
-// src/shared/components/inputs/autocomplete/AutocompleteRefExt.jsx
+import { useTranslation } from 'react-i18next';
 import BaseRemoteAutocomplete from './BaseRemoteAutocomplete';
 import { autocompleteRefExt } from '@/api/services/suggestionService';
 
 export default function AutocompleteRefExt(props) {
-  return (
-    <BaseRemoteAutocomplete
-      label="Référence Externe"
-      fetchOptions={autocompleteRefExt}
-      {...props}
-    />
-  );
+    const { t } = useTranslation();
+
+    return (
+        <BaseRemoteAutocomplete
+            label={t('filters.labels.ref_ext')}
+            fetchOptions={autocompleteRefExt}
+            {...props}
+        />
+    );
 }

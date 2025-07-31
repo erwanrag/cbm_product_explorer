@@ -5,6 +5,7 @@ import App from '@/app/App';
 import { AppStateProvider } from '@/store/contexts/AppStateContext';
 // Styles globaux
 import '@/styles/global.css';
+import './i18n';
 
 // Vérification de la compatibilité navigateur
 if (!window.fetch || !window.Promise) {

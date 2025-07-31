@@ -1,31 +1,28 @@
 // src/shared/components/inputs/selects/SelectQualite.jsx
 import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 
-const QUALITE_OPTIONS = [
-  { value: 'OE', label: 'OE - Origine' },
-  { value: 'OEM', label: 'OEM - Équipementier' },
-  { value: 'PMQ', label: 'PMQ - Qualité Pro' },
-  { value: 'PMV', label: 'PMV - Dév. Interne' },
-];
+export default function SelectQualite({ value, onChange, label = 'filters.qualite.label', sx = {}, fullWidth = true }) {
+    const { t } = useTranslation();
 
-export default function SelectQualite({
-  value,
-  onChange,
-  label = 'Qualité',
-  sx = {},
-  fullWidth = true,
-}) {
-  return (
-    <FormControl fullWidth={fullWidth} sx={sx} size="small">
-      <InputLabel>{label}</InputLabel>
-      <Select value={value ?? ''} onChange={(e) => onChange(e.target.value)} label={label}>
-        <MenuItem value="">(Toutes)</MenuItem>
-        {QUALITE_OPTIONS.map((q) => (
-          <MenuItem key={q.value} value={q.value}>
-            {q.label}
-          </MenuItem>
-        ))}
-      </Select>
-    </FormControl>
-  );
+    const options = [
+        { value: 'OE', label: t('filters.qualite.oe') },
+        { value: 'OEM', label: t('filters.qualite.oem') },
+        { value: 'PMQ', label: t('filters.qualite.pmq') },
+        { value: 'PMV', label: t('filters.qualite.pmv') },
+    ];
+
+    return (
+        <FormControl fullWidth={fullWidth} sx={sx} size="small">
+            <InputLabel>{t(label)}</InputLabel>
+            <Select value={value ?? ''} onChange={(e) => onChange(e.target.value)} label={t(label)}>
+                <MenuItem value="">{t('filters.qualite.all')}</MenuItem>
+                {options.map((q) => (
+                    <MenuItem key={q.value} value={q.value}>
+                        {q.label}
+                    </MenuItem>
+                ))}
+            </Select>
+        </FormControl>
+    );
 }

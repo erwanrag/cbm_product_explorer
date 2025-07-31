@@ -1,287 +1,404 @@
-// frontend/src/features/matrix/components/MatrixExport.jsx
+// ===================================
+// 📁 frontend/src/features/matrix/components/MatrixExport.jsx - EXPORT FONCTIONNEL
+// ===================================
 
 import React, { useState } from 'react';
 import {
-    Button,
-    Menu,
-    MenuItem,
-    ListItemIcon,
-    ListItemText,
     Dialog,
     DialogTitle,
     DialogContent,
     DialogActions,
+    Button,
+    FormGroup,
     FormControlLabel,
     Switch,
     Typography,
     Box,
-    Chip
+    Divider,
+    Alert,
+    Chip,
+    Grid,
+    Paper
 } from '@mui/material';
 import {
     FileDownload,
     TableChart,
-    Description,
-    Settings
+    Code,
+    Assessment
 } from '@mui/icons-material';
+import { motion } from 'framer-motion';
 
-/**
- * Composant d'export pour la matrice
- */
-export default function MatrixExport({ data, filters, onExport, disabled = false }) {
-    const [anchorEl, setAnchorEl] = useState(null);
-    const [configDialog, setConfigDialog] = useState(false);
+const MatrixExport = ({
+    open,
+    onClose,
+    data,
+    filters = {},
+    columnVisibility = {}
+}) => {
     const [exportConfig, setExportConfig] = useState({
         format: 'csv',
-        includeEmptyCells: false,
         includeProductDetails: true,
-        includeFilters: true
+        includeCorrespondences: true,
+        includeFilters: true,
+        includeEmptyCells: false,
+        includeStats: true
     });
 
-    const handleMenuOpen = (event) => {
-        setAnchorEl(event.currentTarget);
-    };
+    const [exporting, setExporting] = useState(false);
 
-    const handleMenuClose = () => {
-        setAnchorEl(null);
-    };
+    // ===== GÉNÉRATION DES DONNÉES D'EXPORT =====
+    const generateExportData = () => {
+        if (!data || !data.products) {
+            return { rows: [], metadata: {} };
+        }
 
-    const handleQuickExport = (format) => {
-        const config = { ...exportConfig, format };
-        handleExport(config);
-        handleMenuClose();
-    };
+        const { products, columnRefs = [], correspondences = [] } = data;
 
-    const handleConfiguredExport = () => {
-        setConfigDialog(true);
-        handleMenuClose();
-    };
-
-    const handleExport = (config) => {
-        const exportData = generateExportData(config);
-        onExport?.(exportData, config);
-    };
-
-    const generateExportData = (config) => {
-        const { products, columnRefs, correspondences } = data;
-
-        // Structure des données pour export
+        // Structure des lignes d'export
         const exportRows = products.map(product => {
             const row = {};
 
-            // Données produit de base
-            if (config.includeProductDetails) {
-                row['Code Produit'] = product.cod_pro;
-                row['Référence Interne'] = product.ref_int;
-                row['Désignation'] = product.designation;
-                row['Qualité'] = product.qualite;
-                row['Stock'] = product.stock;
-                row['Famille'] = product.famille;
-                row['Statut'] = product.statut;
-            } else {
-                row['Code Produit'] = product.cod_pro;
-                row['Référence Interne'] = product.ref_int;
+            // Données produit de base (toujours incluses)
+            row['Code Produit'] = product.cod_pro;
+            row['Référence Interne'] = product.refint || product.ref_int || '';
+
+            // Détails produit (selon configuration et visibilité des colonnes)
+            if (exportConfig.includeProductDetails) {
+                if (columnVisibility.designation !== false) {
+                    row['Désignation'] = product.nom_pro || product.designation || '';
+                }
+                if (columnVisibility.qualite !== false) {
+                    row['Qualité'] = product.qualite || '';
+                }
+                if (columnVisibility.famille !== false) {
+                    row['Famille'] = product.famille || '';
+                    row['Sous-Famille'] = product.s_famille || '';
+                }
+                if (columnVisibility.statut !== false) {
+                    row['Statut'] = product.statut !== null ? product.statut : '';
+                }
+                if (columnVisibility.fournisseur !== false) {
+                    row['Code Fournisseur'] = product.cod_fou_principal || '';
+                    row['Nom Fournisseur'] = product.nom_fou || '';
+                }
+                // Référence externe du produit
+                row['Référence Externe Produit'] = product.ref_ext || '';
             }
 
-            // Correspondances pour chaque colonne
-            columnRefs.forEach(colRef => {
-                const matches = correspondences.filter(c =>
-                    c.cod_pro === product.cod_pro &&
-                    (c.ref_crn === colRef.ref || c.ref_ext === colRef.ref)
-                );
+            // Correspondances pour chaque colonne de référence
+            if (exportConfig.includeCorrespondences && columnRefs.length > 0) {
+                columnRefs.forEach(colRef => {
+                    const matches = correspondences.filter(c =>
+                        c.cod_pro === product.cod_pro &&
+                        (c.ref_crn === colRef.ref || c.ref_ext === colRef.ref)
+                    );
 
-                const hasMatch = matches.length > 0;
+                    const hasMatch = matches.length > 0;
 
-                if (config.includeEmptyCells || hasMatch) {
-                    const matchDetails = matches.map(m => {
-                        const parts = [];
-                        if (m.ref_crn === colRef.ref) parts.push('CRN');
-                        if (m.ref_ext === colRef.ref) parts.push('EXT');
-                        return parts.join('+');
-                    }).join(', ');
+                    if (exportConfig.includeEmptyCells || hasMatch) {
+                        let cellValue = '';
 
-                    row[colRef.ref] = hasMatch ? (matchDetails || '✓') : '';
-                }
-            });
+                        if (hasMatch) {
+                            const matchTypes = [];
+                            const crnMatch = matches.find(m => m.ref_crn === colRef.ref);
+                            const extMatch = matches.find(m => m.ref_ext === colRef.ref);
+
+                            if (crnMatch) matchTypes.push('CRN');
+                            if (extMatch) matchTypes.push('EXT');
+
+                            cellValue = matchTypes.length > 0 ? matchTypes.join('+') : '✓';
+                        }
+
+                        row[`[${colRef.type}] ${colRef.ref}`] = cellValue;
+                    }
+                });
+            }
 
             return row;
         });
 
+        // Métadonnées
         const metadata = {
             generated: new Date().toISOString(),
             totalProducts: products.length,
             totalColumns: columnRefs.length,
             totalCorrespondences: correspondences.length,
-            appliedFilters: config.includeFilters ? filters : null
+            appliedFilters: exportConfig.includeFilters ? filters : null,
+            columnVisibility: columnVisibility,
+            exportConfig: exportConfig
         };
 
-        return {
-            rows: exportRows,
-            metadata,
-            config
-        };
+        return { rows: exportRows, metadata };
     };
 
-    const getExportStats = () => {
-        if (!data.products.length) return null;
+    // ===== FONCTIONS D'EXPORT =====
+    const exportToCSV = (exportData) => {
+        const { rows, metadata } = exportData;
 
-        const stats = {
-            products: data.products.length,
-            columns: data.columnRefs.length,
-            correspondences: data.correspondences.length,
-            matches: data.correspondences.filter(c => c.ref_crn || c.ref_ext).length
-        };
+        if (!rows.length) {
+            console.warn('Aucune donnée à exporter');
+            return;
+        }
 
-        return stats;
+        // Création du CSV
+        const headers = Object.keys(rows[0]);
+        const csvContent = [
+            // Métadonnées en commentaire
+            `# Export Matrice CBM - ${new Date().toLocaleString('fr-FR')}`,
+            `# Produits: ${metadata.totalProducts}`,
+            `# Références: ${metadata.totalColumns}`,
+            `# Correspondances: ${metadata.totalCorrespondences}`,
+            '',
+            // En-têtes
+            headers.join(','),
+            // Données
+            ...rows.map(row =>
+                headers.map(header => {
+                    const value = row[header];
+                    // Échapper les guillemets et virgules
+                    if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
+                        return `"${value.replace(/"/g, '""')}"`;
+                    }
+                    return value ?? '';
+                }).join(',')
+            )
+        ].join('\n');
+
+        // Téléchargement
+        downloadFile(csvContent, 'matrice_correspondances.csv', 'text/csv;charset=utf-8;');
     };
 
-    const stats = getExportStats();
+    const exportToJSON = (exportData) => {
+        const content = JSON.stringify(exportData, null, 2);
+        downloadFile(content, 'matrice_correspondances.json', 'application/json;charset=utf-8;');
+    };
+
+    const exportToExcel = (exportData) => {
+        // Pour une vraie implémentation Excel, utiliser une lib comme xlsx
+        // Pour l'instant, export CSV avec extension xlsx
+        const { rows } = exportData;
+
+        if (!rows.length) return;
+
+        const headers = Object.keys(rows[0]);
+        const excelContent = [
+            headers.join('\t'), // Tabulations pour Excel
+            ...rows.map(row =>
+                headers.map(header => row[header] ?? '').join('\t')
+            )
+        ].join('\n');
+
+        downloadFile(excelContent, 'matrice_correspondances.xlsx', 'application/vnd.ms-excel;charset=utf-8;');
+    };
+
+    // Fonction utilitaire de téléchargement
+    const downloadFile = (content, filename, mimeType) => {
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        link.style.display = 'none';
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+    };
+
+    // ===== GESTION DE L'EXPORT =====
+    const handleExport = async () => {
+        setExporting(true);
+
+        try {
+            const exportData = generateExportData();
+
+            if (!exportData.rows.length) {
+                alert('Aucune donnée à exporter');
+                return;
+            }
+
+            switch (exportConfig.format) {
+                case 'csv':
+                    exportToCSV(exportData);
+                    break;
+                case 'excel':
+                    exportToExcel(exportData);
+                    break;
+                case 'json':
+                    exportToJSON(exportData);
+                    break;
+            }
+
+            // Fermer le dialog après export
+            setTimeout(() => {
+                onClose();
+            }, 1000);
+
+        } catch (error) {
+            console.error('Erreur lors de l\'export:', error);
+            alert('Erreur lors de l\'export: ' + error.message);
+        } finally {
+            setExporting(false);
+        }
+    };
+
+    const handleConfigChange = (key, value) => {
+        setExportConfig(prev => ({
+            ...prev,
+            [key]: value
+        }));
+    };
+
+    // Statistiques pour l'aperçu
+    const previewData = generateExportData();
+    const hasData = data && data.products && data.products.length > 0;
 
     return (
-        <>
-            <Button
-                variant="outlined"
-                startIcon={<FileDownload />}
-                onClick={handleMenuOpen}
-                disabled={disabled || !data.products.length}
-                sx={{ minWidth: 120 }}
-            >
-                Export
-            </Button>
+        <Dialog
+            open={open}
+            onClose={onClose}
+            maxWidth="md"
+            fullWidth
+        >
+            <DialogTitle>
+                📊 Export de la Matrice
+            </DialogTitle>
 
-            <Menu
-                anchorEl={anchorEl}
-                open={Boolean(anchorEl)}
-                onClose={handleMenuClose}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-            >
-                <MenuItem onClick={() => handleQuickExport('csv')}>
-                    <ListItemIcon>
-                        <TableChart fontSize="small" />
-                    </ListItemIcon>
-                    <ListItemText>Export CSV</ListItemText>
-                </MenuItem>
-
-                <MenuItem onClick={() => handleQuickExport('xlsx')}>
-                    <ListItemIcon>
-                        <Description fontSize="small" />
-                    </ListItemIcon>
-                    <ListItemText>Export Excel</ListItemText>
-                </MenuItem>
-
-                <MenuItem onClick={handleConfiguredExport}>
-                    <ListItemIcon>
-                        <Settings fontSize="small" />
-                    </ListItemIcon>
-                    <ListItemText>Export configuré...</ListItemText>
-                </MenuItem>
-            </Menu>
-
-            {/* Dialog de configuration d'export */}
-            <Dialog
-                open={configDialog}
-                onClose={() => setConfigDialog(false)}
-                maxWidth="sm"
-                fullWidth
-            >
-                <DialogTitle>
-                    Configuration d'Export
-                </DialogTitle>
-
-                <DialogContent>
-                    {stats && (
-                        <Box sx={{ mb: 3 }}>
-                            <Typography variant="subtitle2" gutterBottom>
-                                Données à exporter :
+            <DialogContent dividers sx={{ minHeight: 400 }}>
+                {!hasData ? (
+                    <Alert severity="warning">
+                        Aucune donnée disponible pour l'export. Veuillez d'abord charger une matrice.
+                    </Alert>
+                ) : (
+                    <Grid container spacing={3}>
+                        {/* Configuration du format */}
+                        <Grid item xs={12} md={6}>
+                            <Typography variant="h6" gutterBottom>
+                                📁 Format d'Export
                             </Typography>
-                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                {[
+                                    { value: 'csv', label: 'CSV (Recommandé)', icon: <TableChart /> },
+                                    { value: 'excel', label: 'Excel (.xlsx)', icon: <TableChart /> },
+                                    { value: 'json', label: 'JSON (Développeurs)', icon: <Code /> }
+                                ].map(format => (
+                                    <Paper
+                                        key={format.value}
+                                        sx={{
+                                            p: 2,
+                                            cursor: 'pointer',
+                                            border: exportConfig.format === format.value ? 2 : 1,
+                                            borderColor: exportConfig.format === format.value ? 'primary.main' : 'divider'
+                                        }}
+                                        onClick={() => handleConfigChange('format', format.value)}
+                                    >
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            {format.icon}
+                                            <Typography variant="body1">{format.label}</Typography>
+                                        </Box>
+                                    </Paper>
+                                ))}
+                            </Box>
+                        </Grid>
+
+                        {/* Options d'export */}
+                        <Grid item xs={12} md={6}>
+                            <Typography variant="h6" gutterBottom>
+                                ⚙️ Options d'Export
+                            </Typography>
+
+                            <FormGroup>
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            checked={exportConfig.includeProductDetails}
+                                            onChange={(e) => handleConfigChange('includeProductDetails', e.target.checked)}
+                                        />
+                                    }
+                                    label="Inclure les détails produits"
+                                />
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            checked={exportConfig.includeCorrespondences}
+                                            onChange={(e) => handleConfigChange('includeCorrespondences', e.target.checked)}
+                                        />
+                                    }
+                                    label="Inclure les correspondances"
+                                />
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            checked={exportConfig.includeEmptyCells}
+                                            onChange={(e) => handleConfigChange('includeEmptyCells', e.target.checked)}
+                                        />
+                                    }
+                                    label="Inclure les cellules vides"
+                                />
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            checked={exportConfig.includeFilters}
+                                            onChange={(e) => handleConfigChange('includeFilters', e.target.checked)}
+                                        />
+                                    }
+                                    label="Inclure les filtres appliqués"
+                                />
+                            </FormGroup>
+                        </Grid>
+
+                        {/* Aperçu */}
+                        <Grid item xs={12}>
+                            <Divider sx={{ my: 2 }} />
+                            <Typography variant="h6" gutterBottom>
+                                👁️ Aperçu de l'Export
+                            </Typography>
+
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
                                 <Chip
-                                    label={`${stats.products} produits`}
-                                    size="small"
+                                    label={`${previewData.metadata.totalProducts} produits`}
                                     color="primary"
                                 />
                                 <Chip
-                                    label={`${stats.columns} colonnes`}
-                                    size="small"
+                                    label={`${previewData.metadata.totalColumns} références`}
                                     color="secondary"
                                 />
                                 <Chip
-                                    label={`${stats.matches} correspondances`}
-                                    size="small"
+                                    label={`${previewData.rows.length > 0 ? Object.keys(previewData.rows[0]).length : 0} colonnes export`}
                                     color="success"
                                 />
                             </Box>
-                        </Box>
-                    )}
 
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                        <FormControlLabel
-                            control={
-                                <Switch
-                                    checked={exportConfig.includeProductDetails}
-                                    onChange={(e) => setExportConfig(prev => ({
-                                        ...prev,
-                                        includeProductDetails: e.target.checked
-                                    }))}
-                                />
-                            }
-                            label="Inclure tous les détails produits"
-                        />
+                            {previewData.rows.length > 0 && (
+                                <Typography variant="body2" color="text.secondary">
+                                    Colonnes incluses: {Object.keys(previewData.rows[0]).slice(0, 5).join(', ')}
+                                    {Object.keys(previewData.rows[0]).length > 5 && '...'}
+                                </Typography>
+                            )}
+                        </Grid>
+                    </Grid>
+                )}
+            </DialogContent>
 
-                        <FormControlLabel
-                            control={
-                                <Switch
-                                    checked={exportConfig.includeEmptyCells}
-                                    onChange={(e) => setExportConfig(prev => ({
-                                        ...prev,
-                                        includeEmptyCells: e.target.checked
-                                    }))}
-                                />
-                            }
-                            label="Inclure les cellules vides"
-                        />
-
-                        <FormControlLabel
-                            control={
-                                <Switch
-                                    checked={exportConfig.includeFilters}
-                                    onChange={(e) => setExportConfig(prev => ({
-                                        ...prev,
-                                        includeFilters: e.target.checked
-                                    }))}
-                                />
-                            }
-                            label="Inclure les filtres appliqués dans les métadonnées"
-                        />
-                    </Box>
-                </DialogContent>
-
-                <DialogActions>
-                    <Button onClick={() => setConfigDialog(false)}>
-                        Annuler
-                    </Button>
-                    <Button
-                        onClick={() => {
-                            handleExport({ ...exportConfig, format: 'csv' });
-                            setConfigDialog(false);
-                        }}
-                        variant="outlined"
-                        startIcon={<TableChart />}
-                    >
-                        Export CSV
-                    </Button>
-                    <Button
-                        onClick={() => {
-                            handleExport({ ...exportConfig, format: 'xlsx' });
-                            setConfigDialog(false);
-                        }}
-                        variant="contained"
-                        startIcon={<Description />}
-                    >
-                        Export Excel
-                    </Button>
-                </DialogActions>
-            </Dialog>
-        </>
+            <DialogActions>
+                <Button onClick={onClose}>
+                    Annuler
+                </Button>
+                <Button
+                    variant="contained"
+                    onClick={handleExport}
+                    disabled={!hasData || exporting}
+                    startIcon={<FileDownload />}
+                >
+                    {exporting ? 'Export en cours...' : 'Exporter'}
+                </Button>
+            </DialogActions>
+        </Dialog>
     );
-}
+};
+
+export default MatrixExport;
