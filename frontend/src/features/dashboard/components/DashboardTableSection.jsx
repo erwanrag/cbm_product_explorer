@@ -1,45 +1,143 @@
-// frontend/src/features/dashboard/components/DashboardTableSection.jsx
-import React, { useMemo } from 'react';
+// ===================================
+// 📁 frontend/src/features/dashboard/components/DashboardTableSection.jsx - AMÉLIORÉ
+// ===================================
+
+import React, { useState, useMemo } from 'react';
 import {
-    Box, Paper, Typography, Table, TableBody, TableCell,
-    TableContainer, TableHead, TableRow, Chip, IconButton,
-    TableSortLabel
+    Box,
+    Paper,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    TablePagination,
+    Typography,
+    Chip,
+    TableSortLabel,
+    Tooltip,
+    IconButton,
+    Menu,
+    MenuItem,
+    FormControlLabel,
+    Checkbox,
+    Divider
 } from '@mui/material';
-import { Visibility, Edit, TrendingUp, TrendingDown } from '@mui/icons-material';
+import { ViewColumn, Settings } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { formatCurrency } from '@/lib/formatUtils';
-import { getQualiteColor, getMargeColor } from '@/lib/colors';
+import { getQualiteColor, getMargeColor, getStatutColor, getStatutLabel } from '@/constants/colors';
 
-export default function DashboardTableSection({
-    data,
-    loading,
-    onRefresh,
-    onProductSelect,
-    selectedProduct
-}) {
+export default function DashboardTableSection({ data, onProductSelect }) {
+    const [page, setPage] = useState(0);
+    const [rowsPerPage, setRowsPerPage] = useState(25);
+    const [orderBy, setOrderBy] = useState('qualite_ca'); // ✅ Tri par défaut : qualité + CA
+    const [order, setOrder] = useState('desc');
+
+    // ✅ GESTION DES COLONNES MASQUABLES
+    const [anchorEl, setAnchorEl] = useState(null);
+    const [visibleColumns, setVisibleColumns] = useState({
+        cod_pro: true,
+        refint: true,
+        ref_ext: true,
+        nom_pro: true,
+        qualite: true,
+        statut: true,
+        nom_fou: true,
+        ca_total: true,
+        marge_percent_total: true,
+        stock_total: true,
+    });
+
     if (!data?.details || data.details.length === 0) return null;
 
-    // Tri par qualité puis CA décroissant
-    const sortedProducts = useMemo(() => {
-        const qualiteOrder = { 'OE': 1, 'OEM': 2, 'PMQ': 3, 'PMV': 4 };
-
+    // ✅ TRI PERSONNALISÉ qualité + CA
+    const sortedData = useMemo(() => {
         return [...data.details].sort((a, b) => {
-            const qualiteA = qualiteOrder[a.qualite] || 999;
-            const qualiteB = qualiteOrder[b.qualite] || 999;
+            if (orderBy === 'qualite_ca') {
+                // Tri par qualité d'abord, puis par CA descendant
+                const qualiteOrder = ['OE', 'OEM', 'PMQ', 'PMV'];
+                const aQualiteIndex = qualiteOrder.indexOf(a.qualite) !== -1 ? qualiteOrder.indexOf(a.qualite) : 999;
+                const bQualiteIndex = qualiteOrder.indexOf(b.qualite) !== -1 ? qualiteOrder.indexOf(b.qualite) : 999;
 
-            if (qualiteA !== qualiteB) {
-                return qualiteA - qualiteB;
+                if (aQualiteIndex !== bQualiteIndex) {
+                    return aQualiteIndex - bQualiteIndex;
+                }
+                // Si même qualité, trier par CA descendant
+                return (b.ca_total || 0) - (a.ca_total || 0);
             }
 
-            return (b.ca_total || 0) - (a.ca_total || 0);
-        });
-    }, [data.details]);
+            // Tri normal pour les autres colonnes
+            let aVal = a[orderBy] || 0;
+            let bVal = b[orderBy] || 0;
 
-    const getMarginChipColor = (margin) => {
-        if (margin > 20) return 'success';
-        if (margin > 10) return 'warning';
-        return 'error';
+            if (typeof aVal === 'string') {
+                aVal = aVal.toLowerCase();
+                bVal = bVal.toLowerCase();
+            }
+
+            if (order === 'asc') {
+                return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+            } else {
+                return aVal > bVal ? -1 : aVal < bVal ? 1 : 0;
+            }
+        });
+    }, [data.details, orderBy, order]);
+
+    // Données paginées
+    const paginatedData = sortedData.slice(
+        page * rowsPerPage,
+        page * rowsPerPage + rowsPerPage
+    );
+
+    const handleRequestSort = (property) => {
+        const isAsc = orderBy === property && order === 'asc';
+        setOrder(isAsc ? 'desc' : 'asc');
+        setOrderBy(property);
     };
+
+    const handleChangePage = (event, newPage) => {
+        setPage(newPage);
+    };
+
+    const handleChangeRowsPerPage = (event) => {
+        setRowsPerPage(parseInt(event.target.value, 10));
+        setPage(0);
+    };
+
+    // ✅ GESTION DES COLONNES
+    const handleColumnMenuOpen = (event) => {
+        setAnchorEl(event.currentTarget);
+    };
+
+    const handleColumnMenuClose = () => {
+        setAnchorEl(null);
+    };
+
+    const toggleColumn = (columnId) => {
+        setVisibleColumns(prev => ({
+            ...prev,
+            [columnId]: !prev[columnId]
+        }));
+    };
+
+    // ✅ DÉFINITION DES COLONNES avec visibilité
+    const allColumns = [
+        { id: 'cod_pro', label: 'Code', sortable: true, width: 80, align: 'left' },
+        { id: 'refint', label: 'Ref Int', sortable: true, width: 120, align: 'left' },
+        { id: 'ref_ext', label: 'Ref Ext', sortable: true, width: 110, align: 'left' },
+        { id: 'nom_pro', label: 'Nom Produit', sortable: true, width: 180, align: 'left' },
+        { id: 'qualite', label: 'Qualité', sortable: true, width: 80, align: 'center' },
+        { id: 'statut', label: 'Statut', sortable: true, width: 80, align: 'center' },
+        { id: 'nom_fou', label: 'Fournisseur', sortable: true, width: 150, align: 'left' },
+        { id: 'ca_total', label: 'CA Total', sortable: true, width: 100, align: 'right' },
+        { id: 'marge_percent_total', label: 'Marge %', sortable: true, width: 80, align: 'right' },
+        { id: 'stock_total', label: 'Stock', sortable: true, width: 80, align: 'right' },
+    ];
+
+    // Colonnes visibles seulement
+    const visibleColumnsArray = allColumns.filter(col => visibleColumns[col.id]);
 
     return (
         <motion.div
@@ -47,195 +145,285 @@ export default function DashboardTableSection({
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
         >
-            <Paper sx={{ mt: 4, width: '100%' }}>
-                <Box sx={{
-                    p: 3,
-                    borderBottom: 1,
-                    borderColor: 'divider',
-                    background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
-                    color: 'white'
-                }}>
-                    <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                        📋 Détail des Produits ({sortedProducts.length})
+            <Paper elevation={2} sx={{ mt: 2 }}>
+                {/* ✅ HEADER AVEC BOUTON COLONNES */}
+                <Box sx={{ p: 2, pb: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="h6" sx={{ fontSize: '1rem', fontWeight: 600 }}>
+                        Produits ({data.details.length})
+                        {orderBy === 'qualite_ca' && (
+                            <Chip
+                                label="Tri: Qualité + CA"
+                                size="small"
+                                sx={{ ml: 1, bgcolor: '#e3f2fd', fontSize: '0.7rem' }}
+                            />
+                        )}
                     </Typography>
-                    <Typography variant="body2" sx={{ opacity: 0.9, mt: 1 }}>
-                        Triés par qualité (OE → OEM → PMQ/PMV) puis CA décroissant • Cliquez sur une ligne pour ouvrir le détail
-                    </Typography>
+
+                    <IconButton
+                        onClick={handleColumnMenuOpen}
+                        size="small"
+                        sx={{ bgcolor: 'grey.100', '&:hover': { bgcolor: 'grey.200' } }}
+                    >
+                        <ViewColumn fontSize="small" />
+                    </IconButton>
+
+                    {/* Menu des colonnes */}
+                    <Menu
+                        anchorEl={anchorEl}
+                        open={Boolean(anchorEl)}
+                        onClose={handleColumnMenuClose}
+                        PaperProps={{ sx: { minWidth: 200 } }}
+                    >
+                        <MenuItem disabled>
+                            <Settings fontSize="small" sx={{ mr: 1 }} />
+                            Colonnes visibles
+                        </MenuItem>
+                        <Divider />
+                        {allColumns.map((column) => (
+                            <MenuItem key={column.id} onClick={() => toggleColumn(column.id)}>
+                                <FormControlLabel
+                                    control={
+                                        <Checkbox
+                                            checked={visibleColumns[column.id]}
+                                            size="small"
+                                        />
+                                    }
+                                    label={column.label}
+                                    sx={{ m: 0, fontSize: '0.875rem' }}
+                                />
+                            </MenuItem>
+                        ))}
+                    </Menu>
                 </Box>
 
-                <TableContainer sx={{ maxHeight: '70vh', width: '100%' }}>
-                    <Table stickyHeader size="small">
+                <TableContainer sx={{ maxHeight: 500 }}>
+                    <Table size="small" stickyHeader>
                         <TableHead>
                             <TableRow>
-                                <TableCell sx={{ fontWeight: 700, bgcolor: '#f8f9fa' }}>Réf. Interne</TableCell>
-                                <TableCell sx={{ fontWeight: 700, bgcolor: '#f8f9fa', minWidth: 300 }}>Désignation</TableCell>
-                                <TableCell sx={{ fontWeight: 700, bgcolor: '#f8f9fa' }}>Qualité</TableCell>
-                                <TableCell sx={{ fontWeight: 700, bgcolor: '#f8f9fa' }}>Statut</TableCell>
-                                <TableCell sx={{ fontWeight: 700, bgcolor: '#f8f9fa' }} align="right">
-                                    <TableSortLabel active direction="desc">CA (12m)</TableSortLabel>
-                                </TableCell>
-                                <TableCell sx={{ fontWeight: 700, bgcolor: '#f8f9fa' }} align="right">Marge %</TableCell>
-                                <TableCell sx={{ fontWeight: 700, bgcolor: '#f8f9fa' }} align="right">Stock</TableCell>
-                                <TableCell sx={{ fontWeight: 700, bgcolor: '#f8f9fa' }} align="right">PMP €</TableCell>
-                                <TableCell sx={{ fontWeight: 700, bgcolor: '#f8f9fa' }} align="right">Prix Achat €</TableCell>
-                                <TableCell sx={{ fontWeight: 700, bgcolor: '#f8f9fa' }}>Famille</TableCell>
-                                <TableCell sx={{ fontWeight: 700, bgcolor: '#f8f9fa' }} align="center">Actions</TableCell>
+                                {visibleColumnsArray.map((column) => (
+                                    <TableCell
+                                        key={column.id}
+                                        align={column.align}
+                                        style={{
+                                            width: column.width,
+                                            fontSize: '0.875rem',
+                                            fontWeight: 600,
+                                            backgroundColor: '#f5f5f5'
+                                        }}
+                                        sortDirection={orderBy === column.id ? order : false}
+                                    >
+                                        {column.sortable ? (
+                                            <TableSortLabel
+                                                active={orderBy === column.id || (column.id === 'qualite' && orderBy === 'qualite_ca')}
+                                                direction={orderBy === column.id ? order : 'asc'}
+                                                onClick={() => handleRequestSort(column.id === 'qualite' ? 'qualite_ca' : column.id)}
+                                                sx={{ fontSize: '0.875rem' }}
+                                            >
+                                                {column.label}
+                                                {column.id === 'qualite' && orderBy === 'qualite_ca' && (
+                                                    <Typography variant="caption" sx={{ ml: 1, color: 'primary.main' }}>
+                                                        +CA
+                                                    </Typography>
+                                                )}
+                                            </TableSortLabel>
+                                        ) : (
+                                            column.label
+                                        )}
+                                    </TableCell>
+                                ))}
                             </TableRow>
                         </TableHead>
+
                         <TableBody>
-                            {sortedProducts.map((product, index) => {
-                                const caTotal = product.ca_total || 0;
-                                const margin = product.marge_percent_total || 0;
-                                const isSelected = selectedProduct?.cod_pro === product.cod_pro;
-                                const qualiteColor = getQualiteColor(product.qualite);
-
-                                return (
-                                    <TableRow
-                                        key={product.cod_pro || index}
-                                        hover
-                                        onClick={() => {
-                                            console.log('🎯 Clic produit:', product);
-                                            onProductSelect(product);
-                                        }}
-                                        sx={{
-                                            cursor: 'pointer',
-                                            bgcolor: isSelected ? 'rgba(25, 118, 210, 0.12)' : 'inherit',
-                                            '&:hover': {
-                                                bgcolor: isSelected ? 'rgba(25, 118, 210, 0.16)' : 'rgba(25, 118, 210, 0.04)',
-                                                transform: 'scale(1.01)',
-                                                transition: 'all 0.2s ease',
-                                            },
-                                            borderLeft: `4px solid ${isSelected ? '#1976d2' : qualiteColor}`,
-                                            borderLeftWidth: isSelected ? '6px' : '4px',
-                                        }}
-                                    >
-                                        <TableCell sx={{
-                                            fontFamily: 'monospace',
-                                            fontWeight: isSelected ? 800 : 700,
-                                            fontSize: '0.9rem'
-                                        }}>
-                                            {product.refint}
+                            {paginatedData.map((product, index) => (
+                                <TableRow
+                                    key={product.cod_pro}
+                                    hover
+                                    onClick={() => onProductSelect?.(product)}
+                                    sx={{
+                                        cursor: 'pointer',
+                                        '&:hover': { backgroundColor: '#f8f9fa' },
+                                        height: 48
+                                    }}
+                                >
+                                    {/* Code Produit */}
+                                    {visibleColumns.cod_pro && (
+                                        <TableCell sx={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                                            {product.cod_pro}
                                         </TableCell>
+                                    )}
 
-                                        <TableCell sx={{ maxWidth: 300 }}>
-                                            <Typography variant="body2" sx={{
-                                                fontWeight: isSelected ? 700 : 600,
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis',
-                                                whiteSpace: 'nowrap'
-                                            }}>
-                                                {product.designation}
-                                            </Typography>
-                                            <Typography variant="caption" color="text.secondary">
-                                                Réf CRN: {product.ref_crn || 'N/A'}
-                                            </Typography>
+                                    {/* Référence Interne */}
+                                    {visibleColumns.refint && (
+                                        <TableCell sx={{ fontSize: '0.8rem' }}>
+                                            <Tooltip title={product.refint || '-'}>
+                                                <span>
+                                                    {(product.refint || '-').substring(0, 15)}
+                                                    {(product.refint || '').length > 15 ? '...' : ''}
+                                                </span>
+                                            </Tooltip>
                                         </TableCell>
+                                    )}
 
-                                        <TableCell>
+                                    {/* Référence Externe */}
+                                    {visibleColumns.ref_ext && (
+                                        <TableCell sx={{ fontSize: '0.8rem' }}>
+                                            {product.ref_ext ? (
+                                                <Tooltip title={product.ref_ext}>
+                                                    <Chip
+                                                        label={(product.ref_ext).substring(0, 10)}
+                                                        size="small"
+                                                        sx={{
+                                                            height: 20,
+                                                            fontSize: '0.7rem',
+                                                            bgcolor: '#e3f2fd',
+                                                            color: '#1565c0',
+                                                        }}
+                                                    />
+                                                </Tooltip>
+                                            ) : (
+                                                <Typography variant="caption" color="text.secondary">
+                                                    -
+                                                </Typography>
+                                            )}
+                                        </TableCell>
+                                    )}
+
+                                    {/* Nom Produit */}
+                                    {visibleColumns.nom_pro && (
+                                        <TableCell sx={{ fontSize: '0.8rem' }}>
+                                            <Tooltip title={product.nom_pro || 'Nom non défini'}>
+                                                <span>
+                                                    {product.nom_pro ?
+                                                        (product.nom_pro.substring(0, 25) + (product.nom_pro.length > 25 ? '...' : ''))
+                                                        :
+                                                        <Typography variant="caption" color="text.secondary">
+                                                            Non défini
+                                                        </Typography>
+                                                    }
+                                                </span>
+                                            </Tooltip>
+                                        </TableCell>
+                                    )}
+
+                                    {/* Qualité */}
+                                    {visibleColumns.qualite && (
+                                        <TableCell align="center">
                                             <Chip
                                                 label={product.qualite || 'N/A'}
                                                 size="small"
                                                 sx={{
-                                                    bgcolor: isSelected ? '#1976d2' : `${qualiteColor}33`,
-                                                    color: isSelected ? 'white' : qualiteColor,
-                                                    fontWeight: 700,
-                                                    border: `1px solid ${qualiteColor}`,
+                                                    height: 22,
+                                                    fontSize: '0.7rem',
+                                                    fontWeight: 600,
+                                                    bgcolor: getQualiteColor(product.qualite),
+                                                    color: 'white',
+                                                    minWidth: 45,
                                                 }}
                                             />
                                         </TableCell>
+                                    )}
 
-                                        <TableCell>
-                                            <Chip
-                                                label={product.statut_clean || 'RAS'}
-                                                size="small"
-                                                color={product.statut === 0 ? 'success' : 'error'}
-                                            />
+                                    {/* Statut */}
+                                    {visibleColumns.statut && (
+                                        <TableCell align="center">
+                                            <Tooltip title={getStatutLabel(product.statut)}>
+                                                <Chip
+                                                    label={product.statut !== null ? product.statut : 'N/A'}
+                                                    size="small"
+                                                    sx={{
+                                                        height: 22,
+                                                        fontSize: '0.7rem',
+                                                        fontWeight: 600,
+                                                        bgcolor: getStatutColor(product.statut),
+                                                        color: 'white',
+                                                        minWidth: 35,
+                                                    }}
+                                                />
+                                            </Tooltip>
                                         </TableCell>
+                                    )}
 
-                                        <TableCell align="right" sx={{ fontWeight: 700 }}>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1 }}>
-                                                {caTotal > 10000 && <TrendingUp color="success" fontSize="small" />}
-                                                {caTotal < 1000 && <TrendingDown color="error" fontSize="small" />}
-                                                <Typography variant="body2" sx={{
-                                                    fontWeight: isSelected ? 800 : 700
-                                                }}>
-                                                    {formatCurrency(caTotal)}
-                                                </Typography>
-                                            </Box>
+                                    {/* Fournisseur */}
+                                    {visibleColumns.nom_fou && (
+                                        <TableCell sx={{ fontSize: '0.8rem' }}>
+                                            <Tooltip title={product.nom_fou || '-'}>
+                                                <span>
+                                                    {(product.nom_fou || '-').substring(0, 20)}
+                                                    {(product.nom_fou || '').length > 20 ? '...' : ''}
+                                                </span>
+                                            </Tooltip>
                                         </TableCell>
+                                    )}
 
+                                    {/* CA Total */}
+                                    {visibleColumns.ca_total && (
                                         <TableCell align="right">
                                             <Box sx={{
-                                                px: 1,
-                                                py: 0.25,
-                                                borderRadius: 1,
-                                                bgcolor: getMargeColor(margin),
-                                                color: 'white',
-                                                fontWeight: 700,
-                                                minWidth: 60,
-                                                textAlign: 'center'
+                                                fontWeight: (product.ca_total || 0) > 50000 ? 700 : 500,
+                                                fontSize: '0.8rem',
+                                                color: (product.ca_total || 0) > 50000 ? '#2e7d32' : 'inherit'
                                             }}>
-                                                {margin.toFixed(1)}%
+                                                {formatCurrency(product.ca_total || 0, 'EUR', true)}
                                             </Box>
                                         </TableCell>
+                                    )}
 
-                                        <TableCell align="right" sx={{ fontWeight: 600 }}>
+                                    {/* Marge % */}
+                                    {visibleColumns.marge_percent_total && (
+                                        <TableCell align="right">
+                                            <Chip
+                                                label={`${(product.marge_percent_total || 0).toFixed(1)}%`}
+                                                size="small"
+                                                sx={{
+                                                    height: 20,
+                                                    fontSize: '0.7rem',
+                                                    fontWeight: 600,
+                                                    bgcolor: getMargeColor(product.marge_percent_total || 0),
+                                                    color: 'white',
+                                                    minWidth: 50,
+                                                }}
+                                            />
+                                        </TableCell>
+                                    )}
+
+                                    {/* Stock */}
+                                    {visibleColumns.stock_total && (
+                                        <TableCell align="right" sx={{
+                                            fontSize: '0.8rem',
+                                            fontWeight: 600,
+                                            color: (product.stock_total || 0) <= 10 ? '#d32f2f' : 'inherit'
+                                        }}>
                                             {(product.stock_total || 0).toLocaleString('fr-FR')}
                                         </TableCell>
-
-                                        <TableCell align="right">
-                                            {formatCurrency(product.pmp || 0)}
-                                        </TableCell>
-
-                                        <TableCell align="right">
-                                            {formatCurrency(product.px_achat_eur)}
-                                        </TableCell>
-
-                                        <TableCell>
-                                            <Typography variant="caption" color="text.secondary">
-                                                {product.famille || 'N/A'} / {product.s_famille || 'N/A'}
-                                            </Typography>
-                                        </TableCell>
-
-                                        <TableCell align="center" onClick={(e) => e.stopPropagation()}>
-                                            <Box sx={{ display: 'flex', gap: 0.5 }}>
-                                                <IconButton
-                                                    size="small"
-                                                    color="primary"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        console.log('🔍 Clic loupe:', product);
-                                                        onProductSelect(product);
-                                                    }}
-                                                    sx={{
-                                                        '&:hover': {
-                                                            transform: 'scale(1.2)',
-                                                            bgcolor: 'rgba(25, 118, 210, 0.1)'
-                                                        }
-                                                    }}
-                                                >
-                                                    <Visibility fontSize="small" />
-                                                </IconButton>
-                                                <IconButton
-                                                    size="small"
-                                                    color="secondary"
-                                                    sx={{
-                                                        '&:hover': {
-                                                            transform: 'scale(1.2)',
-                                                            bgcolor: 'rgba(156, 39, 176, 0.1)'
-                                                        }
-                                                    }}
-                                                >
-                                                    <Edit fontSize="small" />
-                                                </IconButton>
-                                            </Box>
-                                        </TableCell>
-                                    </TableRow>
-                                );
-                            })}
+                                    )}
+                                </TableRow>
+                            ))}
                         </TableBody>
                     </Table>
                 </TableContainer>
+
+                {/* Pagination */}
+                <TablePagination
+                    rowsPerPageOptions={[10, 25, 50, 100]}
+                    component="div"
+                    count={sortedData.length}
+                    rowsPerPage={rowsPerPage}
+                    page={page}
+                    onPageChange={handleChangePage}
+                    onRowsPerPageChange={handleChangeRowsPerPage}
+                    labelRowsPerPage="Lignes:"
+                    labelDisplayedRows={({ from, to, count }) =>
+                        `${from}-${to} sur ${count}`
+                    }
+                    sx={{
+                        borderTop: '1px solid #e0e0e0',
+                        '& .MuiTablePagination-toolbar': {
+                            minHeight: 48,
+                            fontSize: '0.875rem'
+                        }
+                    }}
+                />
             </Paper>
         </motion.div>
     );

@@ -11,6 +11,7 @@ class ProductDetail(BaseModel):
     statut: Optional[int]
     cod_fou_principal: Optional[int]
     nom_fou: Optional[str]
+    nom_pro: Optional[str]
 
 class ProductDetailResponse(BaseModel):
     products: List[ProductDetail]

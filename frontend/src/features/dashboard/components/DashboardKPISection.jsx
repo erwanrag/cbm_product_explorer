@@ -1,45 +1,64 @@
-// frontend/src/features/dashboard/components/DashboardKPISection.jsx
+// ===================================
+// 📁 frontend/src/features/dashboard/components/DashboardKPISection.jsx - AVEC STOCK
+// ===================================
+
 import React from 'react';
 import { Grid, Card, CardContent, Typography, Box, Avatar } from '@mui/material';
-import { Inventory, Euro, TrendingUp } from '@mui/icons-material';
+import { Inventory, Euro, TrendingUp, Warehouse } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { formatCurrency } from '@/lib/formatUtils';
-import { getQualiteColor } from '@/lib/colors';
 
-export default function DashboardKPISection({ data, loading, selectedProduct }) {
-    if (!data?.kpis) return null;
+export default function DashboardKPISection({ data, loading }) {
+    if (!data?.details) return null;
 
-    // ✅ SEULEMENT 3 KPIs utiles
+    // Calcul des KPIs complets avec STOCK
+    const totalProducts = data.details.length;
+    const totalRevenue = data.details.reduce((sum, p) => sum + (p.ca_total || 0), 0);
+    const averageMargin = data.details.length > 0 ?
+        data.details.reduce((sum, p) => sum + (p.marge_percent_total || 0), 0) / data.details.length : 0;
+
+    // ✅ AJOUT DU STOCK VALORISÉ
+    const totalStockValue = data.details.reduce((sum, p) =>
+        sum + ((p.stock_total || 0) * (p.pmp || 0)), 0);
+
     const kpis = [
         {
-            title: 'Produits Actifs',
-            value: data.kpis.totalProducts,
+            title: 'Produits',
+            value: totalProducts,
             format: 'number',
             icon: <Inventory />,
             color: '#1976d2',
             bgColor: '#e3f2fd',
         },
         {
-            title: 'CA Total (12m)',
-            value: data.kpis.totalRevenue,
+            title: 'CA Total',
+            value: totalRevenue,
             format: 'currency',
             icon: <Euro />,
             color: '#2e7d32',
             bgColor: '#e8f5e8',
         },
         {
-            title: 'Marge Moyenne',
-            value: data.kpis.averageMargin,
+            title: 'Marge Moy.',
+            value: averageMargin,
             format: 'percentage',
             icon: <TrendingUp />,
-            color: data.kpis.averageMargin > 15 ? '#2e7d32' : '#f57c00',
-            bgColor: data.kpis.averageMargin > 15 ? '#e8f5e8' : '#fff3e0',
+            color: averageMargin > 15 ? '#2e7d32' : '#f57c00',
+            bgColor: averageMargin > 15 ? '#e8f5e8' : '#fff3e0',
+        },
+        {
+            title: 'Stock Valorisé',
+            value: totalStockValue,
+            format: 'currency',
+            icon: <Warehouse />,
+            color: '#9c27b0',
+            bgColor: '#f3e5f5',
         },
     ];
 
     const formatValue = (value, format) => {
         if (format === 'currency') {
-            return formatCurrency(value);
+            return formatCurrency(value, 'EUR', true); // Format compact
         }
         if (format === 'percentage') {
             return `${(value || 0).toFixed(1)}%`;
@@ -48,52 +67,45 @@ export default function DashboardKPISection({ data, loading, selectedProduct }) 
     };
 
     return (
-        <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid container spacing={2} sx={{ mb: 3 }}> {/* Plus compact */}
             {kpis.map((kpi, index) => (
-                <Grid item xs={12} sm={4} key={kpi.title}>
+                <Grid item xs={6} sm={3} key={kpi.title}> {/* 4 colonnes sur desktop */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.1 }}
                     >
                         <Card sx={{
-                            height: '140px',
-                            cursor: 'pointer',
+                            height: '110px', // Plus compact
                             transition: 'all 0.3s ease',
                             background: `linear-gradient(135deg, ${kpi.bgColor} 0%, ${kpi.bgColor}aa 100%)`,
-                            border: selectedProduct ? '2px solid #1976d2' : '1px solid #e0e0e0',
                             '&:hover': {
-                                transform: 'translateY(-8px)',
-                                boxShadow: 6,
-                            }
+                                transform: 'translateY(-2px)',
+                                boxShadow: 4,
+                            },
                         }}>
-                            <CardContent sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                                     <Avatar sx={{
                                         bgcolor: kpi.color,
-                                        color: 'white',
-                                        width: 56,
-                                        height: 56,
+                                        width: 32,
+                                        height: 32,
+                                        mr: 1.5
                                     }}>
                                         {kpi.icon}
                                     </Avatar>
-                                    <Box sx={{ textAlign: 'right' }}>
-                                        <Typography variant="h4" sx={{
-                                            fontWeight: 800,
-                                            color: kpi.color,
-                                            lineHeight: 1,
-                                        }}>
-                                            {formatValue(kpi.value, kpi.format)}
-                                        </Typography>
-                                        <Typography variant="body1" sx={{
-                                            color: kpi.color,
-                                            fontWeight: 600,
-                                            mt: 0.5
-                                        }}>
-                                            {kpi.title}
-                                        </Typography>
-                                    </Box>
+                                    <Typography variant="body2" color="text.secondary">
+                                        {kpi.title}
+                                    </Typography>
                                 </Box>
+
+                                <Typography variant="h6" sx={{
+                                    fontWeight: 700,
+                                    color: kpi.color,
+                                    fontSize: '1.1rem' // Plus compact
+                                }}>
+                                    {formatValue(kpi.value, kpi.format)}
+                                </Typography>
                             </CardContent>
                         </Card>
                     </motion.div>

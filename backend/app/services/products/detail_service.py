@@ -41,7 +41,8 @@ async def get_product_details(payload: ProductIdentifierRequest, db: AsyncSessio
                 p.qualite,
                 p.statut,
                 f.cod_fou_principal,
-                fou.nom_fou
+                fou.nom_fou, 
+                p.nom_pro
             FROM CBM_DATA.dm.Dim_Produit p WITH (NOLOCK)
             LEFT JOIN (
                 SELECT DISTINCT cod_pro, cod_fou_principal

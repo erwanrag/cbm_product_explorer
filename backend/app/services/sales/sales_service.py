@@ -1,3 +1,7 @@
+# ===================================
+# 📁 backend/app/services/sales/sales_service.py - VERSION PROPRE ET FONCTIONNELLE
+# ===================================
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
@@ -22,7 +26,7 @@ async def get_sales_history(
     Version sécurisée sans injection SQL.
     """
     if is_payload_empty(payload):
-        return ProductSalesHistoryResponse(items=[])  # 🛑 early return
+        return ProductSalesHistoryResponse(items=[])
 
     # ✅ Résolution cod_pro_list
     cod_pro_list = payload.cod_pro_list or await get_codpro_list_from_identifier(payload, db)
@@ -32,7 +36,7 @@ async def get_sales_history(
     if not cod_pro_list:
         return ProductSalesHistoryResponse(items=[])
 
-    # ✅ Calcul de la période minimale
+    # ✅ Calcul de la période minimale (maintenant corrigé)
     months = get_last_n_months(last_n_months)
     min_period = months[0] + "-01"
 
@@ -99,7 +103,7 @@ async def get_sales_aggregate(
     Version sécurisée sans injection SQL.
     """
     if is_payload_empty(payload):
-        return ProductSalesAggregateResponse(items=[])  # 🛑 early return
+        return ProductSalesAggregateResponse(items=[])
 
     # ✅ Résolution cod_pro_list
     cod_pro_list = payload.cod_pro_list or await get_codpro_list_from_identifier(payload, db)
