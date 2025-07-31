@@ -12,7 +12,7 @@ import {
 } from '@/constants/colors';
 
 // Ré-export pour compatibilité
-export { QUALITE_COLORS, STATUT_COLORS, getQualiteColor, getStatutColor, getMargeColor };
+export { QUALITE_COLORS, STATUT_COLORS, getQualiteColor, getStatutColor, getMargeColor, getMatchPercentColor };
 
 // Couleurs étendues pour graphiques
 export const CHART_COLORS = [

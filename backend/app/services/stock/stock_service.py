@@ -37,6 +37,8 @@ async def get_stock_actuel(payload: ProductIdentifierRequest, db: AsyncSession) 
             SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
             SELECT cod_pro, depot, stock, pmp_eur
             FROM CBM_DATA.stock.Fact_Stock_Actuel WITH (NOLOCK)
+            INNER JOIN (SELECT [WarehouseNumber] FROM [CBM_DATA].[import].[companyStatus] WITH (NO LOCK) WHERE [AnalysisFlag] = 1) AS cs 
+            ON cs.WarehouseNumber = depot
             WHERE cod_pro IN ({placeholders})
         """
         result = await db.execute(text(query), params)
@@ -99,6 +101,8 @@ async def get_stock_history(
             SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
             SELECT depot, cod_pro, dat_deb, dat_fin, stock, pmp
             FROM CBM_DATA.stock.Historique WITH (NOLOCK)
+            INNER JOIN (SELECT [WarehouseNumber] FROM [CBM_DATA].[import].[companyStatus] WITH (NO LOCK) WHERE [AnalysisFlag] = 1) AS cs
+            ON cs.WarehouseNumber = depot
             WHERE cod_pro IN ({placeholders}) {date_filter}
             ORDER BY cod_pro, depot, dat_deb
         """

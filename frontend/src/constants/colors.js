@@ -37,11 +37,41 @@ export const STATUT_LABELS = {
 };
 
 // Couleurs de marge (logique métier CBM)
-export function getMargeColor(val) {
-  if (val == null || isNaN(val)) return '#ccc';
-  if (val < 10) return '#e53935'; // Rouge (faible)
-  if (val <= 20) return '#ff9800'; // Orange (moyenne)
-  return '#27ae60'; // Vert (bonne)
+export function getMargeColor(val, qualite) {
+    if (val == null || isNaN(val)) return '#ccc';
+    if (!qualite) return '#ccc';
+
+    const q = qualite.toUpperCase();
+    if (q === 'PMV') {
+        if (val < 50) return '#e53935';
+        if (val <= 60) return '#f9a825';
+        return '#43a047';
+    }
+    if (q === 'PMQ') {
+        if (val < 40) return '#e53935';
+        if (val <= 50) return '#f9a825';
+        return '#43a047';
+    }
+    if (q === 'OEM') {
+        if (val < 25) return '#e53935';
+        if (val <= 32) return '#f9a825';
+        return '#43a047';
+    }
+    if (q === 'OE') {
+        if (val < 20) return '#e53935';
+        if (val <= 25) return '#f9a825';
+        return '#43a047';
+    }
+
+    return '#999'; // fallback
+}
+
+// Couleurs du matchg pour les pourcentages
+export function getMatchPercentColor(value) {
+    if (value == null || isNaN(value)) return '#9e9e9e'; // gris
+    if (value < 65) return '#e53935';      // rouge
+    if (value < 80) return '#f9a825';      // orange
+    return '#43a047';                      // vert
 }
 
 // Fonctions utilitaires
