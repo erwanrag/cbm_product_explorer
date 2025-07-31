@@ -4,6 +4,7 @@ from app.routers.dashboard.dashboard_router import router as dashboard_router
 from app.routers.products.detail_router import router as detail_router
 from app.routers.products.match_router import router as match_router
 from app.routers.products.matrix_router import router as matrix_router
+from app.routers.matrix.matrix_view_router import router as matrix_view_router
 from app.routers.stock.stock_router import router as stock_router
 from app.routers.sales.sales_router import router as sales_router
 from app.routers.purchase.purchase_router import router as purchase_router
@@ -16,6 +17,7 @@ routers = [
     detail_router,
     match_router,
     matrix_router,
+    matrix_view_router,
     stock_router,
     sales_router,
     purchase_router,
@@ -30,6 +32,7 @@ __all__ = [
     "detail_router",
     "match_router",
     "matrix_router",
+    "matrix_view_router",
     "stock_router",
     "sales_router",
     "purchase_router",

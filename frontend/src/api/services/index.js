@@ -9,6 +9,7 @@ export { StockService } from '@/api/services/stockService';
 export { PurchaseService } from '@/api/services/purchaseService';
 export { SuggestionService } from '@/api/services/suggestionService';
 export { OptimizationService } from '@/api/services/optimizationService';
+export { MatrixService } from '@/api/services/matrixService';
 
 // ===== INSTANCES SINGLETONS (pour compatibilité) =====
 export { dashboardService } from '@/api/services/dashboardService';
@@ -19,6 +20,7 @@ export { stockService } from '@/api/services/stockService';
 export { purchaseService } from '@/api/services/purchaseService';
 export { suggestionService } from '@/api/services/suggestionService';
 export { optimizationService } from '@/api/services/optimizationService';
+export { matrixService } from '@/api/services/matrixService';
 
 // ===== CLIENT PRINCIPAL =====
 export { default as apiClient } from '@/api/core/client';
