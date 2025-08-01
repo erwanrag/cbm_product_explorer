@@ -22,7 +22,7 @@ async def get_refcrn_by_codpro(cod_pro: int, db: AsyncSession) -> list[str]:
     query = text("""
         SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
         SELECT DISTINCT ref_crn
-        FROM CBM_DATA.Pricing.Dimensions_Produit WITH (NOLOCK)
+        FROM [CBM_DATA].[Pricing].[Grouping_crn_table] WITH (NOLOCK)
         WHERE cod_pro = :cod_pro AND ref_crn IS NOT NULL
         ORDER BY ref_crn
     """)
@@ -44,7 +44,7 @@ async def autocomplete_refint_or_codpro(query: str, db: AsyncSession) -> list[di
     sql = """
         SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
         SELECT DISTINCT TOP 10 refint, cod_pro
-        FROM CBM_DATA.dm.Dim_Produit WITH (NOLOCK)
+        FROM [CBM_DATA].[Pricing].[Grouping_crn_table] WITH (NOLOCK)
         WHERE refint LIKE :q OR CAST(cod_pro AS VARCHAR) LIKE :q
         ORDER BY refint
     """

@@ -20,7 +20,9 @@ async def get_codpro_list_from_identifier(payload: ProductIdentifierRequest, db:
     3. fallback : cod_pro seul
     """
 
-    redis_key = resolve_codpro_key(**payload.model_dump())
+    payload_dict = payload.model_dump(exclude_none=False)
+    redis_key = resolve_codpro_key(payload_dict)
+
     try:
         cached = await redis_client.get(redis_key)
         if cached:

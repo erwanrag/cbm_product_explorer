@@ -21,7 +21,7 @@ import {
     Checkbox,
     Divider
 } from '@mui/material';
-import { ViewColumn, Settings } from '@mui/icons-material';
+import { FileDownload, ViewColumn, Settings } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { formatCurrency } from '@/lib/formatUtils';
 import { getQualiteColor, getMargeColor, getMatchPercentColor, getStatutColor, getStatutLabel } from '@/constants/colors';
@@ -41,9 +41,13 @@ export default function DashboardTableSection({ data, onProductSelect }) {
         qualite: true,
         statut: true,
         nom_fou: true,
+        px_vente_calcule: true,
+        px_achat_eur: true,
+        quantite_total: true,
         ca_total: true,
         marge_percent_total: true,
         stock_total: true,
+        pmp: true,
         match_percent: true,
     });
 
@@ -114,9 +118,13 @@ export default function DashboardTableSection({ data, onProductSelect }) {
         { id: 'qualite', label: 'Qualité', sortable: true, width: 80, align: 'center' },
         { id: 'statut', label: 'Statut', sortable: true, width: 80, align: 'center' },
         { id: 'nom_fou', label: 'Fournisseur', sortable: true, width: 150, align: 'left' },
+        { id: 'px_vente_calcule', label: 'PV Cal.', sortable: false, width: 90, align: 'right' },
+        { id: 'px_achat_eur', label: 'PA EUR', sortable: true, width: 90, align: 'right' },
+        { id: 'quantite_total', label: 'Qté Vendue', sortable: true, width: 100, align: 'right' },
         { id: 'ca_total', label: 'CA Total', sortable: true, width: 100, align: 'right' },
         { id: 'marge_percent_total', label: 'Marge %', sortable: true, width: 80, align: 'right' },
         { id: 'stock_total', label: 'Stock', sortable: true, width: 80, align: 'right' },
+        { id: 'pmp', label: 'PMP Dépôt 1', sortable: true, width: 100, align: 'right' },
         { id: 'match_percent', label: '% Matching', sortable: false, width: 100, align: 'right' }
     ];
 
@@ -132,9 +140,13 @@ export default function DashboardTableSection({ data, onProductSelect }) {
                             <Chip label="Tri: Qualité + CA" size="small" sx={{ ml: 1, bgcolor: '#e3f2fd', fontSize: '0.7rem' }} />
                         )}
                     </Typography>
-                    <IconButton onClick={handleColumnMenuOpen} size="small" sx={{ bgcolor: 'grey.100', '&:hover': { bgcolor: 'grey.200' } }}>
-                        <ViewColumn fontSize="small" />
-                    </IconButton>
+
+      
+                    <Tooltip title="Afficher/masquer les colonnes">
+                        <IconButton onClick={handleColumnMenuOpen} color="primary" size="small">
+                            <ViewColumn fontSize="small" />
+                        </IconButton>
+                    </Tooltip>
                     <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleColumnMenuClose} PaperProps={{ sx: { minWidth: 200 } }}>
                         <MenuItem disabled>
                             <Settings fontSize="small" sx={{ mr: 1 }} />
@@ -209,6 +221,21 @@ export default function DashboardTableSection({ data, onProductSelect }) {
                                         </TableCell>
                                     )}
                                     {visibleColumns.nom_fou && <TableCell sx={{ fontSize: '0.8rem' }}>{product.nom_fou || '-'}</TableCell>}
+                                    {visibleColumns.px_vente_calcule && (
+                                        <TableCell align="right" sx={{ fontSize: '0.8rem' }}>
+                                            {product.quantite_total > 0 ? formatCurrency(product.ca_total / product.quantite_total, 'EUR', true) : '-'}
+                                        </TableCell>
+                                    )}
+                                    {visibleColumns.px_achat_eur && (
+                                        <TableCell align="right" sx={{ fontSize: '0.8rem' }}>
+                                            {formatCurrency(product.px_achat_eur || 0, 'EUR', true)}
+                                        </TableCell>
+                                    )}
+                                    {visibleColumns.quantite_total && (
+                                        <TableCell align="right" sx={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                                            {(product.quantite_total || 0).toLocaleString('fr-FR')}
+                                        </TableCell>
+                                    )}
                                     {visibleColumns.ca_total && (
                                         <TableCell align="right">
                                             <Box sx={{ fontWeight: (product.ca_total || 0) > 50000 ? 700 : 500, fontSize: '0.8rem' }}>
@@ -225,6 +252,11 @@ export default function DashboardTableSection({ data, onProductSelect }) {
                                     {visibleColumns.stock_total && (
                                         <TableCell align="right" sx={{ fontSize: '0.8rem', fontWeight: 600 }}>
                                             {(product.stock_total || 0).toLocaleString('fr-FR')}
+                                        </TableCell>
+                                    )}
+                                    {visibleColumns.pmp && (
+                                        <TableCell align="right" sx={{ fontSize: '0.8rem' }}>
+                                            {formatCurrency(product.pmp || 0, 'EUR', true)}
                                         </TableCell>
                                     )}
                                     {visibleColumns.match_percent && (

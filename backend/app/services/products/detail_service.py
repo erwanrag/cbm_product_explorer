@@ -1,32 +1,44 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
-from app.services.identifiers.identifier_service import get_codpro_list_from_identifier
+
+from app.utils.identifier_utils import resolve_codpro_list
 from app.schemas.identifiers.identifier_schema import ProductIdentifierRequest
 from app.schemas.products.detail_schema import ProductDetailResponse
 from app.common.payload_utils import is_payload_empty
 from app.common.logger import logger
 
+from app.cache.cache_keys import product_details_key
+from app.common.redis_client import redis_client
+import json
+
 
 async def get_product_details(payload: ProductIdentifierRequest, db: AsyncSession) -> ProductDetailResponse:
     """
     Retourne un ProductDetailResponse (Pydantic) contenant la liste des détails produits.
-    Version sécurisée avec support du grouping_crn.
+    Version sécurisée avec support du grouping_crn et cache Redis.
     """
     if is_payload_empty(payload):
-        return ProductDetailResponse(products=[])  # 🛑 early return
+        return ProductDetailResponse(products=[])
 
-    # ✅ Résolution via identifier_service (supporte grouping_crn)
-    cod_pro_response = await get_codpro_list_from_identifier(payload, db)
-    cod_pro_list = cod_pro_response.cod_pro_list if hasattr(cod_pro_response, "cod_pro_list") else cod_pro_response
-
+    # ✅ Résolution cod_pro_list (via helper sécurisé)
+    cod_pro_list = await resolve_codpro_list(payload, db)
     if not cod_pro_list:
         logger.warning("⚠️ Aucun cod_pro résolu pour le payload")
         return ProductDetailResponse(products=[])
 
-    # ✅ Requête sécurisée avec paramètres liés
+    # ✅ Tentative de lecture depuis le cache Redis
+    redis_key = product_details_key(payload)
     try:
-        # Création des paramètres dynamiques sécurisés
+        cached = await redis_client.get(redis_key)
+        if cached:
+            logger.debug(f"✅ Cache hit produit:details pour {redis_key}")
+            return ProductDetailResponse(**json.loads(cached))
+    except Exception:
+        logger.exception("[Redis] fallback produit:details")
+
+    # ✅ Requête SQL sécurisée
+    try:
         placeholders = ", ".join([f":p{i}" for i in range(len(cod_pro_list))])
         params = {f"p{i}": int(cod) for i, cod in enumerate(cod_pro_list)}
 
@@ -61,8 +73,16 @@ async def get_product_details(payload: ProductIdentifierRequest, db: AsyncSessio
         columns = result.keys()
 
         products = [dict(zip(columns, row)) for row in rows]
-        
+
         logger.debug(f"✅ Détails produits récupérés: {len(products)} éléments")
+
+        # ✅ Mise en cache Redis
+        try:
+            await redis_client.set(redis_key, json.dumps({"products": products}), ex=3600)
+            logger.debug(f"✅ Cache set produit:details pour {redis_key}")
+        except Exception:
+            logger.exception("[Redis] set produit:details failed")
+
         return ProductDetailResponse(products=products)
 
     except SQLAlchemyError as e:

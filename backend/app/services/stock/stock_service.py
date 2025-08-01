@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
-from app.services.identifiers.identifier_service import get_codpro_list_from_identifier
+from app.utils.identifier_utils import resolve_codpro_list
 from app.schemas.identifiers.identifier_schema import ProductIdentifierRequest
 from app.schemas.stock.stock_schema import (
     ProductStockResponse,
@@ -10,26 +10,29 @@ from app.schemas.stock.stock_schema import (
 from app.common.date_service import get_last_n_months
 from app.common.payload_utils import is_payload_empty
 from app.common.logger import logger
+from app.cache.cache_keys import stock_actuel_key, stock_history_key
+from app.common.redis_client import redis_client
+import json
 
 
 async def get_stock_actuel(payload: ProductIdentifierRequest, db: AsyncSession) -> ProductStockResponse:
-    """
-    Récupère le stock actuel pour une ou plusieurs références.
-    Version sécurisée sans injection SQL.
-    """
     if is_payload_empty(payload):
-        return ProductStockResponse(items=[])  # 🛑 early return
+        return ProductStockResponse(items=[])
 
-    # ✅ Résolution cod_pro_list
-    cod_pro_list = payload.cod_pro_list or await get_codpro_list_from_identifier(payload, db)
-    if hasattr(cod_pro_list, "cod_pro_list"):
-        cod_pro_list = cod_pro_list.cod_pro_list
-
+    cod_pro_list = await resolve_codpro_list(payload, db)
     if not cod_pro_list:
         return ProductStockResponse(items=[])
 
+    redis_key = stock_actuel_key(payload)
     try:
-        # ✅ Paramètres sécurisés
+        cached = await redis_client.get(redis_key)
+        if cached:
+            logger.debug(f"✅ Cache hit stock:actuel pour {redis_key}")
+            return ProductStockResponse(**json.loads(cached))
+    except Exception:
+        logger.exception("[Redis] fallback stock:actuel")
+
+    try:
         placeholders = ", ".join([f":p{i}" for i in range(len(cod_pro_list))])
         params = {f"p{i}": int(cod) for i, cod in enumerate(cod_pro_list)}
 
@@ -37,8 +40,11 @@ async def get_stock_actuel(payload: ProductIdentifierRequest, db: AsyncSession) 
             SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
             SELECT cod_pro, depot, stock, pmp_eur
             FROM CBM_DATA.stock.Fact_Stock_Actuel WITH (NOLOCK)
-            INNER JOIN (SELECT [WarehouseNumber] FROM [CBM_DATA].[import].[companyStatus] WITH (NO LOCK) WHERE [AnalysisFlag] = 1) AS cs 
-            ON cs.WarehouseNumber = depot
+            INNER JOIN (
+                SELECT [WarehouseNumber] 
+                FROM CBM_DATA.import.companyStatus WITH (NOLOCK) 
+                WHERE [AnalysisFlag] = 1
+            ) AS cs ON cs.WarehouseNumber = depot
             WHERE cod_pro IN ({placeholders})
         """
         result = await db.execute(text(query), params)
@@ -53,7 +59,15 @@ async def get_stock_actuel(payload: ProductIdentifierRequest, db: AsyncSession) 
             }
             for r in rows
         ]
+
         logger.debug(f"✅ Stock actuel récupéré: {len(items)} éléments")
+
+        try:
+            await redis_client.set(redis_key, json.dumps({"items": items}), ex=1800)
+            logger.debug(f"✅ Cache set stock:actuel pour {redis_key}")
+        except Exception:
+            logger.exception("[Redis] set stock:actuel")
+
         return ProductStockResponse(items=items)
 
     except SQLAlchemyError as e:
@@ -65,45 +79,44 @@ async def get_stock_actuel(payload: ProductIdentifierRequest, db: AsyncSession) 
 
 
 async def get_stock_history(
-    payload: ProductIdentifierRequest, 
-    db: AsyncSession, 
+    payload: ProductIdentifierRequest,
+    db: AsyncSession,
     last_n_months: int = None
 ) -> ProductStockHistoryResponse:
-    """
-    Récupère l'historique du stock sur N mois max.
-    Version sécurisée sans injection SQL.
-    """
     if is_payload_empty(payload):
-        return ProductStockHistoryResponse(items=[])  # 🛑 early return
+        return ProductStockHistoryResponse(items=[])
 
-    # ✅ Résolution cod_pro_list
-    cod_pro_list = payload.cod_pro_list or await get_codpro_list_from_identifier(payload, db)
-    if hasattr(cod_pro_list, "cod_pro_list"):
-        cod_pro_list = cod_pro_list.cod_pro_list
-
+    cod_pro_list = await resolve_codpro_list(payload, db)
     if not cod_pro_list:
         return ProductStockHistoryResponse(items=[])
 
+    months = get_last_n_months(last_n_months or 12)
+    first_month = months[0] + "-01"
+
+    redis_key = stock_history_key(cod_pro_list, first_month)
     try:
-        # ✅ Paramètres sécurisés
+        cached = await redis_client.get(redis_key)
+        if cached:
+            logger.debug(f"✅ Cache hit stock:history pour {redis_key}")
+            return ProductStockHistoryResponse(**json.loads(cached))
+    except Exception:
+        logger.exception("[Redis] fallback stock:history")
+
+    try:
         placeholders = ", ".join([f":p{i}" for i in range(len(cod_pro_list))])
         params = {f"p{i}": int(cod) for i, cod in enumerate(cod_pro_list)}
-
-        # ✅ Filtre de date optionnel
-        date_filter = ""
-        if last_n_months is not None:
-            months = get_last_n_months(last_n_months)
-            first_month = months[0] + "-01"
-            date_filter = "AND dat_deb >= :first_month"
-            params["first_month"] = first_month
+        params["first_month"] = first_month
 
         query = f"""
             SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
             SELECT depot, cod_pro, dat_deb, dat_fin, stock, pmp
             FROM CBM_DATA.stock.Historique WITH (NOLOCK)
-            INNER JOIN (SELECT [WarehouseNumber] FROM [CBM_DATA].[import].[companyStatus] WITH (NO LOCK) WHERE [AnalysisFlag] = 1) AS cs
-            ON cs.WarehouseNumber = depot
-            WHERE cod_pro IN ({placeholders}) {date_filter}
+            INNER JOIN (
+                SELECT [WarehouseNumber] 
+                FROM CBM_DATA.import.companyStatus WITH (NOLOCK) 
+                WHERE [AnalysisFlag] = 1
+            ) AS cs ON cs.WarehouseNumber = depot
+            WHERE cod_pro IN ({placeholders}) AND dat_deb >= :first_month
             ORDER BY cod_pro, depot, dat_deb
         """
         result = await db.execute(text(query), params)
@@ -120,8 +133,15 @@ async def get_stock_history(
             }
             for r in rows
         ]
-        filter_info = f" avec filtre >= {params.get('first_month', 'aucun')}" if last_n_months else ""
-        logger.debug(f"✅ Historique stock récupéré: {len(items)} éléments{filter_info}")
+
+        logger.debug(f"✅ Historique stock récupéré: {len(items)} éléments (>= {first_month})")
+
+        try:
+            await redis_client.set(redis_key, json.dumps({"items": items}), ex=1800)
+            logger.debug(f"✅ Cache set stock:history pour {redis_key}")
+        except Exception:
+            logger.exception("[Redis] set stock:history")
+
         return ProductStockHistoryResponse(items=items)
 
     except SQLAlchemyError as e:

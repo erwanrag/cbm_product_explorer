@@ -25,7 +25,7 @@ async def get_product_matrix_from_identifier(
         )
 
     # ✅ 1. Cache Redis
-    redis_key = resolve_codpro_key(**payload.model_dump())
+    redis_key = resolve_codpro_key(payload.model_dump(exclude_none=True, sort_keys=True))
     try:
         cached = await redis_client.get(redis_key)
         if cached:

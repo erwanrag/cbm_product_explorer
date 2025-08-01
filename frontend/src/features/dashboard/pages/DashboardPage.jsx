@@ -174,7 +174,7 @@ export default function DashboardPage() {
 
     // ✅ 6. RENDU PRINCIPAL
     return (
-        <Container maxWidth="xl" sx={{ py: 3 }}>
+        <Box sx={{ px: 3, py: 3, width: '100%' }}>
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -191,6 +191,6 @@ export default function DashboardPage() {
 
                 {renderContent()}
             </motion.div>
-        </Container>
+        </Box>
     );
 }
