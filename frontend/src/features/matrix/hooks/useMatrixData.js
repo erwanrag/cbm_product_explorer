@@ -1,110 +1,102 @@
-// frontend/src/features/matrix/hooks/useMatrixData.js
+// ===================================
+// 📁 frontend/src/features/matrix/hooks/useMatrixData.js - VERSION REACT QUERY
+// ===================================
 
-import { useState, useEffect, useCallback } from 'react';
+import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { matrixService } from '@/api/services/matrixService';
+import { toast } from 'react-toastify';
 
 /**
- * Hook pour gérer les données de la vue matricielle
+ * Hook pour gérer les données de la vue matricielle - VERSION REACT QUERY STABLE
+ * Similaire à useDashboardData
  */
-export const useMatrixData = (identifier = null) => {
-    const [data, setData] = useState({
-        products: [],
-        columnRefs: [],
-        correspondences: []
+export function useMatrixData(filters) {
+    // ✅ Vérifier si on a des filtres valides
+    const hasActiveFilters = useMemo(() => {
+        if (!filters || typeof filters !== 'object') return false;
+
+        const { cod_pro, ref_crn, ref_ext } = filters;
+        return !!(cod_pro || ref_crn || ref_ext);
+    }, [filters]);
+
+    // ✅ Stabiliser les filtres pour React Query
+    const stableFilters = useMemo(() => {
+        if (!hasActiveFilters) return null;
+
+        return {
+            cod_pro: filters.cod_pro || null,
+            ref_crn: filters.ref_crn || null,
+            ref_ext: filters.ref_ext || null,
+            grouping_crn: filters.grouping_crn || 0,
+            qualite: filters.qualite || null
+        };
+    }, [
+        filters?.cod_pro,
+        filters?.ref_crn,
+        filters?.ref_ext,
+        filters?.grouping_crn,
+        filters?.qualite,
+        hasActiveFilters
+    ]);
+
+    // ✅ React Query - Stable comme Dashboard
+    const query = useQuery({
+        queryKey: ['matrix', 'view', stableFilters],
+        queryFn: () => matrixService.getMatrixView(stableFilters),
+        enabled: hasActiveFilters && !!stableFilters,
+        staleTime: 5 * 60 * 1000, // 5 minutes
+        refetchOnWindowFocus: false,
+        onSuccess: (data) => {
+            const count = data?.products?.length || 0;
+            if (count === 0) {
+                toast.info('Aucun produit trouvé pour cette matrice');
+            } else {
+                toast.success(`Matrice chargée: ${count} produits`);
+            }
+        },
+        onError: (error) => {
+            console.error('Erreur matrice:', error);
+            toast.error('Impossible de charger la matrice');
+        },
     });
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
 
-    /**
-     * Charge les données de la matrice
-     */
-    const loadMatrixData = useCallback(async (payload = identifier) => {
-        if (!payload || Object.keys(payload).length === 0) {
-            return;
-        }
+    // ✅ Transformation des données
+    const transformedData = useMemo(() => {
+        if (!query.data) return null;
 
-        setLoading(true);
-        setError(null);
+        const { products, column_refs, correspondences } = query.data;
 
-        try {
-            const response = await matrixService.getMatrixView(payload);
-            setData({
-                products: response.products || [],
-                columnRefs: response.column_refs || [],
-                correspondences: response.correspondences || []
-            });
-        } catch (err) {
-            console.error('❌ Erreur chargement matrice:', err);
-            setError(err.message || 'Erreur lors du chargement de la matrice');
-            setData({ products: [], columnRefs: [], correspondences: [] });
-        } finally {
-            setLoading(false);
-        }
-    }, [identifier]);
+        // Statistiques calculées
+        const stats = {
+            totalProducts: products?.length || 0,
+            totalColumns: column_refs?.length || 0,
+            totalCorrespondences: correspondences?.length || 0,
+            matchRate: (products?.length && column_refs?.length)
+                ? ((correspondences?.length || 0) / (products.length * column_refs.length)) * 100
+                : 0
+        };
 
-    /**
-     * Charge les données avec filtres
-     */
-    const loadMatrixDataWithFilters = useCallback(async (payload, filters) => {
-        if (!payload || Object.keys(payload).length === 0) {
-            return;
-        }
+        return {
+            products: products || [],
+            columnRefs: column_refs || [],
+            correspondences: correspondences || [],
+            stats
+        };
+    }, [query.data]);
 
-        setLoading(true);
-        setError(null);
-
-        try {
-            const response = await matrixService.getMatrixViewFiltered(payload, filters);
-            setData({
-                products: response.products || [],
-                columnRefs: response.column_refs || [],
-                correspondences: response.correspondences || []
-            });
-        } catch (err) {
-            console.error('❌ Erreur chargement matrice filtrée:', err);
-            setError(err.message || 'Erreur lors du chargement de la matrice');
-            setData({ products: [], columnRefs: [], correspondences: [] });
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
-    /**
-     * Recharge les données
-     */
-    const refresh = useCallback(() => {
-        if (identifier) {
-            loadMatrixData(identifier);
-        }
-    }, [identifier, loadMatrixData]);
-
-    /**
-     * Reset des données
-     */
-    const reset = useCallback(() => {
-        setData({ products: [], columnRefs: [], correspondences: [] });
-        setError(null);
-    }, []);
-
-    // Chargement initial
-    useEffect(() => {
-        if (identifier && Object.keys(identifier).length > 0) {
-            loadMatrixData(identifier);
-        }
-    }, [identifier, loadMatrixData]);
-
+    // ✅ Retour stable
     return {
-        data,
-        loading,
-        error,
-        loadMatrixData,
-        loadMatrixDataWithFilters,
-        refresh,
-        reset,
-        // Données calculées utiles
-        hasData: data.products.length > 0,
-        productsCount: data.products.length,
-        columnsCount: data.columnRefs.length,
-        correspondencesCount: data.correspondences.length
+        matrixData: transformedData,
+        isLoading: query.isLoading,
+        isError: query.isError,
+        error: query.error,
+        refreshData: query.refetch,
+        isFetching: query.isFetching,
+        // Valeurs calculées pour compatibilité
+        hasData: !!transformedData && transformedData.products.length > 0,
+        productsCount: transformedData?.products?.length || 0,
+        columnsCount: transformedData?.columnRefs?.length || 0,
+        correspondencesCount: transformedData?.correspondences?.length || 0
     };
-};
+}

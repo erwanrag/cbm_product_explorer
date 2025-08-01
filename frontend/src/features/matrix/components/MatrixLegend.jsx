@@ -1,200 +1,167 @@
-// frontend/src/features/matrix/components/MatrixLegend.jsx
+// ===================================
+// 📁 frontend/src/features/matrix/components/MatrixLegend.jsx - VERSION COMPACTE
+// ===================================
 
 import React from 'react';
 import {
     Paper,
     Typography,
-    Grid,
     Box,
     Chip,
-    Divider
+    Stack
 } from '@mui/material';
-import {
-    CheckCircle,
-    Cancel,
-    Info
-} from '@mui/icons-material';
 
 /**
- * Légende pour la vue matricielle
+ * Légende compacte pour la vue matricielle
  */
-export default function MatrixLegend({ sx = {} }) {
+export default function MatrixLegend({ compact = false, sx = {} }) {
     const columnLegendItems = [
         {
             color: '#bbdefb',
-            label: 'CRN uniquement',
-            description: 'Référence présente uniquement dans les données constructeur'
+            label: 'CRN seul',
+            description: 'Référence constructeur uniquement'
         },
         {
             color: '#c8e6c9',
             label: 'CRN + EXT',
-            description: 'Référence présente dans constructeur ET externe'
+            description: 'Constructeur + Externe'
         },
         {
             color: '#ffcc80',
-            label: 'EXT uniquement',
-            description: 'Référence présente uniquement dans les données externes/GRC'
+            label: 'EXT seul',
+            description: 'Référence externe uniquement'
         }
     ];
 
     const cellLegendItems = [
-        {
-            color: '#a5d6a7',
-            icon: <CheckCircle sx={{ fontSize: 16 }} />,
-            label: 'Match CRN',
-            description: 'Correspondance via référence constructeur'
-        },
-        {
-            color: '#90caf9',
-            icon: <CheckCircle sx={{ fontSize: 16 }} />,
-            label: 'Match EXT',
-            description: 'Correspondance via référence externe'
-        },
-        {
-            color: '#d1c4e9',
-            icon: <CheckCircle sx={{ fontSize: 16 }} />,
-            label: 'Match Double',
-            description: 'Correspondance CRN + EXT'
-        },
-        {
-            color: '#ffcdd2',
-            icon: <Cancel sx={{ fontSize: 16 }} />,
-            label: 'Pas de match',
-            description: 'Aucune correspondance trouvée'
-        }
+        { color: '#a5d6a7', label: 'Match CRN' },
+        { color: '#90caf9', label: 'Match EXT' },
+        { color: '#d1c4e9', label: 'Match Double' },
+        { color: '#ffcdd2', label: 'Pas de match' }
     ];
 
+    if (compact) {
+        return (
+            <Paper
+                elevation={0}
+                sx={{
+                    p: 1.5,
+                    bgcolor: '#fafafa',
+                    border: '1px solid #e0e0e0',
+                    borderRadius: 1,
+                    ...sx
+                }}
+            >
+                <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                        Colonnes:
+                    </Typography>
+                    {columnLegendItems.map((item, index) => (
+                        <Chip
+                            key={index}
+                            label={item.label}
+                            size="small"
+                            sx={{
+                                bgcolor: item.color,
+                                color: '#000',
+                                fontWeight: 500,
+                                fontSize: '0.75rem',
+                                height: 24
+                            }}
+                        />
+                    ))}
+
+                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500, ml: 2 }}>
+                        Cellules:
+                    </Typography>
+                    {cellLegendItems.map((item, index) => (
+                        <Chip
+                            key={index}
+                            label={item.label}
+                            size="small"
+                            sx={{
+                                bgcolor: item.color,
+                                color: '#000',
+                                fontWeight: 500,
+                                fontSize: '0.75rem',
+                                height: 24
+                            }}
+                        />
+                    ))}
+                </Stack>
+            </Paper>
+        );
+    }
+
+    // Version complète (pour les cas où compact=false)
     return (
         <Paper
-            elevation={0}
+            elevation={1}
             sx={{
-                p: 2,
+                p: 3,
                 bgcolor: '#fafafa',
                 border: '1px solid #e0e0e0',
                 ...sx
             }}
         >
-            <Typography
-                variant="h6"
-                sx={{
-                    fontSize: '0.95rem',
-                    fontWeight: 600,
-                    mb: 2,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1
-                }}
-            >
-                <Info fontSize="small" />
-                Légende de la Matrice
+            <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
+                🎨 Légende de la Matrice
             </Typography>
 
-            <Grid container spacing={3}>
-                {/* Légende des en-têtes de colonnes */}
-                <Grid item xs={12} md={6}>
-                    <Typography
-                        variant="subtitle2"
-                        sx={{ fontWeight: 600, mb: 1 }}
-                    >
-                        🏷️ En-têtes de Colonnes (Références)
+            <Stack spacing={3}>
+                {/* Légende des colonnes */}
+                <Box>
+                    <Typography variant="subtitle2" gutterBottom color="primary">
+                        Couleurs des colonnes (références)
                     </Typography>
-                    <Grid container spacing={1}>
+                    <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
                         {columnLegendItems.map((item, index) => (
-                            <Grid item xs={12} key={index}>
+                            <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                 <Box
                                     sx={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 1,
-                                        py: 0.5
+                                        width: 16,
+                                        height: 16,
+                                        bgcolor: item.color,
+                                        borderRadius: 0.5,
+                                        border: '1px solid #ccc'
                                     }}
-                                >
-                                    <Chip
-                                        label="REF"
-                                        size="small"
-                                        sx={{
-                                            bgcolor: item.color,
-                                            color: '#000',
-                                            fontWeight: 600,
-                                            minWidth: 50,
-                                            fontSize: '0.7rem'
-                                        }}
-                                    />
-                                    <Box>
-                                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                            {item.label}
-                                        </Typography>
-                                        <Typography
-                                            variant="caption"
-                                            color="text.secondary"
-                                            sx={{ fontSize: '0.75rem' }}
-                                        >
-                                            {item.description}
-                                        </Typography>
-                                    </Box>
-                                </Box>
-                            </Grid>
+                                />
+                                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                    {item.label}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                    - {item.description}
+                                </Typography>
+                            </Box>
                         ))}
-                    </Grid>
-                </Grid>
+                    </Stack>
+                </Box>
 
-                <Grid item xs={12} md={6}>
-                    <Typography
-                        variant="subtitle2"
-                        sx={{ fontWeight: 600, mb: 1 }}
-                    >
-                        ✅ Cellules de Correspondance
+                {/* Légende des cellules */}
+                <Box>
+                    <Typography variant="subtitle2" gutterBottom color="primary">
+                        Couleurs des cellules (correspondances)
                     </Typography>
-                    <Grid container spacing={1}>
+                    <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
                         {cellLegendItems.map((item, index) => (
-                            <Grid item xs={12} key={index}>
+                            <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                 <Box
                                     sx={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 1,
-                                        py: 0.5
+                                        width: 16,
+                                        height: 16,
+                                        bgcolor: item.color,
+                                        borderRadius: 0.5,
+                                        border: '1px solid #ccc'
                                     }}
-                                >
-                                    <Box
-                                        sx={{
-                                            bgcolor: item.color,
-                                            borderRadius: 1,
-                                            p: 0.5,
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            minWidth: 32,
-                                            height: 24
-                                        }}
-                                    >
-                                        {item.icon}
-                                    </Box>
-                                    <Box>
-                                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                            {item.label}
-                                        </Typography>
-                                        <Typography
-                                            variant="caption"
-                                            color="text.secondary"
-                                            sx={{ fontSize: '0.75rem' }}
-                                        >
-                                            {item.description}
-                                        </Typography>
-                                    </Box>
-                                </Box>
-                            </Grid>
+                                />
+                                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                    {item.label}
+                                </Typography>
+                            </Box>
                         ))}
-                    </Grid>
-                </Grid>
-            </Grid>
-
-            <Divider sx={{ my: 2 }} />
-
-            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-                💡 <strong>Utilisation :</strong> Cliquez sur une cellule verte/bleue/violette pour voir les détails de correspondance.
-                Les colonnes sont triées alphabétiquement et colorées selon leur origine (CRN, EXT, ou les deux).
-            </Typography>
+                    </Stack>
+                </Box>
+            </Stack>
         </Paper>
     );
 }
