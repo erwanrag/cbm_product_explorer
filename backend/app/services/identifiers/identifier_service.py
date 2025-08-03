@@ -15,8 +15,9 @@ async def get_codpro_list_from_identifier(payload: ProductIdentifierRequest, db:
     en utilisant uniquement la table enrichie [Pricing].[Grouping_crn_table].
     Priorité :
     1. ref_crn → SELECT WHERE ref_crn
-    2. refint / ref_ext / cod_pro → résolution cod_pro
-       → puis grouping_crn si grouping_crn = 1
+    2. Si grouping_crn == 1 :
+        - résolution cod_pro (via cod_pro, refint, ref_ext)
+        - puis SELECT WHERE grouping_crn
     3. fallback : cod_pro seul
     """
 
@@ -45,7 +46,7 @@ async def get_codpro_list_from_identifier(payload: ProductIdentifierRequest, db:
             )
 
         else:
-            # 2️⃣ Résolution cod_pro via refint / ref_ext
+            # 2️⃣ Résolution cod_pro via cod_pro, refint, ref_ext
             cod_pro = payload.cod_pro
 
             if not cod_pro and payload.refint:
@@ -86,7 +87,7 @@ async def get_codpro_list_from_identifier(payload: ProductIdentifierRequest, db:
                     logger.warning(f"⚠️ Aucun grouping_crn trouvé pour cod_pro={cod_pro}")
                     resolved = [cod_pro]
             else:
-                # 4️⃣ fallback : retour simple
+                # 4️⃣ fallback simple
                 resolved = [cod_pro]
 
     except SQLAlchemyError as e:

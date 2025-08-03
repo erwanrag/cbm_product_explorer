@@ -12,22 +12,47 @@ export const OptimizationService = {
      */
     async getOptimization(filters) {
         try {
-            // Construction du payload selon le schema ProductIdentifierRequest
-            const payload = {
-                cod_pro_list: filters.cod_pro ? [filters.cod_pro] : null,
-                refint_list: null,
-                ref_ext_list: filters.ref_ext ? [filters.ref_ext] : null,
-                famille_list: filters.famille_list || null,
-                s_famille_list: filters.s_famille_list || null,
-                fournisseur_list: filters.fournisseur_list || null,
-                qualite_list: filters.qualite ? [filters.qualite] : null,
-                grouping_crn: filters.grouping_crn || 0
-            };
+            // ✅ Construction du payload IDENTIQUE à ton curl qui marche
+            const payload = {};
+
+            // ✅ Envoyer cod_pro simple (pas cod_pro_list)
+            if (filters.cod_pro) {
+                payload.cod_pro = parseInt(filters.cod_pro, 10);
+            }
+
+            // ✅ Autres champs optionnels
+            if (filters.ref_crn) {
+                payload.ref_crn = filters.ref_crn;
+            }
+            if (filters.ref_ext) {
+                payload.ref_ext = filters.ref_ext;
+            }
+            if (filters.qualite) {
+                payload.qualite = filters.qualite;
+            }
+
+            // ✅ grouping_crn (toujours inclure)
+            payload.grouping_crn = filters.grouping_crn ? parseInt(filters.grouping_crn, 10) : 0;
+
+            // ✅ IMPORTANT : Ajouter single_cod_pro comme dans ton curl
+            payload.single_cod_pro = false;
+
+            console.log('📤 Payload envoyé à l\'API optimisation:', payload);
 
             const response = await apiClient.post('/optimisation/optimisation', payload);
+
+            console.log('📥 Réponse API optimisation:', response.data);
+
             return response.data;
         } catch (error) {
-            console.error('Erreur API getOptimization:', error);
+            console.error('❌ Erreur API getOptimization:', error);
+            if (error.response) {
+                console.error('📄 Détails erreur:', {
+                    status: error.response.status,
+                    data: error.response.data,
+                    headers: error.response.headers
+                });
+            }
             throw error;
         }
     },
@@ -40,12 +65,12 @@ export const OptimizationService = {
     async simulateOptimization(optimization) {
         try {
             const payload = {
-                grouping_crn: optimization.grouping_crn,
+                grouping_crn: parseInt(optimization.grouping_crn, 10),
                 qualite: optimization.qualite,
                 refs_to_delete: [
                     ...(optimization.refs_to_delete_low_sales || []),
                     ...(optimization.refs_to_delete_no_sales || [])
-                ].map(ref => ref.cod_pro),
+                ].map(ref => parseInt(ref.cod_pro, 10)),
                 simulation_months: 6
             };
 
@@ -66,15 +91,15 @@ export const OptimizationService = {
         try {
             const payload = {
                 optimizations: optimizations.map(opt => ({
-                    grouping_crn: opt.grouping_crn,
+                    grouping_crn: parseInt(opt.grouping_crn, 10),
                     qualite: opt.qualite,
                     refs_to_delete: [
                         ...(opt.refs_to_delete_low_sales || []),
                         ...(opt.refs_to_delete_no_sales || [])
-                    ].map(ref => ref.cod_pro),
-                    refs_to_keep: (opt.refs_to_keep || []).map(ref => ref.cod_pro),
-                    expected_gain: opt.gain_potentiel,
-                    expected_gain_6m: opt.gain_potentiel_6m
+                    ].map(ref => parseInt(ref.cod_pro, 10)),
+                    refs_to_keep: (opt.refs_to_keep || []).map(ref => parseInt(ref.cod_pro, 10)),
+                    expected_gain: parseFloat(opt.gain_potentiel),
+                    expected_gain_6m: parseFloat(opt.gain_potentiel_6m)
                 }))
             };
 

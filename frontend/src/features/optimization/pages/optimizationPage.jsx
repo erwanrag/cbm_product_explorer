@@ -19,7 +19,7 @@ import OptimizationSimulationModal from '@/features/optimization/components/Opti
 export default function OptimizationPage() {
     // ✅ 1. TOUS LES HOOKS EN PREMIER - ORDRE FIXE
     const { filters } = useLayout();
-    const { optimizationData, isLoading, isError } = useOptimizationData(filters);
+    const { data: optimizationData, isLoading, isError, error } = useOptimizationData(filters);
 
     // ✅ 2. TOUS LES useState ENSEMBLE
     const [selectedOptimization, setSelectedOptimization] = useState(null);
@@ -112,7 +112,14 @@ export default function OptimizationPage() {
         if (isError) {
             return (
                 <Alert severity="error" sx={{ mb: 3 }}>
-                    Erreur lors du chargement des données d'optimisation. Veuillez réessayer.
+                    <Typography variant="body2">
+                        Erreur lors du chargement des données d'optimisation. Veuillez réessayer.
+                    </Typography>
+                    {error && (
+                        <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>
+                            Erreur: {error.message}
+                        </Typography>
+                    )}
                 </Alert>
             );
         }
@@ -120,7 +127,9 @@ export default function OptimizationPage() {
         if (!hasData) {
             return (
                 <Alert severity="info" sx={{ mb: 3 }}>
-                    Aucune donnée d'optimisation disponible pour les filtres sélectionnés.
+                    <Typography variant="body2">
+                        Aucune donnée d'optimisation disponible pour les filtres sélectionnés.
+                    </Typography>
                 </Alert>
             );
         }

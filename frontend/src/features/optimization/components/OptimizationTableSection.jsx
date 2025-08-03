@@ -326,7 +326,7 @@ const OptimizationTableSection = ({ data, onOptimizationSelect, onSimulationOpen
                                                             {/* Historique */}
                                                             <Box>
                                                                 <Typography variant="body2" fontWeight={500} gutterBottom>
-                                                                    Historique 6 derniers mois
+                                                                    Historique 3 derniers mois
                                                                 </Typography>
                                                                 {optimization.historique_6m?.slice(-3).map((hist, idx) => (
                                                                     <Box key={idx} sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5 }}>
@@ -341,7 +341,7 @@ const OptimizationTableSection = ({ data, onOptimizationSelect, onSimulationOpen
                                                             {/* Projection */}
                                                             <Box>
                                                                 <Typography variant="body2" fontWeight={500} gutterBottom>
-                                                                    Projection 6 prochains mois
+                                                                    Projection 3 prochains mois
                                                                 </Typography>
                                                                 {optimization.projection_6m?.mois?.slice(0, 3).map((proj, idx) => (
                                                                     <Box key={idx} sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5 }}>

@@ -5,27 +5,23 @@
 import React, { useState, useEffect } from 'react';
 import {
     Dialog, DialogTitle, DialogContent, DialogActions,
-    Button, Box, Typography, Stepper, Step, StepLabel,
-    Card, CardContent, Grid, Chip, Table, TableBody,
-    TableCell, TableContainer, TableHead, TableRow,
-    Paper, Alert, CircularProgress, Divider, Stack
+    Box, Typography, Button, Grid, Card, CardContent,
+    Stepper, Step, StepLabel, Alert, CircularProgress,
+    Table, TableBody, TableCell, TableContainer,
+    TableHead, TableRow, Chip, Divider, Stack
 } from '@mui/material';
 import {
-    PlayArrow, CheckCircle, Cancel, Timeline,
-    TrendingUp, Warning, Info
+    PlayArrow, CheckCircle, Warning, Cancel,
+    TrendingUp, TrendingDown, Assessment
 } from '@mui/icons-material';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { useOptimizationSimulation, useApplyOptimizations } from '@/features/optimization/hooks/useOptimizationData';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useOptimizationSimulation } from '@/features/optimization/hooks/useOptimizationData';
 
 const OptimizationSimulationModal = ({ open, onClose, data }) => {
     const [activeStep, setActiveStep] = useState(0);
     const [simulationResults, setSimulationResults] = useState(null);
-
-    // Hooks pour les mutations
     const simulationMutation = useOptimizationSimulation();
-    const applyMutation = useApplyOptimizations();
-
-    const steps = ['Configuration', 'Simulation', 'Résultats', 'Application'];
 
     // Formatage des devises
     const formatCurrency = (value) => {
@@ -38,64 +34,87 @@ const OptimizationSimulationModal = ({ open, onClose, data }) => {
         }).format(value);
     };
 
-    // Reset au changement de données
+    // Formatage des pourcentages
+    const formatPercentage = (value) => {
+        if (value === null || value === undefined) return '0%';
+        return `${(value * 100).toFixed(2)}%`;
+    };
+
+    // Steps de la simulation
+    const steps = [
+        { label: 'Préparation', description: 'Vérification des données' },
+        { label: 'Simulation', description: 'Calcul des impacts' },
+        { label: 'Résultats', description: 'Analyse des gains' }
+    ];
+
+    // Reset quand le modal s'ouvre
     useEffect(() => {
-        if (open && data) {
+        if (open) {
             setActiveStep(0);
             setSimulationResults(null);
         }
-    }, [open, data]);
+    }, [open]);
 
-    // Calculs pour les données sélectionnées
-    const optimizationsToSimulate = Array.isArray(data) ? data : (data ? [data] : []);
-    const totalGainImmediat = optimizationsToSimulate.reduce((sum, opt) => sum + (opt.gain_potentiel || 0), 0);
-    const totalGain6m = optimizationsToSimulate.reduce((sum, opt) => sum + (opt.gain_potentiel_6m || 0), 0);
-    const totalRefsToDelete = optimizationsToSimulate.reduce((sum, opt) =>
-        sum + (opt.refs_to_delete_low_sales?.length || 0) + (opt.refs_to_delete_no_sales?.length || 0), 0
-    );
+    // Calcul des statistiques agrégées
+    const aggregatedStats = React.useMemo(() => {
+        if (!data || !Array.isArray(data)) return null;
+
+        return data.reduce((acc, optimization) => {
+            acc.totalGain += optimization.gain_potentiel || 0;
+            acc.totalGain6m += optimization.gain_potentiel_6m || 0;
+            acc.totalRefs += optimization.refs_total || 0;
+            acc.refsToDelete += (optimization.refs_to_delete_low_sales?.length || 0) +
+                (optimization.refs_to_delete_no_sales?.length || 0);
+            acc.refsToKeep += optimization.refs_to_keep?.length || 0;
+            acc.groupes += 1;
+            return acc;
+        }, {
+            totalGain: 0,
+            totalGain6m: 0,
+            totalRefs: 0,
+            refsToDelete: 0,
+            refsToKeep: 0,
+            groupes: 0
+        });
+    }, [data]);
 
     // Lancer la simulation
     const handleRunSimulation = async () => {
-        setActiveStep(1);
-
         try {
-            const results = await Promise.all(
-                optimizationsToSimulate.map(opt =>
-                    simulationMutation.mutateAsync(opt)
-                )
+            setActiveStep(1);
+
+            // Simuler le processus avec délais réalistes
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // Préparer les données pour chaque optimisation
+            const simulationPromises = data.map(optimization =>
+                simulationMutation.mutateAsync(optimization)
             );
+
+            const results = await Promise.all(simulationPromises);
 
             setSimulationResults(results);
             setActiveStep(2);
+
         } catch (error) {
             console.error('Erreur simulation:', error);
-            setActiveStep(0);
+            // Rester à l'étape 1 pour afficher l'erreur
         }
     };
 
-    // Appliquer les optimisations
-    const handleApplyOptimizations = async () => {
-        setActiveStep(3);
+    // Données pour le graphique de comparaison
+    const comparisonData = React.useMemo(() => {
+        if (!data || !simulationResults) return [];
 
-        try {
-            await applyMutation.mutateAsync(optimizationsToSimulate);
-            onClose();
-        } catch (error) {
-            console.error('Erreur application:', error);
-            setActiveStep(2);
-        }
-    };
+        return data.map((optimization, index) => ({
+            groupe: `${optimization.grouping_crn}-${optimization.qualite}`,
+            gainActuel: optimization.gain_potentiel || 0,
+            gainSimule: simulationResults[index]?.projected_gain || 0,
+            difference: (simulationResults[index]?.projected_gain || 0) - (optimization.gain_potentiel || 0)
+        }));
+    }, [data, simulationResults]);
 
-    // Données pour les graphiques de simulation
-    const simulationChartData = simulationResults ?
-        simulationResults[0]?.projection_data?.map((item, index) => ({
-            mois: `M${index + 1}`,
-            avant: item.marge_avant || 0,
-            apres: item.marge_apres || 0,
-            gain: (item.marge_apres || 0) - (item.marge_avant || 0)
-        })) || [] : [];
-
-    if (!open || !data) return null;
+    if (!open) return null;
 
     return (
         <Dialog
@@ -104,347 +123,342 @@ const OptimizationSimulationModal = ({ open, onClose, data }) => {
             maxWidth="lg"
             fullWidth
             PaperProps={{
-                sx: { height: '90vh' }
+                sx: { minHeight: '70vh' }
             }}
         >
             <DialogTitle>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Typography variant="h5" fontWeight={600}>
-                        Simulation d'Optimisation
-                    </Typography>
-                    <Chip
-                        label={`${optimizationsToSimulate.length} groupe${optimizationsToSimulate.length > 1 ? 's' : ''}`}
-                        color="primary"
-                        variant="outlined"
-                    />
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Assessment color="primary" />
+                    <Box>
+                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                            Simulation d'Optimisation
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            {data?.length || 0} groupe(s) sélectionné(s) pour simulation
+                        </Typography>
+                    </Box>
                 </Box>
             </DialogTitle>
 
-            <DialogContent sx={{ p: 0 }}>
+            <DialogContent sx={{ p: 3 }}>
                 {/* Stepper */}
-                <Box sx={{ px: 3, py: 2, borderBottom: 1, borderColor: 'divider' }}>
+                <Box sx={{ mb: 4 }}>
                     <Stepper activeStep={activeStep} alternativeLabel>
-                        {steps.map((label, index) => (
-                            <Step key={label}>
-                                <StepLabel
-                                    error={
-                                        (index === 1 && simulationMutation.isError) ||
-                                        (index === 3 && applyMutation.isError)
-                                    }
-                                >
-                                    {label}
+                        {steps.map((step, index) => (
+                            <Step key={index}>
+                                <StepLabel>
+                                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                        {step.label}
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                        {step.description}
+                                    </Typography>
                                 </StepLabel>
                             </Step>
                         ))}
                     </Stepper>
                 </Box>
 
-                <Box sx={{ p: 3, flex: 1, overflow: 'auto' }}>
-                    {/* Étape 0: Configuration */}
-                    {activeStep === 0 && (
-                        <Stack spacing={3}>
-                            <Alert severity="info" icon={<Info />}>
-                                Vérifiez les paramètres de simulation avant de continuer
-                            </Alert>
+                {/* Étape 0: Préparation */}
+                {activeStep === 0 && (
+                    <AnimatePresence>
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                        >
+                            <Grid container spacing={3}>
+                                {/* Résumé des données */}
+                                <Grid item xs={12}>
+                                    <Alert severity="info" sx={{ mb: 3 }}>
+                                        <Typography variant="body2">
+                                            Vous êtes sur le point de simuler l'impact de {data?.length || 0} optimisation(s).
+                                            Cette simulation va calculer les gains potentiels sans appliquer les modifications.
+                                        </Typography>
+                                    </Alert>
+                                </Grid>
 
-                            {/* Résumé des optimisations */}
-                            <Card elevation={1}>
-                                <CardContent>
-                                    <Typography variant="h6" gutterBottom>
-                                        Résumé des optimisations
-                                    </Typography>
-                                    <Grid container spacing={3}>
-                                        <Grid item xs={12} md={3}>
-                                            <Box sx={{ textAlign: 'center' }}>
-                                                <Typography variant="h4" color="primary.main" fontWeight={600}>
-                                                    {optimizationsToSimulate.length}
+                                {/* Statistiques agrégées */}
+                                {aggregatedStats && (
+                                    <Grid item xs={12}>
+                                        <Card elevation={2}>
+                                            <CardContent>
+                                                <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
+                                                    Vue d'ensemble de la Simulation
                                                 </Typography>
-                                                <Typography variant="body2" color="text.secondary">
-                                                    Groupes sélectionnés
-                                                </Typography>
-                                            </Box>
-                                        </Grid>
-                                        <Grid item xs={12} md={3}>
-                                            <Box sx={{ textAlign: 'center' }}>
-                                                <Typography variant="h4" color="success.main" fontWeight={600}>
-                                                    {formatCurrency(totalGainImmediat)}
-                                                </Typography>
-                                                <Typography variant="body2" color="text.secondary">
-                                                    Gain immédiat estimé
-                                                </Typography>
-                                            </Box>
-                                        </Grid>
-                                        <Grid item xs={12} md={3}>
-                                            <Box sx={{ textAlign: 'center' }}>
-                                                <Typography variant="h4" color="info.main" fontWeight={600}>
-                                                    {formatCurrency(totalGain6m)}
-                                                </Typography>
-                                                <Typography variant="body2" color="text.secondary">
-                                                    Gain 6 mois estimé
-                                                </Typography>
-                                            </Box>
-                                        </Grid>
-                                        <Grid item xs={12} md={3}>
-                                            <Box sx={{ textAlign: 'center' }}>
-                                                <Typography variant="h4" color="warning.main" fontWeight={600}>
-                                                    {totalRefsToDelete}
-                                                </Typography>
-                                                <Typography variant="body2" color="text.secondary">
-                                                    Références à supprimer
-                                                </Typography>
-                                            </Box>
-                                        </Grid>
-                                    </Grid>
-                                </CardContent>
-                            </Card>
-
-                            {/* Détail par groupe */}
-                            <Card elevation={1}>
-                                <CardContent>
-                                    <Typography variant="h6" gutterBottom>
-                                        Détail par groupe
-                                    </Typography>
-                                    <TableContainer>
-                                        <Table size="small">
-                                            <TableHead>
-                                                <TableRow>
-                                                    <TableCell>Groupe</TableCell>
-                                                    <TableCell>Qualité</TableCell>
-                                                    <TableCell align="right">Gain Immédiat</TableCell>
-                                                    <TableCell align="right">Refs à Suppr.</TableCell>
-                                                    <TableCell align="right">Croissance</TableCell>
-                                                </TableRow>
-                                            </TableHead>
-                                            <TableBody>
-                                                {optimizationsToSimulate.map((opt, index) => (
-                                                    <TableRow key={index}>
-                                                        <TableCell>{opt.grouping_crn}</TableCell>
-                                                        <TableCell>
-                                                            <Chip
-                                                                size="small"
-                                                                label={opt.qualite}
-                                                                color={
-                                                                    opt.qualite === 'OEM' ? 'success' :
-                                                                        opt.qualite === 'PMQ' ? 'primary' : 'warning'
-                                                                }
-                                                                variant="outlined"
-                                                            />
-                                                        </TableCell>
-                                                        <TableCell align="right">
-                                                            <Typography color="success.main" fontWeight={500}>
-                                                                {formatCurrency(opt.gain_potentiel)}
+                                                <Grid container spacing={3} sx={{ mt: 1 }}>
+                                                    <Grid item xs={6} md={3}>
+                                                        <Box sx={{ textAlign: 'center' }}>
+                                                            <Typography variant="h4" sx={{ fontWeight: 700, color: 'primary.main' }}>
+                                                                {aggregatedStats.groupes}
                                                             </Typography>
-                                                        </TableCell>
-                                                        <TableCell align="right">
-                                                            {(opt.refs_to_delete_low_sales?.length || 0) +
-                                                                (opt.refs_to_delete_no_sales?.length || 0)}
-                                                        </TableCell>
-                                                        <TableCell align="right">
-                                                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-                                                                {opt.taux_croissance > 0 ? (
-                                                                    <TrendingUp fontSize="small" color="success" />
-                                                                ) : (
-                                                                    <Warning fontSize="small" color="warning" />
-                                                                )}
-                                                                <Typography
-                                                                    variant="body2"
-                                                                    sx={{ ml: 0.5 }}
-                                                                    color={opt.taux_croissance > 0 ? 'success.main' : 'warning.main'}
-                                                                >
-                                                                    {((opt.taux_croissance || 0) * 100).toFixed(1)}%
-                                                                </Typography>
-                                                            </Box>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))}
-                                            </TableBody>
-                                        </Table>
-                                    </TableContainer>
-                                </CardContent>
-                            </Card>
-                        </Stack>
-                    )}
+                                                            <Typography variant="body2" color="text.secondary">
+                                                                Groupes
+                                                            </Typography>
+                                                        </Box>
+                                                    </Grid>
+                                                    <Grid item xs={6} md={3}>
+                                                        <Box sx={{ textAlign: 'center' }}>
+                                                            <Typography variant="h4" sx={{ fontWeight: 700, color: 'warning.main' }}>
+                                                                {aggregatedStats.refsToDelete}
+                                                            </Typography>
+                                                            <Typography variant="body2" color="text.secondary">
+                                                                Refs à supprimer
+                                                            </Typography>
+                                                        </Box>
+                                                    </Grid>
+                                                    <Grid item xs={6} md={3}>
+                                                        <Box sx={{ textAlign: 'center' }}>
+                                                            <Typography variant="h4" sx={{ fontWeight: 700, color: 'success.main' }}>
+                                                                {formatCurrency(aggregatedStats.totalGain)}
+                                                            </Typography>
+                                                            <Typography variant="body2" color="text.secondary">
+                                                                Gain Immédiat
+                                                            </Typography>
+                                                        </Box>
+                                                    </Grid>
+                                                    <Grid item xs={6} md={3}>
+                                                        <Box sx={{ textAlign: 'center' }}>
+                                                            <Typography variant="h4" sx={{ fontWeight: 700, color: 'info.main' }}>
+                                                                {formatCurrency(aggregatedStats.totalGain6m)}
+                                                            </Typography>
+                                                            <Typography variant="body2" color="text.secondary">
+                                                                Gain 6 Mois
+                                                            </Typography>
+                                                        </Box>
+                                                    </Grid>
+                                                </Grid>
+                                            </CardContent>
+                                        </Card>
+                                    </Grid>
+                                )}
 
-                    {/* Étape 1: Simulation en cours */}
-                    {activeStep === 1 && (
-                        <Box sx={{ textAlign: 'center', py: 8 }}>
+                                {/* Détail des optimisations */}
+                                <Grid item xs={12}>
+                                    <Card elevation={2}>
+                                        <CardContent>
+                                            <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
+                                                Détail des Optimisations à Simuler
+                                            </Typography>
+                                            <TableContainer>
+                                                <Table>
+                                                    <TableHead>
+                                                        <TableRow>
+                                                            <TableCell>Groupe</TableCell>
+                                                            <TableCell>Qualité</TableCell>
+                                                            <TableCell align="right">Refs Total</TableCell>
+                                                            <TableCell align="right">À Supprimer</TableCell>
+                                                            <TableCell align="right">Gain Estimé</TableCell>
+                                                        </TableRow>
+                                                    </TableHead>
+                                                    <TableBody>
+                                                        {data?.map((optimization, index) => (
+                                                            <TableRow key={index}>
+                                                                <TableCell>{optimization.grouping_crn}</TableCell>
+                                                                <TableCell>
+                                                                    <Chip
+                                                                        size="small"
+                                                                        label={optimization.qualite}
+                                                                        color={
+                                                                            optimization.qualite === 'OEM' ? 'success' :
+                                                                                optimization.qualite === 'PMQ' ? 'primary' : 'warning'
+                                                                        }
+                                                                        variant="outlined"
+                                                                    />
+                                                                </TableCell>
+                                                                <TableCell align="right">{optimization.refs_total}</TableCell>
+                                                                <TableCell align="right">
+                                                                    {(optimization.refs_to_delete_low_sales?.length || 0) +
+                                                                        (optimization.refs_to_delete_no_sales?.length || 0)}
+                                                                </TableCell>
+                                                                <TableCell align="right" sx={{ fontWeight: 600, color: 'success.main' }}>
+                                                                    {formatCurrency(optimization.gain_potentiel)}
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        ))}
+                                                    </TableBody>
+                                                </Table>
+                                            </TableContainer>
+                                        </CardContent>
+                                    </Card>
+                                </Grid>
+                            </Grid>
+                        </motion.div>
+                    </AnimatePresence>
+                )}
+
+                {/* Étape 1: Simulation en cours */}
+                {activeStep === 1 && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                    >
+                        <Box sx={{ textAlign: 'center', py: 6 }}>
                             <CircularProgress size={60} sx={{ mb: 3 }} />
                             <Typography variant="h6" gutterBottom>
                                 Simulation en cours...
                             </Typography>
-                            <Typography color="text.secondary">
-                                Calcul des impacts et projections sur 6 mois
+                            <Typography variant="body2" color="text.secondary">
+                                Calcul des impacts et projections pour {data?.length || 0} groupe(s)
                             </Typography>
-                        </Box>
-                    )}
 
-                    {/* Étape 2: Résultats */}
-                    {activeStep === 2 && simulationResults && (
-                        <Stack spacing={3}>
-                            <Alert severity="success" icon={<CheckCircle />}>
-                                Simulation terminée avec succès !
-                            </Alert>
-
-                            {/* Résultats globaux */}
-                            <Card elevation={1}>
-                                <CardContent>
-                                    <Typography variant="h6" gutterBottom>
-                                        Résultats de la simulation
-                                    </Typography>
-                                    <Grid container spacing={3}>
-                                        <Grid item xs={12} md={4}>
-                                            <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'success.light', borderRadius: 2 }}>
-                                                <Typography variant="h4" color="success.dark" fontWeight={600}>
-                                                    {formatCurrency(simulationResults.reduce((sum, r) => sum + (r.gain_simule || 0), 0))}
-                                                </Typography>
-                                                <Typography variant="body2" color="success.dark">
-                                                    Gain simulé total
-                                                </Typography>
-                                            </Box>
-                                        </Grid>
-                                        <Grid item xs={12} md={4}>
-                                            <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'info.light', borderRadius: 2 }}>
-                                                <Typography variant="h4" color="info.dark" fontWeight={600}>
-                                                    {simulationResults.reduce((sum, r) => sum + (r.refs_impactees || 0), 0)}
-                                                </Typography>
-                                                <Typography variant="body2" color="info.dark">
-                                                    Références impactées
-                                                </Typography>
-                                            </Box>
-                                        </Grid>
-                                        <Grid item xs={12} md={4}>
-                                            <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'warning.light', borderRadius: 2 }}>
-                                                <Typography variant="h4" color="warning.dark" fontWeight={600}>
-                                                    {Math.round(simulationResults.reduce((sum, r) => sum + (r.impact_score || 0), 0))}%
-                                                </Typography>
-                                                <Typography variant="body2" color="warning.dark">
-                                                    Score d'impact
-                                                </Typography>
-                                            </Box>
-                                        </Grid>
-                                    </Grid>
-                                </CardContent>
-                            </Card>
-
-                            {/* Graphique de projection */}
-                            {simulationChartData.length > 0 && (
-                                <Card elevation={1}>
-                                    <CardContent>
-                                        <Typography variant="h6" gutterBottom>
-                                            Projection des gains sur 6 mois
-                                        </Typography>
-                                        <Box sx={{ height: 300 }}>
-                                            <ResponsiveContainer width="100%" height="100%">
-                                                <BarChart data={simulationChartData}>
-                                                    <CartesianGrid strokeDasharray="3 3" />
-                                                    <XAxis dataKey="mois" />
-                                                    <YAxis tickFormatter={formatCurrency} />
-                                                    <Tooltip formatter={(value) => [formatCurrency(value), '']} />
-                                                    <Bar dataKey="avant" name="Avant optimisation" fill="#ff9800" />
-                                                    <Bar dataKey="apres" name="Après optimisation" fill="#4caf50" />
-                                                </BarChart>
-                                            </ResponsiveContainer>
-                                        </Box>
-                                    </CardContent>
-                                </Card>
-                            )}
-
-                            {/* Alertes et recommandations */}
-                            <Stack spacing={2}>
-                                {simulationResults.some(r => r.risque_niveau > 2) && (
-                                    <Alert severity="warning" icon={<Warning />}>
-                                        <Typography variant="body2">
-                                            <strong>Attention :</strong> Certaines optimisations présentent un risque élevé.
-                                            Vérifiez les impacts avant d'appliquer.
-                                        </Typography>
-                                    </Alert>
-                                )}
-
-                                <Alert severity="info" icon={<Info />}>
+                            {simulationMutation.isError && (
+                                <Alert severity="error" sx={{ mt: 3, maxWidth: 500, mx: 'auto' }}>
                                     <Typography variant="body2">
-                                        La simulation est basée sur les données historiques et les projections.
-                                        Les résultats réels peuvent varier selon les conditions de marché.
+                                        Erreur lors de la simulation. Veuillez réessayer.
                                     </Typography>
                                 </Alert>
-                            </Stack>
-                        </Stack>
-                    )}
-
-                    {/* Étape 3: Application */}
-                    {activeStep === 3 && (
-                        <Box sx={{ textAlign: 'center', py: 8 }}>
-                            {applyMutation.isLoading ? (
-                                <>
-                                    <CircularProgress size={60} sx={{ mb: 3 }} />
-                                    <Typography variant="h6" gutterBottom>
-                                        Application des optimisations...
-                                    </Typography>
-                                    <Typography color="text.secondary">
-                                        Mise à jour du catalogue en cours
-                                    </Typography>
-                                </>
-                            ) : applyMutation.isSuccess ? (
-                                <>
-                                    <CheckCircle sx={{ fontSize: 60, color: 'success.main', mb: 3 }} />
-                                    <Typography variant="h6" gutterBottom color="success.main">
-                                        Optimisations appliquées avec succès !
-                                    </Typography>
-                                    <Typography color="text.secondary">
-                                        Le catalogue a été mis à jour selon les paramètres d'optimisation
-                                    </Typography>
-                                </>
-                            ) : (
-                                <>
-                                    <Cancel sx={{ fontSize: 60, color: 'error.main', mb: 3 }} />
-                                    <Typography variant="h6" gutterBottom color="error.main">
-                                        Erreur lors de l'application
-                                    </Typography>
-                                    <Typography color="text.secondary">
-                                        Une erreur s'est produite. Veuillez réessayer.
-                                    </Typography>
-                                </>
                             )}
                         </Box>
-                    )}
-                </Box>
+                    </motion.div>
+                )}
+
+                {/* Étape 2: Résultats */}
+                {activeStep === 2 && simulationResults && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                    >
+                        <Grid container spacing={3}>
+                            {/* Résumé des résultats */}
+                            <Grid item xs={12}>
+                                <Alert severity="success" sx={{ mb: 3 }}>
+                                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                        Simulation terminée avec succès !
+                                    </Typography>
+                                    <Typography variant="body2">
+                                        Les résultats ci-dessous montrent l'impact estimé de vos optimisations.
+                                    </Typography>
+                                </Alert>
+                            </Grid>
+
+                            {/* Graphique de comparaison */}
+                            <Grid item xs={12}>
+                                <Card elevation={2}>
+                                    <CardContent>
+                                        <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
+                                            Comparaison Gains Estimés vs Simulés
+                                        </Typography>
+                                        <ResponsiveContainer width="100%" height={300}>
+                                            <LineChart data={comparisonData}>
+                                                <CartesianGrid strokeDasharray="3 3" />
+                                                <XAxis dataKey="groupe" />
+                                                <YAxis />
+                                                <Tooltip
+                                                    formatter={(value, name) => [formatCurrency(value), name]}
+                                                />
+                                                <Line
+                                                    type="monotone"
+                                                    dataKey="gainActuel"
+                                                    stroke="#2196F3"
+                                                    name="Gain Estimé"
+                                                    strokeWidth={2}
+                                                />
+                                                <Line
+                                                    type="monotone"
+                                                    dataKey="gainSimule"
+                                                    stroke="#4CAF50"
+                                                    name="Gain Simulé"
+                                                    strokeWidth={2}
+                                                />
+                                            </LineChart>
+                                        </ResponsiveContainer>
+                                    </CardContent>
+                                </Card>
+                            </Grid>
+
+                            {/* Tableaux des résultats détaillés */}
+                            <Grid item xs={12}>
+                                <Card elevation={2}>
+                                    <CardContent>
+                                        <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
+                                            Résultats Détaillés par Groupe
+                                        </Typography>
+                                        <TableContainer>
+                                            <Table>
+                                                <TableHead>
+                                                    <TableRow>
+                                                        <TableCell>Groupe</TableCell>
+                                                        <TableCell>Qualité</TableCell>
+                                                        <TableCell align="right">Gain Estimé</TableCell>
+                                                        <TableCell align="right">Gain Simulé</TableCell>
+                                                        <TableCell align="right">Différence</TableCell>
+                                                        <TableCell align="center">Status</TableCell>
+                                                    </TableRow>
+                                                </TableHead>
+                                                <TableBody>
+                                                    {comparisonData.map((result, index) => (
+                                                        <TableRow key={index}>
+                                                            <TableCell>{result.groupe.split('-')[0]}</TableCell>
+                                                            <TableCell>
+                                                                <Chip
+                                                                    size="small"
+                                                                    label={result.groupe.split('-')[1]}
+                                                                    color={
+                                                                        result.groupe.split('-')[1] === 'OEM' ? 'success' :
+                                                                            result.groupe.split('-')[1] === 'PMQ' ? 'primary' : 'warning'
+                                                                    }
+                                                                    variant="outlined"
+                                                                />
+                                                            </TableCell>
+                                                            <TableCell align="right">
+                                                                {formatCurrency(result.gainActuel)}
+                                                            </TableCell>
+                                                            <TableCell align="right" sx={{ fontWeight: 600 }}>
+                                                                {formatCurrency(result.gainSimule)}
+                                                            </TableCell>
+                                                            <TableCell
+                                                                align="right"
+                                                                sx={{
+                                                                    color: result.difference >= 0 ? 'success.main' : 'error.main',
+                                                                    fontWeight: 600
+                                                                }}
+                                                            >
+                                                                {result.difference >= 0 ? '+' : ''}{formatCurrency(result.difference)}
+                                                            </TableCell>
+                                                            <TableCell align="center">
+                                                                {result.difference >= 0 ? (
+                                                                    <CheckCircle fontSize="small" color="success" />
+                                                                ) : (
+                                                                    <Warning fontSize="small" color="warning" />
+                                                                )}
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    ))}
+                                                </TableBody>
+                                            </Table>
+                                        </TableContainer>
+                                    </CardContent>
+                                </Card>
+                            </Grid>
+                        </Grid>
+                    </motion.div>
+                )}
             </DialogContent>
 
-            <Divider />
-
-            <DialogActions sx={{ p: 3 }}>
-                <Button onClick={onClose} disabled={simulationMutation.isLoading || applyMutation.isLoading}>
-                    {activeStep === 3 && applyMutation.isSuccess ? 'Fermer' : 'Annuler'}
+            <DialogActions sx={{ p: 3, borderTop: 1, borderColor: 'divider' }}>
+                <Button onClick={onClose} variant="outlined">
+                    {activeStep === 2 ? 'Fermer' : 'Annuler'}
                 </Button>
 
                 {activeStep === 0 && (
                     <Button
-                        variant="contained"
                         onClick={handleRunSimulation}
-                        startIcon={<PlayArrow />}
-                        disabled={optimizationsToSimulate.length === 0}
-                    >
-                        Lancer la simulation
-                    </Button>
-                )}
-
-                {activeStep === 2 && simulationResults && (
-                    <Button
                         variant="contained"
-                        color="success"
-                        onClick={handleApplyOptimizations}
-                        startIcon={<CheckCircle />}
-                        disabled={applyMutation.isLoading}
+                        startIcon={<PlayArrow />}
+                        disabled={!data || data.length === 0}
                     >
-                        Appliquer les optimisations
+                        Lancer la Simulation
                     </Button>
                 )}
 
                 {activeStep === 2 && (
                     <Button
-                        variant="outlined"
-                        onClick={() => setActiveStep(0)}
+                        variant="contained"
+                        color="success"
+                        startIcon={<CheckCircle />}
                     >
-                        Modifier la configuration
+                        Appliquer les Optimisations
                     </Button>
                 )}
             </DialogActions>

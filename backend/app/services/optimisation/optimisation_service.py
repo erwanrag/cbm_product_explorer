@@ -61,22 +61,22 @@ async def evaluate_group_optimization(
             ),
             Achat AS (
                 SELECT a.cod_pro, MIN(a.px_net_eur) AS px_achat
-                FROM CBM_DATA.Pricing.Px_achat_net a
+                FROM CBM_DATA.Pricing.Px_achat_net a WITH (NOLOCK)
                 JOIN CodProList c ON a.cod_pro = c.cod_pro
                 GROUP BY a.cod_pro
             ),
             Sales AS (
                 SELECT v.cod_pro, SUM(v.tot_vte_eur) AS ca_total, SUM(v.qte) AS quantite_total
-                FROM CBM_DATA.Pricing.Px_vte_mouvement v
+                FROM CBM_DATA.Pricing.Px_vte_mouvement v WITH (NOLOCK)
                 JOIN CodProList c ON v.cod_pro = c.cod_pro
                 WHERE v.dat_mvt >= DATEADD(YEAR, -1, GETDATE())
                 GROUP BY v.cod_pro
             )
-            SELECT dp.grouping_crn, dp.qualite, dp.cod_pro,
+            SELECT dp.grouping_crn, dp.qualite, dp.cod_pro, dp.refint,
                    ISNULL(a.px_achat,0) AS px_achat,
                    ISNULL(s.ca_total,0) AS ca_total,
                    ISNULL(s.quantite_total,0) AS qte_total
-            FROM (SELECT DISTINCT cod_pro, grouping_crn, qualite FROM [CBM_DATA].[Pricing].[Grouping_crn_table]) dp
+            FROM (SELECT DISTINCT cod_pro, refint, grouping_crn, qualite FROM [CBM_DATA].[Pricing].[Grouping_crn_table] WITH (NOLOCK)) dp
             JOIN CodProList c ON dp.cod_pro = c.cod_pro
             LEFT JOIN Achat a ON dp.cod_pro = a.cod_pro
             LEFT JOIN Sales s ON dp.cod_pro = s.cod_pro
@@ -88,13 +88,14 @@ async def evaluate_group_optimization(
         logger.info(f"SQL principale exécutée en {perf_counter() - sql_start:.2f}s, {len(rows)} lignes")
 
         groups = {}
-        for g, qual, cod, px, ca, qte in rows:
+        for g, qual, cod, refint, px, ca, qte in rows:
             if not g:
                 continue
             key = (g, qual)
             groups.setdefault(key, {})
             groups[key][cod] = {
                 "cod_pro": int(cod),
+                "refint": refint,
                 "px_achat": float(px or 0),
                 "ca": float(ca or 0),
                 "qte": float(qte or 0)
@@ -174,8 +175,8 @@ async def _get_sales_history_for_trend(cod_pro_list, db: AsyncSession):
             SELECT dp.grouping_crn, dp.qualite,
                    CONVERT(VARCHAR(7), v.dat_mvt, 120) AS periode,
                    SUM(v.qte) AS qte
-            FROM CBM_DATA.Pricing.Px_vte_mouvement v
-            INNER JOIN [CBM_DATA].[Pricing].[Grouping_crn_table] dp
+            FROM CBM_DATA.Pricing.Px_vte_mouvement v WITH (NOLOCK)
+            INNER JOIN (SELECT DISTINCT cod_pro, grouping_crn, qualite FROM [CBM_DATA].[Pricing].[Grouping_crn_table] WITH (NOLOCK)) dp
             ON v.cod_pro = dp.cod_pro
             WHERE v.cod_pro IN ({placeholders})
               AND v.dat_mvt >= DATEADD(MONTH,-6,GETDATE())

@@ -5,12 +5,14 @@
 import React from 'react';
 import {
     Box, Grid, Card, CardContent, Typography,
-    Skeleton, Chip, LinearProgress
+    Skeleton, Chip, LinearProgress, 
+    Accordion, AccordionSummary, AccordionDetails
 } from '@mui/material';
 import {
     TrendingUp, TrendingDown, Assessment,
     Insights, MonetizationOn, Inventory
 } from '@mui/icons-material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { motion } from 'framer-motion';
 
 const OptimizationKPISection = ({ data, totals, isLoading }) => {
@@ -33,7 +35,7 @@ const OptimizationKPISection = ({ data, totals, isLoading }) => {
 
     const kpiData = [
         {
-            title: 'Groupes Analysés',
+            title: 'Qualités Analysées',
             value: totals?.totalGroups || 0,
             icon: Assessment,
             color: 'primary',
@@ -269,7 +271,7 @@ const OptimizationKPISection = ({ data, totals, isLoading }) => {
             {totals && totals.totalGroups > 0 && (
                 <Box sx={{ mt: 3, p: 2, bgcolor: 'grey.50', borderRadius: 2 }}>
                     <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
-                        <strong>{totals.totalGroups}</strong> groupes analysés avec un potentiel de gain de{' '}
+                        <strong>{totals.totalGroups}</strong> qualités analysées avec un potentiel de gain de{' '}
                         <strong>{formatCurrency(totals.totalGainImmediat)}</strong> immédiatement et{' '}
                         <strong>{formatCurrency(totals.totalGain6m)}</strong> sur 6 mois.
                         {totals.avgTauxCroissance > 0 && (
@@ -278,7 +280,68 @@ const OptimizationKPISection = ({ data, totals, isLoading }) => {
                     </Typography>
                 </Box>
             )}
+            {data?.items?.length > 0 && (
+                <Box sx={{ mt: 2 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
+                        Références à conserver par qualité :
+                    </Typography>
+
+                    <Box sx={{ mt: 1 }}>
+
+                        {['OEM', 'PMQ', 'PMV'].map((qualite) => {
+                            const groupes = data.items.filter(item => item.qualite === qualite);
+                            const refs = groupes.flatMap(g => g.refs_to_keep || []);
+                            if (refs.length === 0) return null;
+
+                            return (
+                                <Box key={qualite} sx={{ mb: 1 }}>
+                                    <Typography
+                                        variant="body2"
+                                        sx={{ fontWeight: 600, color: 'text.primary', mb: 0.5 }}
+                                    >
+                                        {qualite} • {refs.length} référence{refs.length > 1 ? 's' : ''}
+                                    </Typography>
+
+                                    <Box
+                                        sx={{
+                                            display: 'flex',
+                                            flexWrap: 'wrap',
+                                            gap: 1,
+                                            alignItems: 'center'
+                                        }}
+                                    >
+                                        {refs.map((ref, idx) => (
+                                            <Box
+                                                key={idx}
+                                                sx={{
+                                                    px: 1.2,
+                                                    py: 0.4,
+                                                    borderRadius: 1,
+                                                    bgcolor: 'grey.100',
+                                                    border: '1px solid',
+                                                    borderColor: 'grey.300',
+                                                    fontFamily: 'monospace',
+                                                    fontSize: '0.75rem'
+                                                }}
+                                            >
+                                                {ref.refint ?? '?'} ({ref.cod_pro})
+                                            </Box>
+                                        ))}
+                                    </Box>
+                                </Box>
+                            );
+                        })}
+                    </Box>
+
+                </Box>
+            )}
+
+
+
+
+
         </Box>
+
     );
 };
 

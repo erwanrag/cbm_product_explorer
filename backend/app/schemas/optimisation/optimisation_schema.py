@@ -5,6 +5,7 @@ from typing import List, Optional
 
 class RefOptimization(BaseModel):
     cod_pro: int
+    refint: Optional[str] = None
     px_achat: float
     ca: float
     qte: float
