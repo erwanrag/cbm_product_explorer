@@ -1,91 +1,80 @@
 // ===================================
-// 📁 frontend/src/features/optimization/components/OptimizationFiltersSection.jsx
+// 📁 frontend/src/features/optimization/components/OptimizationFiltersSection.jsx - VERSION SIMPLIFIÉE
 // ===================================
 
 import React, { useMemo } from 'react';
 import {
-    Box, Paper, Grid, TextField, Autocomplete,
-    ToggleButton, ToggleButtonGroup, Chip,
-    Typography, Button, Stack
+    Box, Paper, Grid, Typography, ToggleButtonGroup, ToggleButton,
+    FormControl, InputLabel, Select, MenuItem, Button, Stack, Chip, Alert
 } from '@mui/material';
 import {
-    TableChart, BarChart, ViewList,
-    FilterList, Clear
+    TableChart, BarChart, ViewList, FilterList, Clear
 } from '@mui/icons-material';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { getQualiteColor } from '@/constants/colors';
 
 const OptimizationFiltersSection = ({
-    selectedGroupingCrn,
     selectedQualite,
-    onGroupingCrnChange,
     onQualiteChange,
     data,
     viewMode,
     onViewModeChange
 }) => {
-    // Extraction des valeurs uniques pour les filtres
-    const availableGroupingCrns = useMemo(() => {
-        if (!data?.items) return [];
-
-        const crns = [...new Set(data.items.map(item => item.grouping_crn))]
-            .filter(crn => crn !== null && crn !== undefined)
-            .sort((a, b) => a - b);
-
-        return crns.map(crn => ({
-            label: `Groupe ${crn}`,
-            value: crn.toString()
-        }));
-    }, [data]);
-
+    // Options qualités disponibles
     const availableQualites = useMemo(() => {
         if (!data?.items) return [];
 
-        const qualites = [...new Set(data.items.map(item => item.qualite))]
-            .filter(qualite => qualite !== null && qualite !== undefined)
-            .sort();
+        const qualites = [...new Set(data.items.map(item => item.qualite))].sort();
+        const options = [];
 
-        return qualites.map(qualite => ({
-            label: qualite,
-            value: qualite,
-            color: getQualiteColor(qualite)
-        }));
+        // Ajouter option "Toutes"
+        options.push({ value: '', label: 'Toutes les qualités', color: 'default' });
+
+        // Ajouter qualités individuelles
+        qualites.forEach(qualite => {
+            if (qualite === 'PMV') return; // PMV sera inclus dans PMQ
+
+            const label = qualite === 'PMQ' ? 'PMQ + PMV (Marché)' : qualite;
+            options.push({
+                value: qualite,
+                label: label,
+                color: getQualiteColor(qualite)
+            });
+        });
+
+        return options;
     }, [data]);
 
-    // Statistiques filtrées
+    // Statistiques dynamiques basées sur les filtres
     const filteredStats = useMemo(() => {
-        if (!data?.items) return { total: 0, filtered: 0 };
+        if (!data?.items) return null;
 
         let filtered = data.items;
 
-        if (selectedGroupingCrn) {
-            filtered = filtered.filter(item =>
-                item.grouping_crn && item.grouping_crn.toString().includes(selectedGroupingCrn)
-            );
-        }
-
         if (selectedQualite) {
-            filtered = filtered.filter(item =>
-                item.qualite && item.qualite.toLowerCase().includes(selectedQualite.toLowerCase())
-            );
+            if (selectedQualite === 'PMQ') {
+                filtered = filtered.filter(item =>
+                    item.qualite === 'PMQ' || item.qualite === 'PMV'
+                );
+            } else {
+                filtered = filtered.filter(item =>
+                    item.qualite === selectedQualite
+                );
+            }
         }
 
         return {
             total: data.items.length,
             filtered: filtered.length,
             totalGain: filtered.reduce((sum, item) => sum + (item.gain_potentiel || 0), 0),
-            totalGain6m: filtered.reduce((sum, item) => sum + (item.gain_potentiel_6m || 0), 0)
+            totalGain6m: filtered.reduce((sum, item) => sum + (item.gain_potentiel_6m || 0), 0),
+            refsTotal: filtered.reduce((sum, item) => sum + (item.refs_total || 0), 0),
+            refsToDelete: filtered.reduce((sum, item) =>
+                sum + (item.refs_to_delete_low_sales?.length || 0) +
+                (item.refs_to_delete_no_sales?.length || 0), 0
+            )
         };
-    }, [data, selectedGroupingCrn, selectedQualite]);
-
-    // Couleurs pour les qualités
-    function getQualiteColor(qualite) {
-        switch (qualite) {
-            case 'OEM': return 'success';
-            case 'PMQ': return 'primary';
-            case 'OE': return 'warning';
-            default: return 'secondary';
-        }
-    }
+    }, [data, selectedQualite]);
 
     // Formatage des devises
     const formatCurrency = (value) => {
@@ -99,11 +88,10 @@ const OptimizationFiltersSection = ({
     };
 
     const handleClearFilters = () => {
-        onGroupingCrnChange('');
         onQualiteChange('');
     };
 
-    const hasActiveFilters = selectedGroupingCrn || selectedQualite;
+    const hasActiveFilters = selectedQualite;
 
     return (
         <Paper elevation={1} sx={{ mb: 3 }}>
@@ -136,179 +124,146 @@ const OptimizationFiltersSection = ({
                 </Box>
 
                 <Grid container spacing={3} alignItems="center">
-                    {/* Filtre Grouping CRN */}
-                    <Grid item xs={12} sm={6} md={3}>
-                        <Autocomplete
-                            options={availableGroupingCrns}
-                            value={availableGroupingCrns.find(option => option.value === selectedGroupingCrn) || null}
-                            onChange={(event, newValue) => {
-                                onGroupingCrnChange(newValue ? newValue.value : '');
-                            }}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    label="Grouping CRN"
-                                    size="small"
-                                    InputProps={{
-                                        ...params.InputProps,
-                                        startAdornment: <FilterList fontSize="small" sx={{ mr: 1, color: 'action.active' }} />
-                                    }}
-                                />
-                            )}
-                            renderOption={(props, option) => (
-                                <Box component="li" {...props}>
-                                    <Typography variant="body2">
-                                        {option.label}
-                                    </Typography>
-                                </Box>
-                            )}
-                            isOptionEqualToValue={(option, value) => option.value === value.value}
-                            clearable
-                            placeholder="Tous les groupes"
-                        />
+                    {/* Filtre Qualité SEUL */}
+                    <Grid item xs={12} sm={6} md={4}>
+                        <FormControl fullWidth size="small">
+                            <InputLabel>Qualité Produit</InputLabel>
+                            <Select
+                                value={selectedQualite}
+                                onChange={(e) => onQualiteChange(e.target.value)}
+                                label="Qualité Produit"
+                                startAdornment={<FilterList fontSize="small" sx={{ mr: 1, color: 'action.active' }} />}
+                            >
+                                {availableQualites.map((option) => (
+                                    <MenuItem key={option.value} value={option.value}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <Box
+                                                sx={{
+                                                    width: 12,
+                                                    height: 12,
+                                                    borderRadius: '50%',
+                                                    bgcolor: option.color
+                                                }}
+                                            />
+                                            {option.label}
+                                        </Box>
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
                     </Grid>
 
-                    {/* Filtre Qualité */}
-                    <Grid item xs={12} sm={6} md={3}>
-                        <Autocomplete
-                            options={availableQualites}
-                            value={availableQualites.find(option => option.value === selectedQualite) || null}
-                            onChange={(event, newValue) => {
-                                onQualiteChange(newValue ? newValue.value : '');
-                            }}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    label="Qualité"
-                                    size="small"
-                                    InputProps={{
-                                        ...params.InputProps,
-                                        startAdornment: <FilterList fontSize="small" sx={{ mr: 1, color: 'action.active' }} />
-                                    }}
-                                />
-                            )}
-                            renderOption={(props, option) => (
-                                <Box component="li" {...props}>
-                                    <Chip
-                                        size="small"
-                                        label={option.label}
-                                        color={option.color}
-                                        variant="outlined"
-                                        sx={{ mr: 1 }}
-                                    />
-                                    <Typography variant="body2">
-                                        {option.label}
-                                    </Typography>
-                                </Box>
-                            )}
-                            isOptionEqualToValue={(option, value) => option.value === value.value}
-                            clearable
-                            placeholder="Toutes les qualités"
-                        />
+                    {/* Bouton Clear */}
+                    <Grid item xs={12} sm={6} md={2}>
+                        <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<Clear />}
+                            onClick={handleClearFilters}
+                            disabled={!hasActiveFilters}
+                            fullWidth
+                        >
+                            Effacer
+                        </Button>
                     </Grid>
 
-                    {/* Actions */}
-                    <Grid item xs={12} sm={12} md={6}>
-                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-                            {hasActiveFilters && (
-                                <Button
-                                    variant="outlined"
-                                    size="small"
-                                    startIcon={<Clear />}
-                                    onClick={handleClearFilters}
-                                >
-                                    Effacer les filtres
-                                </Button>
-                            )}
-                        </Box>
+                    {/* Espace pour équilibrer */}
+                    <Grid item xs={12} md={6}>
+                        {/* Vide pour équilibrer */}
                     </Grid>
                 </Grid>
 
-                {/* Filtres actifs */}
+                {/* Chips filtres actifs */}
                 {hasActiveFilters && (
                     <Box sx={{ mt: 2 }}>
                         <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
-                            Filtres actifs:
+                            Filtres actifs :
                         </Typography>
-                        <Stack direction="row" spacing={1} flexWrap="wrap">
-                            {selectedGroupingCrn && (
-                                <motion.div
-                                    initial={{ scale: 0 }}
-                                    animate={{ scale: 1 }}
-                                    exit={{ scale: 0 }}
-                                >
-                                    <Chip
-                                        size="small"
-                                        label={`Groupe: ${selectedGroupingCrn}`}
-                                        onDelete={() => onGroupingCrnChange('')}
-                                        color="primary"
-                                        variant="outlined"
-                                    />
-                                </motion.div>
-                            )}
-                            {selectedQualite && (
-                                <motion.div
-                                    initial={{ scale: 0 }}
-                                    animate={{ scale: 1 }}
-                                    exit={{ scale: 0 }}
-                                >
-                                    <Chip
-                                        size="small"
-                                        label={`Qualité: ${selectedQualite}`}
-                                        onDelete={() => onQualiteChange('')}
-                                        color={getQualiteColor(selectedQualite)}
-                                        variant="outlined"
-                                    />
-                                </motion.div>
-                            )}
+                        <Stack direction="row" spacing={1}>
+                            <AnimatePresence>
+                                {selectedQualite && (
+                                    <motion.div
+                                        initial={{ scale: 0 }}
+                                        animate={{ scale: 1 }}
+                                        exit={{ scale: 0 }}
+                                    >
+                                        <Chip
+                                            size="small"
+                                            label={`Qualité: ${selectedQualite === 'PMQ' ? 'PMQ + PMV' : selectedQualite}`}
+                                            onDelete={() => onQualiteChange('')}
+                                            sx={{
+                                                bgcolor: getQualiteColor(selectedQualite) + '20',
+                                                borderColor: getQualiteColor(selectedQualite),
+                                                color: getQualiteColor(selectedQualite)
+                                            }}
+                                            variant="outlined"
+                                        />
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </Stack>
                     </Box>
                 )}
 
+                {/* Explications importantes */}
+                <Alert severity="info" sx={{ mt: 3 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                        📊 Comprendre les gains d'optimisation
+                    </Typography>
+                    <Typography variant="body2" component="div">
+                        • <strong>Économie immédiate</strong> : Réduction coûts d'achat si rationalisation appliquée aujourd'hui<br />
+                        • <strong>Projection 6 mois</strong> : Basée sur tendance historique (⚠️ données août partielles)<br />
+                        • <strong>PMQ + PMV</strong> : Analysés ensemble, priorité PMV si disponible<br />
+                        • <strong>Calcul</strong> : (Prix vente moyen - Prix achat minimum) × Volume total
+                    </Typography>
+                </Alert>
+
                 {/* Statistiques filtrées */}
-                <Box sx={{
-                    mt: 3,
-                    p: 2,
-                    bgcolor: 'grey.50',
-                    borderRadius: 2,
-                    border: 1,
-                    borderColor: 'divider'
-                }}>
-                    <Grid container spacing={2} alignItems="center">
-                        <Grid item xs={12} sm={6} md={3}>
-                            <Typography variant="body2" color="text.secondary">
-                                Résultats
-                            </Typography>
-                            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                                {filteredStats.filtered} / {filteredStats.total}
-                            </Typography>
+                {filteredStats && (
+                    <Box sx={{
+                        mt: 3,
+                        p: 2,
+                        bgcolor: 'grey.50',
+                        borderRadius: 2,
+                        border: 1,
+                        borderColor: 'divider'
+                    }}>
+                        <Grid container spacing={2} alignItems="center">
+                            <Grid item xs={12} sm={6} md={3}>
+                                <Typography variant="body2" color="text.secondary">
+                                    Groupes analysés
+                                </Typography>
+                                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                                    {filteredStats.filtered} / {filteredStats.total}
+                                </Typography>
+                            </Grid>
+                            <Grid item xs={12} sm={6} md={3}>
+                                <Typography variant="body2" color="text.secondary">
+                                    Économie immédiate
+                                </Typography>
+                                <Typography variant="h6" sx={{ fontWeight: 600, color: 'success.main' }}>
+                                    {formatCurrency(filteredStats.totalGain)}
+                                </Typography>
+                            </Grid>
+                            <Grid item xs={12} sm={6} md={3}>
+                                <Typography variant="body2" color="text.secondary">
+                                    Projection 6 mois
+                                </Typography>
+                                <Typography variant="h6" sx={{ fontWeight: 600, color: 'info.main' }}>
+                                    {formatCurrency(filteredStats.totalGain6m)}
+                                </Typography>
+                            </Grid>
+                            <Grid item xs={12} sm={6} md={3}>
+                                <Typography variant="body2" color="text.secondary">
+                                    Références à rationaliser
+                                </Typography>
+                                <Typography variant="h6" sx={{ fontWeight: 600, color: 'warning.main' }}>
+                                    {filteredStats.refsToDelete} / {filteredStats.refsTotal}
+                                </Typography>
+                            </Grid>
                         </Grid>
-                        <Grid item xs={12} sm={6} md={3}>
-                            <Typography variant="body2" color="text.secondary">
-                                Gain Immédiat
-                            </Typography>
-                            <Typography variant="h6" sx={{ fontWeight: 600, color: 'success.main' }}>
-                                {formatCurrency(filteredStats.totalGain)}
-                            </Typography>
-                        </Grid>
-                        <Grid item xs={12} sm={6} md={3}>
-                            <Typography variant="body2" color="text.secondary">
-                                Gain 6 Mois
-                            </Typography>
-                            <Typography variant="h6" sx={{ fontWeight: 600, color: 'info.main' }}>
-                                {formatCurrency(filteredStats.totalGain6m)}
-                            </Typography>
-                        </Grid>
-                        <Grid item xs={12} sm={6} md={3}>
-                            <Typography variant="body2" color="text.secondary">
-                                Efficacité Filtre
-                            </Typography>
-                            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                                {filteredStats.total > 0 ? Math.round((filteredStats.filtered / filteredStats.total) * 100) : 0}%
-                            </Typography>
-                        </Grid>
-                    </Grid>
-                </Box>
+                    </Box>
+                )}
             </Box>
         </Paper>
     );

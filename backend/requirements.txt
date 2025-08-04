@@ -24,7 +24,11 @@ loguru
 aiofiles
 
 # Analyse / Data
-pandas
+prophet>=1.1.4
+scikit-learn==1.3.2  
+pandas==2.0.3
+numpy==1.24.3         # ✅ Compatible avec Prophet 1.1.4
+plotly
 
 # Tests
 pytest>=7.4,<8

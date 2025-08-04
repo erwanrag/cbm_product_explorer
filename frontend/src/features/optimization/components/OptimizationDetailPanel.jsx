@@ -15,6 +15,7 @@ import {
 } from '@mui/icons-material';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
+import ProjectionQualityIndicator from './indicators/ProjectionQualityIndicator'; // Assurez-vous que le chemin est correct
 
 const OptimizationDetailPanel = ({ optimization, onClose, optimizationData }) => {
     const [activeTab, setActiveTab] = useState(0);
@@ -145,6 +146,19 @@ const OptimizationDetailPanel = ({ optimization, onClose, optimizationData }) =>
                                     </Box>
                                 </Box>
                             </Grid>
+                            <Grid item xs={4}>
+                                <Box sx={{ textAlign: 'center' }}>
+                                    <ProjectionQualityIndicator
+                                        score={optimization.projection_6m?.metadata?.quality_score}
+                                        method={optimization.projection_6m?.metadata?.method}
+                                        variant="chip"
+                                    />
+                                    <Typography variant="caption">
+                                        Fiabilité projection
+                                    </Typography>
+                                </Box>
+                            </Grid>
+
                         </Grid>
                     </Box>
 
@@ -156,6 +170,24 @@ const OptimizationDetailPanel = ({ optimization, onClose, optimizationData }) =>
                             ))}
                         </Tabs>
                     </Box>
+                    {/* Projection */}
+                    <Grid item xs={12} md={6}>
+                        <Card elevation={2}>
+                            <CardContent>
+                                <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
+                                    Qualité de la Projection
+                                </Typography>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                    <ProjectionQualityIndicator
+                                        score={optimization.projection_6m?.metadata?.quality_score}
+                                        method={optimization.projection_6m?.metadata?.method}
+                                        confidence={optimization.projection_6m?.metadata?.confidence_level}
+                                        variant="card"
+                                    />
+                                </Box>
+                            </CardContent>
+                        </Card>
+                    </Grid>
 
                     {/* Content */}
                     <Box sx={{ flex: 1, overflow: 'auto', p: 3 }}>

@@ -14,6 +14,7 @@ import {
     CheckCircle, TrendingUp, TrendingDown, Visibility
 } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
+import ProjectionQualityIndicator from './indicators/ProjectionQualityIndicator'; // Assurez-vous que le chemin est correct
 
 const OptimizationTableSection = ({ data, onOptimizationSelect, onSimulationOpen }) => {
     const [page, setPage] = useState(0);
@@ -187,6 +188,7 @@ const OptimizationTableSection = ({ data, onOptimizationSelect, onSimulationOpen
                             <SortableTableCell sortKey="gain_potentiel" align="right">Gain Immédiat</SortableTableCell>
                             <SortableTableCell sortKey="gain_potentiel_6m" align="right">Gain 6M</SortableTableCell>
                             <SortableTableCell sortKey="taux_croissance" align="right">Croissance</SortableTableCell>
+                            <TableCell align="center">Qualité Projection</TableCell>
                             <TableCell align="center">Actions</TableCell>
                         </TableRow>
                     </TableHead>
@@ -289,6 +291,9 @@ const OptimizationTableSection = ({ data, onOptimizationSelect, onSimulationOpen
                                                         {formatPercentage(optimization.taux_croissance)}
                                                     </Typography>
                                                 </Box>
+                                            </TableCell>
+                                            <TableCell align="center">
+                                                <ProjectionQualityIndicator score={optimization.projection_6m?.metadata?.quality_score} />
                                             </TableCell>
                                             <TableCell align="center">
                                                 <Stack direction="row" spacing={0.5} justifyContent="center">
@@ -415,6 +420,7 @@ const OptimizationTableSection = ({ data, onOptimizationSelect, onSimulationOpen
                                                     </Box>
                                                 </Collapse>
                                             </TableCell>
+                                           
                                         </TableRow>
                                     </React.Fragment>
                                 );
