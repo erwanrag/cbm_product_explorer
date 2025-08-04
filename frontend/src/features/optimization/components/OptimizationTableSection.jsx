@@ -1,5 +1,5 @@
 // ===================================
-// 📁 frontend/src/features/optimization/components/OptimizationTableSection.jsx
+// 📁 frontend/src/features/optimization/components/OptimizationTableSection.jsx - COMPLET
 // ===================================
 
 import React, { useState, useMemo } from 'react';
@@ -14,7 +14,7 @@ import {
     CheckCircle, TrendingUp, TrendingDown, Visibility
 } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
-import ProjectionQualityIndicator from './indicators/ProjectionQualityIndicator'; // Assurez-vous que le chemin est correct
+import ProjectionQualityIndicator from './indicators/ProjectionQualityIndicator';
 
 const OptimizationTableSection = ({ data, onOptimizationSelect, onSimulationOpen }) => {
     const [page, setPage] = useState(0);
@@ -131,10 +131,10 @@ const OptimizationTableSection = ({ data, onOptimizationSelect, onSimulationOpen
         </TableCell>
     );
 
-    if (!data?.items || data.items.length === 0) {
+    if (!data?.items?.length) {
         return (
-            <Paper elevation={1} sx={{ p: 4, textAlign: 'center' }}>
-                <Typography color="text.secondary">
+            <Paper sx={{ p: 4, textAlign: 'center' }}>
+                <Typography variant="h6" color="text.secondary">
                     Aucune donnée d'optimisation disponible
                 </Typography>
             </Paper>
@@ -142,17 +142,18 @@ const OptimizationTableSection = ({ data, onOptimizationSelect, onSimulationOpen
     }
 
     return (
-        <Paper elevation={1} sx={{ mb: 3 }}>
-            <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+        <Paper elevation={2}>
+            {/* En-tête avec actions */}
+            <Box sx={{ p: 3, borderBottom: 1, borderColor: 'divider' }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                        Optimisations Détaillées
+                        Opportunités d'Optimisation ({sortedData.length} groupes)
                     </Typography>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
+
+                    <Stack direction="row" spacing={1}>
                         {selectedRows.size > 0 && (
                             <Button
-                                variant="contained"
-                                size="small"
+                                variant="outlined"
                                 startIcon={<PlayArrow />}
                                 onClick={() => {
                                     const selectedOptimizations = paginatedData.filter(item =>
@@ -164,7 +165,7 @@ const OptimizationTableSection = ({ data, onOptimizationSelect, onSimulationOpen
                                 Simuler ({selectedRows.size})
                             </Button>
                         )}
-                    </Box>
+                    </Stack>
                 </Box>
             </Box>
 
@@ -187,7 +188,10 @@ const OptimizationTableSection = ({ data, onOptimizationSelect, onSimulationOpen
                             <SortableTableCell sortKey="px_vente_pondere" align="right">Prix Moy</SortableTableCell>
                             <SortableTableCell sortKey="gain_potentiel" align="right">Gain Immédiat</SortableTableCell>
                             <SortableTableCell sortKey="gain_potentiel_6m" align="right">Gain 6M</SortableTableCell>
-                            <SortableTableCell sortKey="taux_croissance" align="right">Croissance</SortableTableCell>
+                            {/* ✅ NOUVELLE COLONNE: Marge optimisée */}
+                            <SortableTableCell sortKey="marge_optimisee_6m" align="right">Marge Opt. 6M</SortableTableCell>
+                            <SortableTableCell sortKey="taux_croissance" align="center">Tendance</SortableTableCell>
+                            {/* ✅ NOUVELLE COLONNE: Qualité projection */}
                             <TableCell align="center">Qualité Projection</TableCell>
                             <TableCell align="center">Actions</TableCell>
                         </TableRow>
@@ -195,106 +199,143 @@ const OptimizationTableSection = ({ data, onOptimizationSelect, onSimulationOpen
                     <TableBody>
                         <AnimatePresence>
                             {paginatedData.map((optimization) => {
-                                const rowKey = `${optimization.grouping_crn}_${optimization.qualite}`;
-                                const isExpanded = expandedRows.has(rowKey);
-                                const isSelected = selectedRows.has(rowKey);
+                                const key = `${optimization.grouping_crn}_${optimization.qualite}`;
+                                const isSelected = selectedRows.has(key);
+                                const isExpanded = expandedRows.has(key);
 
                                 return (
-                                    <React.Fragment key={rowKey}>
-                                        {/* Ligne principale */}
+                                    <React.Fragment key={key}>
                                         <motion.tr
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 1 }}
                                             exit={{ opacity: 0 }}
-                                            style={{ backgroundColor: isSelected ? '#f3f4f6' : 'transparent' }}
+                                            component={TableRow}
+                                            hover
+                                            selected={isSelected}
                                         >
                                             <TableCell padding="checkbox">
                                                 <Checkbox
                                                     checked={isSelected}
-                                                    onChange={(e) => handleRowSelect(rowKey, e.target.checked)}
+                                                    onChange={(e) => handleRowSelect(key, e.target.checked)}
                                                 />
                                             </TableCell>
+
                                             <TableCell>
                                                 <IconButton
                                                     size="small"
-                                                    onClick={() => handleRowExpand(rowKey)}
+                                                    onClick={() => handleRowExpand(key)}
                                                 >
                                                     {isExpanded ? <KeyboardArrowDown /> : <KeyboardArrowRight />}
                                                 </IconButton>
                                             </TableCell>
+
                                             <TableCell>
-                                                <Typography variant="body2" fontWeight={500}>
+                                                <Typography variant="body2" sx={{ fontWeight: 600 }}>
                                                     {optimization.grouping_crn}
                                                 </Typography>
                                             </TableCell>
+
                                             <TableCell>
                                                 <Chip
-                                                    size="small"
                                                     label={optimization.qualite}
+                                                    size="small"
                                                     color={
-                                                        optimization.qualite === 'OEM' ? 'success' :
-                                                            optimization.qualite === 'PMQ' ? 'primary' : 'warning'
+                                                        optimization.qualite === 'OEM' ? 'primary' :
+                                                            optimization.qualite === 'PMQ' ? 'success' : 'warning'
                                                     }
                                                     variant="outlined"
                                                 />
                                             </TableCell>
+
                                             <TableCell align="right">
-                                                <Stack alignItems="flex-end" spacing={0.5}>
-                                                    <Typography variant="body2" fontWeight={500}>
-                                                        {optimization.refs_total}
-                                                    </Typography>
-                                                    <Typography variant="caption" color="text.secondary">
-                                                        {optimization.refs_to_keep?.length || 0} à garder
-                                                    </Typography>
-                                                </Stack>
+                                                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                                    {optimization.refs_total}
+                                                </Typography>
                                             </TableCell>
+
                                             <TableCell align="right">
                                                 <Typography variant="body2">
                                                     {formatCurrency(optimization.px_achat_min)}
                                                 </Typography>
                                             </TableCell>
+
                                             <TableCell align="right">
                                                 <Typography variant="body2">
                                                     {formatCurrency(optimization.px_vente_pondere)}
                                                 </Typography>
                                             </TableCell>
+
                                             <TableCell align="right">
                                                 <Typography
                                                     variant="body2"
-                                                    fontWeight={600}
-                                                    color={optimization.gain_potentiel > 0 ? 'success.main' : 'error.main'}
+                                                    sx={{
+                                                        fontWeight: 600,
+                                                        color: optimization.gain_potentiel > 0 ? 'success.main' : 'text.secondary'
+                                                    }}
                                                 >
                                                     {formatCurrency(optimization.gain_potentiel)}
                                                 </Typography>
                                             </TableCell>
+
                                             <TableCell align="right">
                                                 <Typography
                                                     variant="body2"
-                                                    fontWeight={600}
-                                                    color={optimization.gain_potentiel_6m > 0 ? 'success.main' : 'error.main'}
+                                                    sx={{
+                                                        fontWeight: 600,
+                                                        color: optimization.gain_potentiel_6m > 0 ? 'primary.main' : 'text.secondary'
+                                                    }}
                                                 >
                                                     {formatCurrency(optimization.gain_potentiel_6m)}
                                                 </Typography>
                                             </TableCell>
+
+                                            {/* ✅ NOUVELLE CELLULE: Marge optimisée 6M */}
                                             <TableCell align="right">
-                                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-                                                    {optimization.taux_croissance > 0 ? (
-                                                        <TrendingUp fontSize="small" color="success" />
+                                                <Typography
+                                                    variant="body2"
+                                                    sx={{
+                                                        fontWeight: 600,
+                                                        color: 'secondary.main'
+                                                    }}
+                                                >
+                                                    {formatCurrency(optimization.marge_optimisee_6m)}
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    vs {formatCurrency(optimization.marge_actuelle_6m)}
+                                                </Typography>
+                                            </TableCell>
+
+                                            <TableCell align="center">
+                                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+                                                    {optimization.taux_croissance >= 0 ? (
+                                                        <TrendingUp color="success" fontSize="small" />
                                                     ) : (
-                                                        <TrendingDown fontSize="small" color="error" />
+                                                        <TrendingDown color="error" fontSize="small" />
                                                     )}
                                                     <Typography
                                                         variant="body2"
-                                                        sx={{ ml: 0.5 }}
-                                                        color={optimization.taux_croissance > 0 ? 'success.main' : 'error.main'}
+                                                        sx={{
+                                                            fontWeight: 600,
+                                                            color: optimization.taux_croissance >= 0 ? 'success.main' : 'error.main'
+                                                        }}
                                                     >
                                                         {formatPercentage(optimization.taux_croissance)}
                                                     </Typography>
                                                 </Box>
                                             </TableCell>
+
+                                            {/* ✅ CELLULE QUALITÉ PROJECTION CORRIGÉE */}
                                             <TableCell align="center">
-                                                <ProjectionQualityIndicator score={optimization.projection_6m?.metadata?.quality_score} />
+                                                {optimization.projection_6m?.metadata?.quality_score ? (
+                                                    <ProjectionQualityIndicator
+                                                        projection={optimization.projection_6m}
+                                                        compact={true}
+                                                    />
+                                                ) : (
+                                                    <Chip size="small" label="N/A" color="default" variant="outlined" />
+                                                )}
                                             </TableCell>
+
                                             <TableCell align="center">
                                                 <Stack direction="row" spacing={0.5} justifyContent="center">
                                                     <Tooltip title="Voir détails">
@@ -318,91 +359,129 @@ const OptimizationTableSection = ({ data, onOptimizationSelect, onSimulationOpen
                                             </TableCell>
                                         </motion.tr>
 
-                                        {/* Ligne détaillée */}
+                                        {/* Ligne détaillée expansible */}
                                         <TableRow>
-                                            <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={11}>
-                                                <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-                                                    <Box sx={{ py: 2, px: 4, bgcolor: 'grey.50' }}>
-                                                        <Typography variant="subtitle2" gutterBottom>
-                                                            Détail de l'optimisation
+                                            <TableCell colSpan={13} sx={{ p: 0, border: 'none' }}>
+                                                <Collapse in={isExpanded}>
+                                                    <Box sx={{ p: 3, bgcolor: 'grey.50' }}>
+                                                        <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                                                            Détails {optimization.grouping_crn} - {optimization.qualite}
                                                         </Typography>
 
-                                                        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 3 }}>
-                                                            {/* Historique */}
-                                                            <Box>
-                                                                <Typography variant="body2" fontWeight={500} gutterBottom>
-                                                                    Historique 3 derniers mois
-                                                                </Typography>
-                                                                {optimization.historique_6m?.slice(-3).map((hist, idx) => (
-                                                                    <Box key={idx} sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5 }}>
-                                                                        <Typography variant="caption">{hist.periode}</Typography>
-                                                                        <Typography variant="caption" fontWeight={500}>
-                                                                            {formatCurrency(hist.marge)}
-                                                                        </Typography>
-                                                                    </Box>
-                                                                ))}
-                                                            </Box>
+                                                        {/* ✅ Métriques détaillées avec nouveaux champs */}
+                                                        <Box sx={{ mb: 2 }}>
+                                                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                                                                💰 Métriques économiques:
+                                                            </Typography>
+                                                            <Stack spacing={1}>
+                                                                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                                    <Typography variant="body2">Prix achat minimum:</Typography>
+                                                                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                                                        {formatCurrency(optimization.px_achat_min)}
+                                                                    </Typography>
+                                                                </Box>
+                                                                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                                    <Typography variant="body2">Prix vente pondéré:</Typography>
+                                                                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                                                        {formatCurrency(optimization.px_vente_pondere)}
+                                                                    </Typography>
+                                                                </Box>
+                                                                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                                    <Typography variant="body2">Marge actuelle 6M:</Typography>
+                                                                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                                                        {formatCurrency(optimization.marge_actuelle_6m)}
+                                                                    </Typography>
+                                                                </Box>
+                                                                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                                    <Typography variant="body2">Marge optimisée 6M:</Typography>
+                                                                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'success.main' }}>
+                                                                        {formatCurrency(optimization.marge_optimisee_6m)}
+                                                                    </Typography>
+                                                                </Box>
+                                                            </Stack>
+                                                        </Box>
 
-                                                            {/* Projection */}
-                                                            <Box>
-                                                                <Typography variant="body2" fontWeight={500} gutterBottom>
-                                                                    Projection 3 prochains mois
+                                                        {/* ✅ Qualité de projection détaillée */}
+                                                        {optimization.projection_6m?.metadata && (
+                                                            <Box sx={{ mb: 2, p: 2, bgcolor: 'white', borderRadius: 1 }}>
+                                                                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                                                                    🎯 Qualité de la projection:
                                                                 </Typography>
-                                                                {optimization.projection_6m?.mois?.slice(0, 3).map((proj, idx) => (
-                                                                    <Box key={idx} sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5 }}>
-                                                                        <Typography variant="caption">{proj.periode}</Typography>
-                                                                        <Typography variant="caption" fontWeight={500} color="success.main">
-                                                                            {formatCurrency(proj.marge)}
-                                                                        </Typography>
-                                                                    </Box>
-                                                                ))}
-                                                            </Box>
-
-                                                            {/* Références à supprimer */}
-                                                            <Box>
-                                                                <Typography variant="body2" fontWeight={500} gutterBottom>
-                                                                    Références à optimiser
-                                                                </Typography>
-                                                                <Stack spacing={0.5}>
-                                                                    {optimization.refs_to_delete_low_sales?.length > 0 && (
-                                                                        <Chip
-                                                                            size="small"
-                                                                            label={`${optimization.refs_to_delete_low_sales.length} avec ventes`}
-                                                                            color="warning"
-                                                                            variant="outlined"
-                                                                        />
-                                                                    )}
-                                                                    {optimization.refs_to_delete_no_sales?.length > 0 && (
-                                                                        <Chip
-                                                                            size="small"
-                                                                            label={`${optimization.refs_to_delete_no_sales.length} sans ventes`}
-                                                                            color="error"
-                                                                            variant="outlined"
-                                                                        />
-                                                                    )}
-                                                                    {optimization.refs_to_keep?.length > 0 && (
-                                                                        <Chip
-                                                                            size="small"
-                                                                            label={`${optimization.refs_to_keep.length} à conserver`}
-                                                                            color="success"
-                                                                            variant="outlined"
-                                                                        />
-                                                                    )}
+                                                                <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
+                                                                    <Chip
+                                                                        size="small"
+                                                                        label={`${(optimization.projection_6m.metadata.quality_score * 100).toFixed(0)}%`}
+                                                                        color={
+                                                                            optimization.projection_6m.metadata.quality_score >= 0.7 ? 'success' :
+                                                                                optimization.projection_6m.metadata.quality_score >= 0.4 ? 'warning' : 'error'
+                                                                        }
+                                                                    />
+                                                                    <Chip
+                                                                        size="small"
+                                                                        label={optimization.projection_6m.metadata.method}
+                                                                        variant="outlined"
+                                                                    />
+                                                                    <Chip
+                                                                        size="small"
+                                                                        label={optimization.projection_6m.metadata.confidence_level}
+                                                                        variant="outlined"
+                                                                        color="info"
+                                                                    />
                                                                 </Stack>
+                                                                <Typography variant="body2" color="text.secondary">
+                                                                    {optimization.projection_6m.metadata.summary}
+                                                                </Typography>
                                                             </Box>
+                                                        )}
+
+                                                        {/* Répartition des références */}
+                                                        <Box>
+                                                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                                                                📦 Répartition des références:
+                                                            </Typography>
+                                                            <Stack direction="row" spacing={2}>
+                                                                <Box sx={{
+                                                                    p: 1,
+                                                                    bgcolor: 'success.50',
+                                                                    borderRadius: 1,
+                                                                    border: '1px solid',
+                                                                    borderColor: 'success.200'
+                                                                }}>
+                                                                    <Typography variant="caption" sx={{ fontWeight: 600, color: 'success.main' }}>
+                                                                        ✅ À conserver: {optimization.refs_to_keep?.length || 0}
+                                                                    </Typography>
+                                                                </Box>
+                                                                <Box sx={{
+                                                                    p: 1,
+                                                                    bgcolor: 'warning.50',
+                                                                    borderRadius: 1,
+                                                                    border: '1px solid',
+                                                                    borderColor: 'warning.200'
+                                                                }}>
+                                                                    <Typography variant="caption" sx={{ fontWeight: 600, color: 'warning.main' }}>
+                                                                        ⚠️ Faibles ventes: {optimization.refs_to_delete_low_sales?.length || 0}
+                                                                    </Typography>
+                                                                </Box>
+                                                                <Box sx={{
+                                                                    p: 1,
+                                                                    bgcolor: 'error.50',
+                                                                    borderRadius: 1,
+                                                                    border: '1px solid',
+                                                                    borderColor: 'error.200'
+                                                                }}>
+                                                                    <Typography variant="caption" sx={{ fontWeight: 600, color: 'error.main' }}>
+                                                                        ❌ Sans ventes: {optimization.refs_to_delete_no_sales?.length || 0}
+                                                                    </Typography>
+                                                                </Box>
+                                                            </Stack>
                                                         </Box>
 
                                                         {/* Barre de progression du gain */}
                                                         {optimization.gain_potentiel > 0 && (
                                                             <Box sx={{ mt: 2 }}>
-                                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                                                                    <Typography variant="caption" color="text.secondary">
-                                                                        Potentiel de gain
-                                                                    </Typography>
-                                                                    <Typography variant="caption" fontWeight={500}>
-                                                                        {Math.round((optimization.gain_potentiel / Math.max(optimization.gain_potentiel_6m, optimization.gain_potentiel)) * 100)}%
-                                                                    </Typography>
-                                                                </Box>
+                                                                <Typography variant="caption" color="text.secondary">
+                                                                    Potentiel de gain (relatif)
+                                                                </Typography>
                                                                 <LinearProgress
                                                                     variant="determinate"
                                                                     value={Math.min((optimization.gain_potentiel / 50000) * 100, 100)}
@@ -420,7 +499,6 @@ const OptimizationTableSection = ({ data, onOptimizationSelect, onSimulationOpen
                                                     </Box>
                                                 </Collapse>
                                             </TableCell>
-                                           
                                         </TableRow>
                                     </React.Fragment>
                                 );

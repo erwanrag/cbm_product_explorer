@@ -1,5 +1,5 @@
 // ===================================
-// 📁 frontend/src/features/optimization/pages/OptimizationPage.jsx - VERSION CORRIGÉE
+// 📁 frontend/src/features/optimization/pages/OptimizationPage.jsx - COMPLET
 // ===================================
 
 import React, { useState, useMemo } from 'react';
@@ -17,68 +17,33 @@ import OptimizationDetailPanel from '@/features/optimization/components/Optimiza
 import OptimizationSimulationModal from '@/features/optimization/components/OptimizationSimulationModal';
 
 export default function OptimizationPage() {
-    // ✅ 1. TOUS LES HOOKS EN PREMIER - ORDRE FIXE
+    // ✅ Hooks
     const { filters } = useLayout();
     const { data: optimizationData, isLoading, isError, error } = useOptimizationData(filters);
 
-    // ✅ 2. TOUS LES useState ENSEMBLE - SUPPRIMÉ selectedGroupingCrn
+    // ✅ États locaux
     const [selectedOptimization, setSelectedOptimization] = useState(null);
     const [selectedQualite, setSelectedQualite] = useState('');
     const [simulationModalOpen, setSimulationModalOpen] = useState(false);
     const [selectedSimulationData, setSelectedSimulationData] = useState(null);
-    const [viewMode, setViewMode] = useState('table'); // 'table', 'charts', 'summary'
+    const [viewMode, setViewMode] = useState('table');
 
-    // ✅ 3. FILTRAGE AVEC LOGIQUE PMQ/PMV FRONTEND
+    // ✅ Filtrage des données par qualité
     const filteredData = useMemo(() => {
-        if (!optimizationData?.items) return { items: [] };
+        if (!optimizationData?.items) return optimizationData;
 
-        let filtered = [...optimizationData.items];
+        if (!selectedQualite) return optimizationData;
 
-        // Filtrage par Qualité avec logique PMQ/PMV
-        if (selectedQualite) {
-            if (selectedQualite === 'PMQ') {
-                // PMQ inclut PMQ + PMV
-                filtered = filtered.filter(item =>
-                    item.qualite === 'PMQ' || item.qualite === 'PMV'
-                );
-
-                // Regroupement PMQ/PMV par grouping_crn avec priorité PMV
-                const grouped = {};
-                filtered.forEach(item => {
-                    const key = item.grouping_crn;
-                    if (!grouped[key]) {
-                        grouped[key] = item;
-                    } else {
-                        // Priorité PMV sur PMQ
-                        if (item.qualite === 'PMV' && grouped[key].qualite === 'PMQ') {
-                            grouped[key] = item;
-                        }
-                        // Si même qualité, garder celui avec meilleur gain
-                        else if (item.qualite === grouped[key].qualite &&
-                            item.gain_potentiel > grouped[key].gain_potentiel) {
-                            grouped[key] = item;
-                        }
-                    }
-                });
-
-                filtered = Object.values(grouped);
-            } else {
-                // Filtre normal pour OEM, OE, etc.
-                filtered = filtered.filter(item =>
-                    item.qualite === selectedQualite
-                );
-            }
-        }
-
-        return { items: filtered };
+        return {
+            ...optimizationData,
+            items: optimizationData.items.filter(item => item.qualite === selectedQualite)
+        };
     }, [optimizationData, selectedQualite]);
 
-    // ✅ 4. VÉRIFICATION hasData APRÈS filteredData
-    const hasData = useMemo(() => {
-        return filteredData && filteredData.items && filteredData.items.length > 0;
-    }, [filteredData]);
+    // Vérification des données
+    const hasData = filteredData?.items?.length > 0;
 
-    // ✅ 5. CALCULS TOTAUX
+    // ✅ Calculs des totaux - AVEC LES NOUVEAUX CHAMPS
     const totals = useMemo(() => {
         if (!filteredData?.items?.length) return null;
 
@@ -91,27 +56,32 @@ export default function OptimizationPage() {
             ? items.reduce((sum, item) => sum + (item.taux_croissance || 0), 0) / totalGroups
             : 0;
 
+        // ✅ NOUVEAUX CHAMPS du backend
+        const totalMargeActuelle6m = items.reduce((sum, item) => sum + (item.marge_actuelle_6m || 0), 0);
+        const totalMargeOptimisee6m = items.reduce((sum, item) => sum + (item.marge_optimisee_6m || 0), 0);
+
         return {
             totalGroups,
             totalGainImmediat,
             totalGain6m,
             totalRefs,
-            avgTauxCroissance
+            avgTauxCroissance,
+            totalMargeActuelle6m,
+            totalMargeOptimisee6m
         };
     }, [filteredData]);
 
-    // ✅ 6. FONCTIONS HANDLERS
+    // ✅ Handlers
     const handleOptimizationSelect = (optimization) => {
         setSelectedOptimization(optimization);
     };
 
     const handleQualiteChange = (value) => {
         setSelectedQualite(value);
-        setSelectedOptimization(null); // Reset sélection
+        setSelectedOptimization(null);
     };
 
     const handleSimulationModalOpen = (optimizationData) => {
-        // S'assurer que c'est un array
         const dataArray = Array.isArray(optimizationData) ? optimizationData : [optimizationData];
         setSelectedSimulationData(dataArray);
         setSimulationModalOpen(true);
@@ -126,7 +96,7 @@ export default function OptimizationPage() {
         setViewMode(mode);
     };
 
-    // ✅ 7. RENDU CONDITIONNEL
+    // ✅ Rendu conditionnel
     const renderContent = () => {
         if (isLoading) {
             return (
@@ -165,16 +135,16 @@ export default function OptimizationPage() {
 
         return (
             <>
-                {/* FILTRES EN PREMIER (se mettent à jour avec KPI) */}
+                {/* Section Filtres */}
                 <OptimizationFiltersSection
                     selectedQualite={selectedQualite}
                     onQualiteChange={handleQualiteChange}
-                    data={optimizationData} // Données non filtrées pour stats
+                    data={optimizationData}
                     viewMode={viewMode}
                     onViewModeChange={handleViewModeChange}
                 />
 
-                {/* Section KPI (mise à jour avec filtres) */}
+                {/* Section KPI */}
                 <OptimizationKPISection
                     data={filteredData}
                     totals={totals}
@@ -189,7 +159,7 @@ export default function OptimizationPage() {
                     />
                 )}
 
-                {/* Section Tableau */}
+                {/* Tableau */}
                 {viewMode === 'table' && (
                     <OptimizationTableSection
                         data={filteredData}
@@ -198,7 +168,7 @@ export default function OptimizationPage() {
                     />
                 )}
 
-                {/* Panel de détail avec historique */}
+                {/* Panel de détail */}
                 {selectedOptimization && (
                     <OptimizationDetailPanel
                         optimization={selectedOptimization}
@@ -207,7 +177,7 @@ export default function OptimizationPage() {
                     />
                 )}
 
-                {/* Modal Simulation avec appel à l'API */}
+                {/* Modal Simulation */}
                 <OptimizationSimulationModal
                     open={simulationModalOpen}
                     onClose={handleSimulationModalClose}
@@ -217,7 +187,7 @@ export default function OptimizationPage() {
         );
     };
 
-    // ✅ 8. RENDU PRINCIPAL
+    // ✅ Rendu principal
     return (
         <Container maxWidth="xl" sx={{ py: 3 }}>
             <motion.div
@@ -239,4 +209,3 @@ export default function OptimizationPage() {
         </Container>
     );
 }
-

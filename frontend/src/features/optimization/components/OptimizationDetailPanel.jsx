@@ -1,5 +1,5 @@
 // ===================================
-// 📁 frontend/src/features/optimization/components/OptimizationDetailPanel.jsx
+// 📁 frontend/src/features/optimization/components/OptimizationDetailPanel.jsx - COMPLET CORRIGÉ
 // ===================================
 
 import React, { useState } from 'react';
@@ -7,19 +7,22 @@ import {
     Box, Paper, Typography, Grid, Card, CardContent,
     IconButton, Collapse, Table, TableBody, TableCell,
     TableContainer, TableHead, TableRow, Chip, Button,
-    Stack, Divider, Tabs, Tab, Alert
+    Stack, Divider, Tabs, Tab, Alert, ToggleButtonGroup, ToggleButton
 } from '@mui/material';
 import {
     Close, ExpandMore, ExpandLess, TrendingUp, TrendingDown,
-    CheckCircle, Cancel, Warning, Info, PlayArrowOutlined
+    CheckCircle, Cancel, Warning, Info, PlayArrowOutlined, GetApp
 } from '@mui/icons-material';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+// ✅ CORRECTION: Import correct de Legend depuis recharts
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
-import ProjectionQualityIndicator from './indicators/ProjectionQualityIndicator'; // Assurez-vous que le chemin est correct
+import { toast } from 'react-toastify';
+import ProjectionQualityIndicator from './indicators/ProjectionQualityIndicator';
 
 const OptimizationDetailPanel = ({ optimization, onClose, optimizationData }) => {
     const [activeTab, setActiveTab] = useState(0);
     const [expandedSection, setExpandedSection] = useState('historique');
+    const [selectedMetric, setSelectedMetric] = useState('marge');
 
     // Formatage des devises
     const formatCurrency = (value) => {
@@ -30,6 +33,14 @@ const OptimizationDetailPanel = ({ optimization, onClose, optimizationData }) =>
             minimumFractionDigits: 0,
             maximumFractionDigits: 0
         }).format(value);
+    };
+
+    // Formatage K€
+    const formatCurrencyK = (value) => {
+        if (!value) return '0';
+        if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M€`;
+        if (value >= 1000) return `${(value / 1000).toFixed(0)}K€`;
+        return `${value}€`;
     };
 
     // Formatage des pourcentages
@@ -51,6 +62,53 @@ const OptimizationDetailPanel = ({ optimization, onClose, optimizationData }) =>
 
     const handleSectionToggle = (section) => {
         setExpandedSection(expandedSection === section ? '' : section);
+    };
+
+    // ✅ Fonction d'export
+    const handleExport = (format) => {
+        const exportData = {
+            groupe: optimization.grouping_crn,
+            qualite: optimization.qualite,
+            gainImmediat: optimization.gain_potentiel,
+            gain6m: optimization.gain_potentiel_6m,
+            margeActuelle6m: optimization.marge_actuelle_6m,
+            margeOptimisee6m: optimization.marge_optimisee_6m,
+            refsAConserver: optimization.refs_to_keep,
+            refsFaiblesVentes: optimization.refs_to_delete_low_sales,
+            refsSansVentes: optimization.refs_to_delete_no_sales,
+            historique: optimization.historique_6m,
+            projection: optimization.projection_6m,
+            metadata: optimization.projection_6m?.metadata
+        };
+
+        if (format === 'excel') {
+            console.log('📥 Export Excel demandé pour:', exportData);
+
+            // Créer un CSV simple pour simulation
+            const csvContent = [
+                ['Période', 'Quantité', 'CA', 'Marge', 'Marge Opt', 'Type'],
+                ...timelineData.map(item => [
+                    item.periode,
+                    item.qte,
+                    item.ca,
+                    item.marge || item.marge_actuelle || 0,
+                    item.marge_optimisee || 0,
+                    item.type
+                ])
+            ].map(row => row.join(',')).join('\n');
+
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `optimisation_${optimization.grouping_crn}_${optimization.qualite}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+
+            toast.success('Export CSV généré avec succès');
+        }
     };
 
     const tabs = [
@@ -115,23 +173,13 @@ const OptimizationDetailPanel = ({ optimization, onClose, optimizationData }) =>
                                         {formatCurrency(optimization.gain_potentiel)}
                                     </Typography>
                                     <Typography variant="caption">
-                                        Gain Immédiat
-                                    </Typography>
-                                </Box>
-                            </Grid>
-                            <Grid item xs={4}>
-                                <Box sx={{ textAlign: 'center' }}>
-                                    <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                                        {formatCurrency(optimization.gain_potentiel_6m)}
-                                    </Typography>
-                                    <Typography variant="caption">
-                                        Projection 6M
+                                        Gain immédiat
                                     </Typography>
                                 </Box>
                             </Grid>
                             <Grid item xs={4}>
                                 <Box sx={{ textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    {optimization.taux_croissance > 0 ? (
+                                    {optimization.taux_croissance >= 0 ? (
                                         <TrendingUp sx={{ mr: 0.5 }} />
                                     ) : (
                                         <TrendingDown sx={{ mr: 0.5 }} />
@@ -146,19 +194,22 @@ const OptimizationDetailPanel = ({ optimization, onClose, optimizationData }) =>
                                     </Box>
                                 </Box>
                             </Grid>
+                            {/* ✅ FIABILITÉ PROJECTION CORRIGÉE */}
                             <Grid item xs={4}>
                                 <Box sx={{ textAlign: 'center' }}>
-                                    <ProjectionQualityIndicator
-                                        score={optimization.projection_6m?.metadata?.quality_score}
-                                        method={optimization.projection_6m?.metadata?.method}
-                                        variant="chip"
-                                    />
-                                    <Typography variant="caption">
+                                    {optimization.projection_6m?.metadata?.quality_score ? (
+                                        <ProjectionQualityIndicator
+                                            projection={optimization.projection_6m}
+                                            compact={true}
+                                        />
+                                    ) : (
+                                        <Chip size="small" label="N/A" color="default" variant="outlined" />
+                                    )}
+                                    <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>
                                         Fiabilité projection
                                     </Typography>
                                 </Box>
                             </Grid>
-
                         </Grid>
                     </Box>
 
@@ -170,181 +221,230 @@ const OptimizationDetailPanel = ({ optimization, onClose, optimizationData }) =>
                             ))}
                         </Tabs>
                     </Box>
-                    {/* Projection */}
-                    <Grid item xs={12} md={6}>
-                        <Card elevation={2}>
-                            <CardContent>
-                                <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
-                                    Qualité de la Projection
-                                </Typography>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                    <ProjectionQualityIndicator
-                                        score={optimization.projection_6m?.metadata?.quality_score}
-                                        method={optimization.projection_6m?.metadata?.method}
-                                        confidence={optimization.projection_6m?.metadata?.confidence_level}
-                                        variant="card"
-                                    />
-                                </Box>
-                            </CardContent>
-                        </Card>
-                    </Grid>
 
                     {/* Content */}
                     <Box sx={{ flex: 1, overflow: 'auto', p: 3 }}>
-                        {/* Vue d'ensemble */}
+                        {/* Tab 0: Vue d'ensemble */}
                         {activeTab === 0 && (
-                            <Box>
-                                <Grid container spacing={3}>
-                                    {/* Prix et marges */}
-                                    <Grid item xs={12} md={6}>
-                                        <Card elevation={2}>
-                                            <CardContent>
-                                                <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
-                                                    Analyse des Prix
-                                                </Typography>
-                                                <Stack spacing={2}>
-                                                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                        <Typography variant="body2" color="text.secondary">
-                                                            Prix d'achat minimum
-                                                        </Typography>
-                                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                                            {formatCurrency(optimization.px_achat_min)}
-                                                        </Typography>
-                                                    </Box>
-                                                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                        <Typography variant="body2" color="text.secondary">
-                                                            Prix de vente pondéré
-                                                        </Typography>
-                                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                                            {formatCurrency(optimization.px_vente_pondere)}
-                                                        </Typography>
-                                                    </Box>
-                                                    <Divider />
-                                                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                        <Typography variant="body2" color="text.secondary">
-                                                            Marge théorique
-                                                        </Typography>
-                                                        <Typography variant="body2" sx={{ fontWeight: 600, color: 'success.main' }}>
-                                                            {formatCurrency(optimization.px_vente_pondere - optimization.px_achat_min)}
-                                                        </Typography>
-                                                    </Box>
-                                                </Stack>
-                                            </CardContent>
-                                        </Card>
-                                    </Grid>
+                            <Stack spacing={3}>
+                                {/* ✅ Métriques économiques avec nouveaux champs */}
+                                <Card>
+                                    <CardContent>
+                                        <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                                            💰 Métriques Économiques
+                                        </Typography>
+                                        <Grid container spacing={2}>
+                                            <Grid item xs={6}>
+                                                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                    <Typography variant="body2">Prix achat min:</Typography>
+                                                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                                        {formatCurrency(optimization.px_achat_min)}
+                                                    </Typography>
+                                                </Box>
+                                            </Grid>
+                                            <Grid item xs={6}>
+                                                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                    <Typography variant="body2">Prix vente pond.:</Typography>
+                                                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                                        {formatCurrency(optimization.px_vente_pondere)}
+                                                    </Typography>
+                                                </Box>
+                                            </Grid>
+                                            <Grid item xs={6}>
+                                                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                    <Typography variant="body2">Gain immédiat:</Typography>
+                                                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'success.main' }}>
+                                                        {formatCurrency(optimization.gain_potentiel)}
+                                                    </Typography>
+                                                </Box>
+                                            </Grid>
+                                            <Grid item xs={6}>
+                                                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                    <Typography variant="body2">Gain 6 mois:</Typography>
+                                                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                                                        {formatCurrency(optimization.gain_potentiel_6m)}
+                                                    </Typography>
+                                                </Box>
+                                            </Grid>
+                                            {/* ✅ NOUVEAUX CHAMPS */}
+                                            <Grid item xs={6}>
+                                                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                    <Typography variant="body2">Marge actuelle 6M:</Typography>
+                                                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                                        {formatCurrency(optimization.marge_actuelle_6m)}
+                                                    </Typography>
+                                                </Box>
+                                            </Grid>
+                                            <Grid item xs={6}>
+                                                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                    <Typography variant="body2">Marge optimisée 6M:</Typography>
+                                                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'secondary.main' }}>
+                                                        {formatCurrency(optimization.marge_optimisee_6m)}
+                                                    </Typography>
+                                                </Box>
+                                            </Grid>
+                                        </Grid>
+                                    </CardContent>
+                                </Card>
 
-                                    {/* Répartition des références */}
-                                    <Grid item xs={12} md={6}>
-                                        <Card elevation={2}>
-                                            <CardContent>
-                                                <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
-                                                    Répartition des Références
-                                                </Typography>
-                                                <Stack spacing={2}>
-                                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                                            <CheckCircle fontSize="small" sx={{ color: 'success.main', mr: 1 }} />
-                                                            <Typography variant="body2">À conserver</Typography>
-                                                        </Box>
-                                                        <Chip
-                                                            size="small"
-                                                            label={optimization.refs_to_keep?.length || 0}
-                                                            color="success"
-                                                        />
-                                                    </Box>
-                                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                                            <Warning fontSize="small" sx={{ color: 'warning.main', mr: 1 }} />
-                                                            <Typography variant="body2">Faibles ventes</Typography>
-                                                        </Box>
-                                                        <Chip
-                                                            size="small"
-                                                            label={optimization.refs_to_delete_low_sales?.length || 0}
-                                                            color="warning"
-                                                        />
-                                                    </Box>
-                                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                                            <Cancel fontSize="small" sx={{ color: 'error.main', mr: 1 }} />
-                                                            <Typography variant="body2">Sans ventes</Typography>
-                                                        </Box>
-                                                        <Chip
-                                                            size="small"
-                                                            label={optimization.refs_to_delete_no_sales?.length || 0}
-                                                            color="error"
-                                                        />
-                                                    </Box>
-                                                </Stack>
-                                            </CardContent>
-                                        </Card>
-                                    </Grid>
+                                {/* ✅ Qualité de projection détaillée */}
+                                {optimization.projection_6m?.metadata && (
+                                    <Card>
+                                        <CardContent>
+                                            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                                                🎯 Qualité de la Projection
+                                            </Typography>
 
-                                    {/* Graphique chronologique */}
-                                    <Grid item xs={12}>
-                                        <Card elevation={2}>
-                                            <CardContent>
-                                                <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
-                                                    Évolution Historique et Projection
-                                                </Typography>
-                                                <ResponsiveContainer width="100%" height={300}>
-                                                    <LineChart data={timelineData}>
-                                                        <CartesianGrid strokeDasharray="3 3" />
-                                                        <XAxis dataKey="periode" />
-                                                        <YAxis />
-                                                        <Tooltip
-                                                            formatter={(value, name) => [formatCurrency(value), name]}
-                                                            labelFormatter={(label) => `Période: ${label}`}
+                                            <Stack spacing={2}>
+                                                <Box>
+                                                    <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
+                                                        <Chip
+                                                            label={`Score: ${(optimization.projection_6m.metadata.quality_score * 100).toFixed(0)}%`}
+                                                            color={
+                                                                optimization.projection_6m.metadata.quality_score >= 0.7 ? 'success' :
+                                                                    optimization.projection_6m.metadata.quality_score >= 0.4 ? 'warning' : 'error'
+                                                            }
                                                         />
-                                                        <Line
-                                                            type="monotone"
-                                                            dataKey="marge"
-                                                            stroke="#2196F3"
-                                                            strokeWidth={2}
-                                                            dot={{ fill: '#2196F3' }}
-                                                            connectNulls={false}
+                                                        <Chip
+                                                            label={optimization.projection_6m.metadata.method}
+                                                            variant="outlined"
                                                         />
-                                                    </LineChart>
-                                                </ResponsiveContainer>
-                                            </CardContent>
-                                        </Card>
-                                    </Grid>
-                                </Grid>
-                            </Box>
+                                                        <Chip
+                                                            label={`${optimization.projection_6m.metadata.data_points} points`}
+                                                            variant="outlined"
+                                                            size="small"
+                                                        />
+                                                    </Stack>
+                                                    <Typography variant="body2" color="text.secondary">
+                                                        {optimization.projection_6m.metadata.summary}
+                                                    </Typography>
+                                                </Box>
+
+                                                {optimization.projection_6m.metadata.warnings?.length > 0 && (
+                                                    <Alert severity="warning" size="small">
+                                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                                            Avertissements:
+                                                        </Typography>
+                                                        <ul style={{ margin: '4px 0', paddingLeft: '20px' }}>
+                                                            {optimization.projection_6m.metadata.warnings.map((warning, index) => (
+                                                                <li key={index}>
+                                                                    <Typography variant="body2">
+                                                                        {warning}
+                                                                    </Typography>
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    </Alert>
+                                                )}
+
+                                                {optimization.projection_6m.metadata.recommendations?.length > 0 && (
+                                                    <Box sx={{ p: 2, bgcolor: 'info.50', borderRadius: 1 }}>
+                                                        <Typography variant="body2" sx={{ fontWeight: 600, mb: 1, color: 'info.main' }}>
+                                                            💡 Recommandations:
+                                                        </Typography>
+                                                        <ul style={{ margin: 0, paddingLeft: '16px' }}>
+                                                            {optimization.projection_6m.metadata.recommendations.map((rec, index) => (
+                                                                <li key={index}>
+                                                                    <Typography variant="body2" color="info.dark">
+                                                                        {rec}
+                                                                    </Typography>
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    </Box>
+                                                )}
+                                            </Stack>
+                                        </CardContent>
+                                    </Card>
+                                )}
+
+                                {/* Répartition des références */}
+                                <Card>
+                                    <CardContent>
+                                        <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                                            📦 Répartition des Références
+                                        </Typography>
+
+                                        <Grid container spacing={2}>
+                                            <Grid item xs={12} md={4}>
+                                                <Box sx={{ p: 2, bgcolor: 'success.50', borderRadius: 1, border: '1px solid', borderColor: 'success.200' }}>
+                                                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'success.main', mb: 1 }}>
+                                                        ✅ À Conserver ({optimization.refs_to_keep?.length || 0})
+                                                    </Typography>
+                                                    {optimization.refs_to_keep?.slice(0, 3).map(ref => (
+                                                        <Typography key={ref.cod_pro} variant="caption" sx={{ display: 'block' }}>
+                                                            {ref.refint} - {formatCurrency(ref.ca)}
+                                                        </Typography>
+                                                    ))}
+                                                </Box>
+                                            </Grid>
+
+                                            <Grid item xs={12} md={4}>
+                                                <Box sx={{ p: 2, bgcolor: 'warning.50', borderRadius: 1, border: '1px solid', borderColor: 'warning.200' }}>
+                                                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'warning.main', mb: 1 }}>
+                                                        ⚠️ Faibles Ventes ({optimization.refs_to_delete_low_sales?.length || 0})
+                                                    </Typography>
+                                                    {optimization.refs_to_delete_low_sales?.slice(0, 3).map(ref => (
+                                                        <Typography key={ref.cod_pro} variant="caption" sx={{ display: 'block' }}>
+                                                            {ref.refint} - {formatCurrency(ref.ca)}
+                                                        </Typography>
+                                                    ))}
+                                                </Box>
+                                            </Grid>
+
+                                            <Grid item xs={12} md={4}>
+                                                <Box sx={{ p: 2, bgcolor: 'error.50', borderRadius: 1, border: '1px solid', borderColor: 'error.200' }}>
+                                                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'error.main', mb: 1 }}>
+                                                        ❌ Sans Ventes ({optimization.refs_to_delete_no_sales?.length || 0})
+                                                    </Typography>
+                                                    {optimization.refs_to_delete_no_sales?.slice(0, 3).map(ref => (
+                                                        <Typography key={ref.cod_pro} variant="caption" sx={{ display: 'block' }}>
+                                                            {ref.refint} - Stock mort
+                                                        </Typography>
+                                                    ))}
+                                                </Box>
+                                            </Grid>
+                                        </Grid>
+                                    </CardContent>
+                                </Card>
+                            </Stack>
                         )}
 
-                        {/* Références */}
+                        {/* ✅ Tab 1: Références détaillées CORRIGÉES */}
                         {activeTab === 1 && (
                             <Box>
-                                <Stack spacing={3}>
-                                    {/* Références à conserver */}
-                                    <Card elevation={2}>
-                                        <CardContent>
-                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                                                <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'success.main' }}>
-                                                    Références à Conserver ({optimization.refs_to_keep?.length || 0})
-                                                </Typography>
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={() => handleSectionToggle('keep')}
-                                                >
-                                                    {expandedSection === 'keep' ? <ExpandLess /> : <ExpandMore />}
-                                                </IconButton>
-                                            </Box>
-                                            <Collapse in={expandedSection === 'keep'}>
+                                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                                    📋 Détail des Références
+                                </Typography>
+
+                                {/* Références à conserver */}
+                                <Card sx={{ mb: 2 }}>
+                                    <CardContent>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                                            <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'success.main' }}>
+                                                ✅ Références à conserver ({optimization.refs_to_keep?.length || 0})
+                                            </Typography>
+                                            <IconButton size="small" onClick={() => handleSectionToggle('keep')}>
+                                                {expandedSection === 'keep' ? <ExpandLess /> : <ExpandMore />}
+                                            </IconButton>
+                                        </Box>
+
+                                        <Collapse in={expandedSection === 'keep'}>
+                                            {optimization.refs_to_keep && optimization.refs_to_keep.length > 0 ? (
                                                 <TableContainer>
                                                     <Table size="small">
                                                         <TableHead>
                                                             <TableRow>
-                                                                <TableCell>Code Produit</TableCell>
+                                                                <TableCell>Réf. Interne</TableCell>
                                                                 <TableCell align="right">Prix Achat</TableCell>
                                                                 <TableCell align="right">CA</TableCell>
-                                                                <TableCell align="right">Quantité</TableCell>
+                                                                <TableCell align="right">Qté</TableCell>
                                                             </TableRow>
                                                         </TableHead>
                                                         <TableBody>
-                                                            {optimization.refs_to_keep?.map((ref, index) => (
-                                                                <TableRow key={index}>
-                                                                    <TableCell>{ref.cod_pro}</TableCell>
+                                                            {optimization.refs_to_keep.map(ref => (
+                                                                <TableRow key={ref.cod_pro}>
+                                                                    <TableCell>{ref.refint}</TableCell>
                                                                     <TableCell align="right">{formatCurrency(ref.px_achat)}</TableCell>
                                                                     <TableCell align="right">{formatCurrency(ref.ca)}</TableCell>
                                                                     <TableCell align="right">{ref.qte}</TableCell>
@@ -353,231 +453,409 @@ const OptimizationDetailPanel = ({ optimization, onClose, optimizationData }) =>
                                                         </TableBody>
                                                     </Table>
                                                 </TableContainer>
-                                            </Collapse>
-                                        </CardContent>
-                                    </Card>
-
-                                    {/* Références à supprimer - faibles ventes */}
-                                    <Card elevation={2}>
-                                        <CardContent>
-                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                                                <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'warning.main' }}>
-                                                    Références avec Faibles Ventes ({optimization.refs_to_delete_low_sales?.length || 0})
+                                            ) : (
+                                                <Typography variant="body2" color="text.secondary">
+                                                    Aucune référence à conserver
                                                 </Typography>
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={() => handleSectionToggle('low_sales')}
-                                                >
-                                                    {expandedSection === 'low_sales' ? <ExpandLess /> : <ExpandMore />}
-                                                </IconButton>
-                                            </Box>
-                                            <Collapse in={expandedSection === 'low_sales'}>
+                                            )}
+                                        </Collapse>
+                                    </CardContent>
+                                </Card>
+
+                                {/* Références faibles ventes */}
+                                <Card sx={{ mb: 2 }}>
+                                    <CardContent>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                                            <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'warning.main' }}>
+                                                ⚠️ Références faibles ventes ({optimization.refs_to_delete_low_sales?.length || 0})
+                                            </Typography>
+                                            <IconButton size="small" onClick={() => handleSectionToggle('low')}>
+                                                {expandedSection === 'low' ? <ExpandLess /> : <ExpandMore />}
+                                            </IconButton>
+                                        </Box>
+
+                                        <Collapse in={expandedSection === 'low'}>
+                                            {optimization.refs_to_delete_low_sales && optimization.refs_to_delete_low_sales.length > 0 ? (
                                                 <TableContainer>
                                                     <Table size="small">
                                                         <TableHead>
                                                             <TableRow>
-                                                                <TableCell>Code Produit</TableCell>
+                                                                <TableCell>Réf. Interne</TableCell>
                                                                 <TableCell align="right">Prix Achat</TableCell>
                                                                 <TableCell align="right">CA</TableCell>
-                                                                <TableCell align="right">Quantité</TableCell>
+                                                                <TableCell align="right">Qté</TableCell>
                                                                 <TableCell align="right">Gain Potentiel</TableCell>
                                                             </TableRow>
                                                         </TableHead>
                                                         <TableBody>
-                                                            {optimization.refs_to_delete_low_sales?.map((ref, index) => (
-                                                                <TableRow key={index}>
-                                                                    <TableCell>{ref.cod_pro}</TableCell>
+                                                            {optimization.refs_to_delete_low_sales.map(ref => (
+                                                                <TableRow key={ref.cod_pro}>
+                                                                    <TableCell>{ref.refint}</TableCell>
                                                                     <TableCell align="right">{formatCurrency(ref.px_achat)}</TableCell>
                                                                     <TableCell align="right">{formatCurrency(ref.ca)}</TableCell>
                                                                     <TableCell align="right">{ref.qte}</TableCell>
                                                                     <TableCell align="right" sx={{ color: 'success.main', fontWeight: 600 }}>
-                                                                        {formatCurrency(ref.gain_potentiel_par_ref)}
+                                                                        {formatCurrency(ref.gain_potentiel_par_ref || 0)}
                                                                     </TableCell>
                                                                 </TableRow>
                                                             ))}
                                                         </TableBody>
                                                     </Table>
                                                 </TableContainer>
-                                            </Collapse>
-                                        </CardContent>
-                                    </Card>
-
-                                    {/* Références sans ventes */}
-                                    <Card elevation={2}>
-                                        <CardContent>
-                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                                                <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'error.main' }}>
-                                                    Références sans Ventes ({optimization.refs_to_delete_no_sales?.length || 0})
+                                            ) : (
+                                                <Typography variant="body2" color="text.secondary">
+                                                    Aucune référence à faibles ventes
                                                 </Typography>
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={() => handleSectionToggle('no_sales')}
-                                                >
-                                                    {expandedSection === 'no_sales' ? <ExpandLess /> : <ExpandMore />}
-                                                </IconButton>
-                                            </Box>
-                                            <Collapse in={expandedSection === 'no_sales'}>
+                                            )}
+                                        </Collapse>
+                                    </CardContent>
+                                </Card>
+
+                                {/* Références sans ventes */}
+                                <Card>
+                                    <CardContent>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                                            <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'error.main' }}>
+                                                ❌ Références sans ventes ({optimization.refs_to_delete_no_sales?.length || 0})
+                                            </Typography>
+                                            <IconButton size="small" onClick={() => handleSectionToggle('no')}>
+                                                {expandedSection === 'no' ? <ExpandLess /> : <ExpandMore />}
+                                            </IconButton>
+                                        </Box>
+
+                                        <Collapse in={expandedSection === 'no'}>
+                                            {optimization.refs_to_delete_no_sales && optimization.refs_to_delete_no_sales.length > 0 ? (
                                                 <TableContainer>
                                                     <Table size="small">
                                                         <TableHead>
                                                             <TableRow>
-                                                                <TableCell>Code Produit</TableCell>
+                                                                <TableCell>Réf. Interne</TableCell>
                                                                 <TableCell align="right">Prix Achat</TableCell>
-                                                                <TableCell align="right">CA</TableCell>
-                                                                <TableCell align="right">Quantité</TableCell>
+                                                                <TableCell>Statut</TableCell>
                                                             </TableRow>
                                                         </TableHead>
                                                         <TableBody>
-                                                            {optimization.refs_to_delete_no_sales?.map((ref, index) => (
-                                                                <TableRow key={index}>
-                                                                    <TableCell>{ref.cod_pro}</TableCell>
+                                                            {optimization.refs_to_delete_no_sales.map(ref => (
+                                                                <TableRow key={ref.cod_pro}>
+                                                                    <TableCell>{ref.refint}</TableCell>
                                                                     <TableCell align="right">{formatCurrency(ref.px_achat)}</TableCell>
-                                                                    <TableCell align="right">-</TableCell>
-                                                                    <TableCell align="right">-</TableCell>
+                                                                    <TableCell>
+                                                                        <Chip label="Stock mort" color="error" size="small" />
+                                                                    </TableCell>
                                                                 </TableRow>
                                                             ))}
                                                         </TableBody>
                                                     </Table>
                                                 </TableContainer>
-                                            </Collapse>
-                                        </CardContent>
-                                    </Card>
-                                </Stack>
+                                            ) : (
+                                                <Typography variant="body2" color="text.secondary">
+                                                    Aucune référence sans ventes
+                                                </Typography>
+                                            )}
+                                        </Collapse>
+                                    </CardContent>
+                                </Card>
                             </Box>
                         )}
 
-                        {/* Chronologie */}
+                        {/* ✅ Tab 2: Chronologie avec sélecteur de métrique - CORRIGÉ */}
                         {activeTab === 2 && (
                             <Box>
-                                <Grid container spacing={3}>
-                                    <Grid item xs={12} md={6}>
-                                        <Card elevation={2}>
-                                            <CardContent>
-                                                <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
-                                                    Historique 6 Derniers Mois
-                                                </Typography>
-                                                <Stack spacing={1}>
-                                                    {optimization.historique_6m?.map((hist, index) => (
-                                                        <Box key={index} sx={{
-                                                            display: 'flex',
-                                                            justify: 'space-between',
-                                                            p: 1,
-                                                            bgcolor: 'grey.50',
-                                                            borderRadius: 1
-                                                        }}>
-                                                            <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                                                {hist.periode}
-                                                            </Typography>
-                                                            <Box sx={{ textAlign: 'right' }}>
-                                                                <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                                                    {formatCurrency(hist.marge)}
-                                                                </Typography>
-                                                                <Typography variant="caption" color="text.secondary">
-                                                                    {hist.qte} unités
-                                                                </Typography>
-                                                            </Box>
-                                                        </Box>
-                                                    ))}
-                                                </Stack>
-                                            </CardContent>
-                                        </Card>
-                                    </Grid>
-                                    <Grid item xs={12} md={6}>
-                                        <Card elevation={2}>
-                                            <CardContent>
-                                                <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
-                                                    Projection 6 Prochains Mois
-                                                </Typography>
-                                                <Stack spacing={1}>
-                                                    {optimization.projection_6m?.mois?.map((proj, index) => (
-                                                        <Box key={index} sx={{
-                                                            display: 'flex',
-                                                            justify: 'space-between',
-                                                            p: 1,
-                                                            bgcolor: 'success.50',
-                                                            borderRadius: 1,
-                                                            border: 1,
-                                                            borderColor: 'success.200'
-                                                        }}>
-                                                            <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                                                {proj.periode}
-                                                            </Typography>
-                                                            <Box sx={{ textAlign: 'right' }}>
-                                                                <Typography variant="body2" sx={{ fontWeight: 600, color: 'success.main' }}>
-                                                                    {formatCurrency(proj.marge)}
-                                                                </Typography>
-                                                                <Typography variant="caption" color="text.secondary">
-                                                                    {proj.qte} unités
-                                                                </Typography>
-                                                            </Box>
-                                                        </Box>
-                                                    ))}
-                                                </Stack>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                                        📈 Évolution Temporelle
+                                    </Typography>
+                                    <ToggleButtonGroup
+                                        value={selectedMetric}
+                                        exclusive
+                                        onChange={(e, newValue) => newValue && setSelectedMetric(newValue)}
+                                        size="small"
+                                    >
+                                        <ToggleButton value="qte">Quantité</ToggleButton>
+                                        <ToggleButton value="ca">CA</ToggleButton>
+                                        <ToggleButton value="marge">Marge</ToggleButton>
+                                    </ToggleButtonGroup>
+                                </Box>
 
-                                                {optimization.projection_6m?.totaux && (
-                                                    <Box sx={{ mt: 2, p: 2, bgcolor: 'success.100', borderRadius: 1 }}>
-                                                        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                                                            Total Projection
-                                                        </Typography>
-                                                        <Typography variant="h6" sx={{ color: 'success.main', fontWeight: 700 }}>
-                                                            {formatCurrency(optimization.projection_6m.totaux.marge)}
-                                                        </Typography>
-                                                        <Typography variant="caption">
-                                                            {optimization.projection_6m.totaux.qte} unités • {formatCurrency(optimization.projection_6m.totaux.ca)} CA
-                                                        </Typography>
-                                                    </Box>
+                                <Card>
+                                    <CardContent>
+                                        <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
+                                            {selectedMetric === 'qte' ? 'Quantités' :
+                                                selectedMetric === 'ca' ? 'Chiffre d\'Affaires' : 'Marges'} - Historique + Projection
+                                        </Typography>
+
+                                        <ResponsiveContainer width="100%" height={350}>
+                                            <LineChart data={timelineData}>
+                                                <CartesianGrid strokeDasharray="3 3" />
+                                                <XAxis
+                                                    dataKey="periode"
+                                                    tick={{ fontSize: 12 }}
+                                                />
+                                                <YAxis
+                                                    tick={{ fontSize: 12 }}
+                                                    tickFormatter={selectedMetric === 'qte' ? undefined : formatCurrencyK}
+                                                />
+                                                <Tooltip
+                                                    formatter={(value, name) => [
+                                                        selectedMetric === 'qte' ? value : formatCurrency(value),
+                                                        name
+                                                    ]}
+                                                    labelFormatter={(label) => `Période: ${label}`}
+                                                />
+                                                <Legend />
+
+                                                {/* Affichage selon la métrique sélectionnée */}
+                                                {selectedMetric === 'qte' && (
+                                                    <Line
+                                                        type="monotone"
+                                                        dataKey="qte"
+                                                        stroke="#2196F3"
+                                                        strokeWidth={2}
+                                                        dot={{ fill: '#2196F3', strokeWidth: 2, r: 4 }}
+                                                        name="Quantité"
+                                                    />
                                                 )}
-                                            </CardContent>
-                                        </Card>
-                                    </Grid>
-                                </Grid>
+
+                                                {selectedMetric === 'ca' && (
+                                                    <Line
+                                                        type="monotone"
+                                                        dataKey="ca"
+                                                        stroke="#FF9800"
+                                                        strokeWidth={2}
+                                                        dot={{ fill: '#FF9800', strokeWidth: 2, r: 4 }}
+                                                        name="Chiffre d'Affaires"
+                                                    />
+                                                )}
+
+                                                {selectedMetric === 'marge' && (
+                                                    <>
+                                                        <Line
+                                                            type="monotone"
+                                                            dataKey="marge"
+                                                            stroke="#4CAF50"
+                                                            strokeWidth={2}
+                                                            dot={{ fill: '#4CAF50', strokeWidth: 2, r: 4 }}
+                                                            name="Marge Historique"
+                                                        />
+                                                        <Line
+                                                            type="monotone"
+                                                            dataKey="marge_actuelle"
+                                                            stroke="#F44336"
+                                                            strokeWidth={2}
+                                                            strokeDasharray="5 5"
+                                                            dot={{ fill: '#F44336', strokeWidth: 2, r: 4 }}
+                                                            name="Marge Actuelle Projetée"
+                                                        />
+                                                        <Line
+                                                            type="monotone"
+                                                            dataKey="marge_optimisee"
+                                                            stroke="#2E7D32"
+                                                            strokeWidth={2}
+                                                            strokeDasharray="5 5"
+                                                            dot={{ fill: '#2E7D32', strokeWidth: 2, r: 4 }}
+                                                            name="Marge Optimisée Projetée"
+                                                        />
+                                                    </>
+                                                )}
+                                            </LineChart>
+                                        </ResponsiveContainer>
+
+                                        {/* ✅ Informations sur la projection */}
+                                        {optimization.projection_6m?.metadata && (
+                                            <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+                                                <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                                                    📊 Informations sur la projection:
+                                                </Typography>
+                                                <Typography variant="body2" color="text.secondary">
+                                                    Méthode: {optimization.projection_6m.metadata.method} •
+                                                    R²: {(optimization.projection_6m.metadata.r_squared * 100).toFixed(1)}% •
+                                                    Confiance: {optimization.projection_6m.metadata.confidence_level}
+                                                </Typography>
+                                                {optimization.projection_6m.metadata.slope && (
+                                                    <Typography variant="body2" color="text.secondary">
+                                                        Tendance: {optimization.projection_6m.metadata.slope > 0 ? '↗️' : '↘️'}
+                                                        {optimization.projection_6m.metadata.slope.toFixed(2)} unités/mois
+                                                    </Typography>
+                                                )}
+                                            </Box>
+                                        )}
+                                    </CardContent>
+                                </Card>
+
+                                {/* Tableau des données détaillées */}
+                                <Card sx={{ mt: 2 }}>
+                                    <CardContent>
+                                        <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
+                                            📋 Données Détaillées
+                                        </Typography>
+
+                                        <TableContainer>
+                                            <Table size="small">
+                                                <TableHead>
+                                                    <TableRow>
+                                                        <TableCell>Période</TableCell>
+                                                        <TableCell align="right">Quantité</TableCell>
+                                                        <TableCell align="right">CA</TableCell>
+                                                        <TableCell align="right">Marge</TableCell>
+                                                        <TableCell align="right">Marge Opt.</TableCell>
+                                                        <TableCell align="center">Type</TableCell>
+                                                    </TableRow>
+                                                </TableHead>
+                                                <TableBody>
+                                                    {timelineData.map((item, index) => (
+                                                        <TableRow key={index}>
+                                                            <TableCell>{item.periode}</TableCell>
+                                                            <TableCell align="right">{item.qte}</TableCell>
+                                                            <TableCell align="right">{formatCurrency(item.ca)}</TableCell>
+                                                            <TableCell align="right">
+                                                                {formatCurrency(item.marge || item.marge_actuelle || 0)}
+                                                            </TableCell>
+                                                            <TableCell align="right">
+                                                                {formatCurrency(item.marge_optimisee || 0)}
+                                                            </TableCell>
+                                                            <TableCell align="center">
+                                                                <Chip
+                                                                    label={item.type}
+                                                                    size="small"
+                                                                    color={item.type === 'historique' ? 'primary' : 'secondary'}
+                                                                    variant="outlined"
+                                                                />
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    ))}
+                                                </TableBody>
+                                            </Table>
+                                        </TableContainer>
+                                    </CardContent>
+                                </Card>
                             </Box>
                         )}
 
-                        {/* Simulation */}
+                        {/* Tab 3: Simulation */}
                         {activeTab === 3 && (
                             <Box>
-                                <Alert severity="info" sx={{ mb: 3 }}>
-                                    <Typography variant="body2">
-                                        Cette section permet de simuler l'impact de l'optimisation avant application.
-                                    </Typography>
-                                </Alert>
+                                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                                    🎮 Simulation d'Optimisation
+                                </Typography>
 
-                                <Card elevation={2}>
+                                <Card>
                                     <CardContent>
-                                        <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
-                                            Paramètres de Simulation
+                                        <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
+                                            Scénario de Rationalisation
                                         </Typography>
 
-                                        <Grid container spacing={3} sx={{ mt: 1 }}>
+                                        <Grid container spacing={3}>
+                                            {/* Avant optimisation */}
                                             <Grid item xs={12} md={6}>
-                                                <Typography variant="body2" color="text.secondary" gutterBottom>
-                                                    Références concernées
-                                                </Typography>
-                                                <Typography variant="h6">
-                                                    {(optimization.refs_to_delete_low_sales?.length || 0) +
-                                                        (optimization.refs_to_delete_no_sales?.length || 0)} à supprimer
-                                                </Typography>
+                                                <Box sx={{ p: 2, bgcolor: 'warning.50', borderRadius: 1, border: '1px solid', borderColor: 'warning.200' }}>
+                                                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'warning.main', mb: 2 }}>
+                                                        📊 Situation Actuelle
+                                                    </Typography>
+                                                    <Stack spacing={1}>
+                                                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                            <Typography variant="body2">Références totales:</Typography>
+                                                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                                                {optimization.refs_total}
+                                                            </Typography>
+                                                        </Box>
+                                                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                            <Typography variant="body2">Marge 6M actuelle:</Typography>
+                                                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                                                {formatCurrency(optimization.marge_actuelle_6m)}
+                                                            </Typography>
+                                                        </Box>
+                                                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                            <Typography variant="body2">Coût de gestion:</Typography>
+                                                            <Typography variant="body2" sx={{ color: 'error.main' }}>
+                                                                Élevé (dispersé)
+                                                            </Typography>
+                                                        </Box>
+                                                    </Stack>
+                                                </Box>
                                             </Grid>
+
+                                            {/* Après optimisation */}
                                             <Grid item xs={12} md={6}>
-                                                <Typography variant="body2" color="text.secondary" gutterBottom>
-                                                    Impact estimé
-                                                </Typography>
-                                                <Typography variant="h6" sx={{ color: 'success.main' }}>
-                                                    {formatCurrency(optimization.gain_potentiel)}
-                                                </Typography>
+                                                <Box sx={{ p: 2, bgcolor: 'success.50', borderRadius: 1, border: '1px solid', borderColor: 'success.200' }}>
+                                                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'success.main', mb: 2 }}>
+                                                        🎯 Après Optimisation
+                                                    </Typography>
+                                                    <Stack spacing={1}>
+                                                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                            <Typography variant="body2">Références conservées:</Typography>
+                                                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                                                {optimization.refs_to_keep?.length || 0}
+                                                            </Typography>
+                                                        </Box>
+                                                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                            <Typography variant="body2">Marge 6M optimisée:</Typography>
+                                                            <Typography variant="body2" sx={{ fontWeight: 600, color: 'success.main' }}>
+                                                                {formatCurrency(optimization.marge_optimisee_6m)}
+                                                            </Typography>
+                                                        </Box>
+                                                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                            <Typography variant="body2">Coût de gestion:</Typography>
+                                                            <Typography variant="body2" sx={{ color: 'success.main' }}>
+                                                                Réduit (focalisé)
+                                                            </Typography>
+                                                        </Box>
+                                                    </Stack>
+                                                </Box>
                                             </Grid>
                                         </Grid>
 
-                                        <Box sx={{ mt: 3, textAlign: 'center' }}>
-                                            <Button
-                                                variant="contained"
-                                                size="large"
-                                                startIcon={<PlayArrowOutlined />}
-                                                color="primary"
-                                            >
-                                                Lancer la Simulation
-                                            </Button>
+                                        {/* Impact de l'optimisation */}
+                                        <Box sx={{ mt: 3, p: 2, bgcolor: 'primary.50', borderRadius: 1, border: '1px solid', borderColor: 'primary.200' }}>
+                                            <Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.main', mb: 2 }}>
+                                                💰 Impact Financier
+                                            </Typography>
+                                            <Grid container spacing={2}>
+                                                <Grid item xs={4}>
+                                                    <Typography variant="caption" color="text.secondary">Gain immédiat</Typography>
+                                                    <Typography variant="h6" sx={{ fontWeight: 700, color: 'success.main' }}>
+                                                        {formatCurrency(optimization.gain_potentiel)}
+                                                    </Typography>
+                                                </Grid>
+                                                <Grid item xs={4}>
+                                                    <Typography variant="caption" color="text.secondary">Gain projeté 6M</Typography>
+                                                    <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main' }}>
+                                                        {formatCurrency(optimization.gain_potentiel_6m)}
+                                                    </Typography>
+                                                </Grid>
+                                                <Grid item xs={4}>
+                                                    <Typography variant="caption" color="text.secondary">Amélioration marge</Typography>
+                                                    <Typography variant="h6" sx={{ fontWeight: 700, color: 'secondary.main' }}>
+                                                        {formatCurrency(optimization.marge_optimisee_6m - optimization.marge_actuelle_6m)}
+                                                    </Typography>
+                                                </Grid>
+                                            </Grid>
+                                        </Box>
+
+                                        {/* Actions recommandées */}
+                                        <Box sx={{ mt: 3 }}>
+                                            <Typography variant="body2" sx={{ fontWeight: 600, mb: 2 }}>
+                                                🎯 Actions Recommandées:
+                                            </Typography>
+                                            <Stack spacing={1}>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    <CheckCircle color="success" fontSize="small" />
+                                                    <Typography variant="body2">
+                                                        Conserver {optimization.refs_to_keep?.length || 0} références principales
+                                                    </Typography>
+                                                </Box>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    <Warning color="warning" fontSize="small" />
+                                                    <Typography variant="body2">
+                                                        Évaluer {optimization.refs_to_delete_low_sales?.length || 0} références à faibles ventes
+                                                    </Typography>
+                                                </Box>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    <Cancel color="error" fontSize="small" />
+                                                    <Typography variant="body2">
+                                                        Supprimer {optimization.refs_to_delete_no_sales?.length || 0} références sans ventes
+                                                    </Typography>
+                                                </Box>
+                                            </Stack>
                                         </Box>
                                     </CardContent>
                                 </Card>
@@ -585,20 +863,28 @@ const OptimizationDetailPanel = ({ optimization, onClose, optimizationData }) =>
                         )}
                     </Box>
 
-                    {/* Footer Actions */}
-                    <Box sx={{
-                        p: 2,
-                        borderTop: 1,
-                        borderColor: 'divider',
-                        bgcolor: 'grey.50'
-                    }}>
-                        <Stack direction="row" spacing={2} justifyContent="flex-end">
-                            <Button variant="outlined" onClick={onClose}>
-                                Fermer
+                    {/* ✅ Footer avec actions et export */}
+                    <Box sx={{ p: 3, borderTop: 1, borderColor: 'divider', bgcolor: 'grey.50' }}>
+                        <Stack direction="row" spacing={2} justifyContent="space-between">
+                            <Button
+                                variant="outlined"
+                                startIcon={<GetApp />}
+                                onClick={() => handleExport('excel')}
+                            >
+                                Export CSV
                             </Button>
-                            <Button variant="contained" startIcon={<PlayArrowOutlined />}>
-                                Simuler cette Optimisation
-                            </Button>
+                            <Stack direction="row" spacing={2}>
+                                <Button variant="outlined" onClick={onClose}>
+                                    Fermer
+                                </Button>
+                                <Button
+                                    variant="contained"
+                                    startIcon={<PlayArrowOutlined />}
+                                    color="primary"
+                                >
+                                    Simuler cette Optimisation
+                                </Button>
+                            </Stack>
                         </Stack>
                     </Box>
                 </Paper>

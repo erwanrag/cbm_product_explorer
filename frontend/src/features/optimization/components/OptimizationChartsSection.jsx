@@ -1,5 +1,5 @@
 // ===================================
-// 📁 frontend/src/features/optimization/components/OptimizationChartsSection.jsx
+// 📁 frontend/src/features/optimization/components/OptimizationChartsSection.jsx - CORRIGÉ
 // ===================================
 
 import React, { useMemo } from 'react';
@@ -29,6 +29,14 @@ const OptimizationChartsSection = ({ data, isLoading }) => {
         }).format(value);
     };
 
+    // ✅ Formatage K€ pour les axes
+    const formatCurrencyK = (value) => {
+        if (!value) return '0';
+        if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M€`;
+        if (value >= 1000) return `${(value / 1000).toFixed(0)}K€`;
+        return `${value}€`;
+    };
+
     // Données pour le graphique de gains par groupe
     const gainsData = useMemo(() => {
         if (!data?.items) return [];
@@ -37,22 +45,32 @@ const OptimizationChartsSection = ({ data, isLoading }) => {
             groupe: `${item.grouping_crn}-${item.qualite}`,
             gainImmediat: item.gain_potentiel || 0,
             gain6m: item.gain_potentiel_6m || 0,
+            margeActuelle6m: item.marge_actuelle_6m || 0,
+            margeOptimisee6m: item.marge_optimisee_6m || 0,
             refsTotal: item.refs_total || 0,
+            refsConservees: item.refs_to_keep?.length || 0,
             qualite: item.qualite,
             croissance: (item.taux_croissance || 0) * 100
         })).sort((a, b) => b.gainImmediat - a.gainImmediat);
     }, [data]);
 
-    // Données historiques agrégées
-    const historiqueData = useMemo(() => {
+    // ✅ Données historiques + projections combinées
+    const timelineData = useMemo(() => {
         if (!data?.items) return [];
 
         const periodeMap = new Map();
 
+        // Historique
         data.items.forEach(item => {
             if (item.historique_6m) {
                 item.historique_6m.forEach(hist => {
-                    const existing = periodeMap.get(hist.periode) || { periode: hist.periode, ca: 0, marge: 0, qte: 0 };
+                    const existing = periodeMap.get(hist.periode) || {
+                        periode: hist.periode,
+                        ca: 0,
+                        marge: 0,
+                        qte: 0,
+                        type: 'historique'
+                    };
                     existing.ca += hist.ca || 0;
                     existing.marge += hist.marge || 0;
                     existing.qte += hist.qte || 0;
@@ -61,21 +79,21 @@ const OptimizationChartsSection = ({ data, isLoading }) => {
             }
         });
 
-        return Array.from(periodeMap.values()).sort((a, b) => a.periode.localeCompare(b.periode));
-    }, [data]);
-
-    // Données projections agrégées
-    const projectionData = useMemo(() => {
-        if (!data?.items) return [];
-
-        const periodeMap = new Map();
-
+        // Projections
         data.items.forEach(item => {
             if (item.projection_6m?.mois) {
                 item.projection_6m.mois.forEach(proj => {
-                    const existing = periodeMap.get(proj.periode) || { periode: proj.periode, ca: 0, marge: 0, qte: 0 };
+                    const existing = periodeMap.get(proj.periode) || {
+                        periode: proj.periode,
+                        ca: 0,
+                        margeActuelle: 0,
+                        margeOptimisee: 0,
+                        qte: 0,
+                        type: 'projection'
+                    };
                     existing.ca += proj.ca || 0;
-                    existing.marge += proj.marge || 0;
+                    existing.margeActuelle += proj.marge_actuelle || 0;
+                    existing.margeOptimisee += proj.marge_optimisee || 0;
                     existing.qte += proj.qte || 0;
                     periodeMap.set(proj.periode, existing);
                 });
@@ -85,48 +103,41 @@ const OptimizationChartsSection = ({ data, isLoading }) => {
         return Array.from(periodeMap.values()).sort((a, b) => a.periode.localeCompare(b.periode));
     }, [data]);
 
-    // Données distribution par qualité
+    // ✅ Données distribution par qualité avec PMQ/PMV groupés
     const qualiteData = useMemo(() => {
         if (!data?.items) return [];
 
         const qualiteMap = new Map();
 
         data.items.forEach(item => {
-            const existing = qualiteMap.get(item.qualite) || {
-                qualite: item.qualite,
+            // ✅ Grouper PMQ et PMV ensemble
+            const qualiteKey = (item.qualite === 'PMV') ? 'PMQ/PMV' : item.qualite;
+
+            const existing = qualiteMap.get(qualiteKey) || {
+                qualite: qualiteKey,
                 gain: 0,
                 gain6m: 0,
                 groupes: 0,
-                refs: 0
+                refs: 0,
+                refsConservees: 0
             };
             existing.gain += item.gain_potentiel || 0;
             existing.gain6m += item.gain_potentiel_6m || 0;
             existing.groupes += 1;
             existing.refs += item.refs_total || 0;
-            qualiteMap.set(item.qualite, existing);
+            existing.refsConservees += item.refs_to_keep?.length || 0;
+            qualiteMap.set(qualiteKey, existing);
         });
 
         return Array.from(qualiteMap.values());
     }, [data]);
 
-    // Données scatter plot prix vs gain
-    const scatterData = useMemo(() => {
-        if (!data?.items) return [];
-
-        return data.items.map(item => ({
-            prixMin: item.px_achat_min || 0,
-            prixMoyen: item.px_vente_pondere || 0,
-            gain: item.gain_potentiel || 0,
-            qualite: item.qualite,
-            refs: item.refs_total || 0,
-            groupe: item.grouping_crn
-        })).filter(item => item.prixMin > 0 && item.gain > 0);
-    }, [data]);
-
-    // Couleurs pour les graphiques
+    // ✅ Couleurs pour les graphiques
     const colors = {
         OEM: '#2196F3',
+        'PMQ/PMV': '#4CAF50',
         PMQ: '#4CAF50',
+        PMV: '#66BB6A',
         OE: '#FF9800',
         OTHER: '#9C27B0'
     };
@@ -214,11 +225,12 @@ const OptimizationChartsSection = ({ data, isLoading }) => {
                         transition={{ duration: 0.3 }}
                     >
                         <Grid container spacing={3}>
+                            {/* ✅ Graphique principal avec références conservées visibles */}
                             <Grid item xs={12}>
                                 <Card elevation={2}>
                                     <CardContent>
                                         <Typography variant="subtitle1" gutterBottom>
-                                            Potentiel de Gain par Groupe
+                                            Potentiel de Gain par Groupe (Top 15)
                                         </Typography>
                                         <ResponsiveContainer width="100%" height={350}>
                                             <BarChart data={gainsData.slice(0, 15)}>
@@ -230,7 +242,7 @@ const OptimizationChartsSection = ({ data, isLoading }) => {
                                                     height={100}
                                                     fontSize={11}
                                                 />
-                                                <YAxis />
+                                                <YAxis tickFormatter={formatCurrencyK} />
                                                 <Tooltip content={<CustomTooltip />} />
                                                 <Legend />
                                                 <Bar
@@ -248,11 +260,83 @@ const OptimizationChartsSection = ({ data, isLoading }) => {
                                     </CardContent>
                                 </Card>
                             </Grid>
+
+                            {/* ✅ Nouveau graphique: Références conservées */}
+                            <Grid item xs={12} md={6}>
+                                <Card elevation={2}>
+                                    <CardContent>
+                                        <Typography variant="subtitle1" gutterBottom>
+                                            📦 Références Conservées vs Total
+                                        </Typography>
+                                        <ResponsiveContainer width="100%" height={300}>
+                                            <BarChart data={gainsData.slice(0, 10)}>
+                                                <CartesianGrid strokeDasharray="3 3" />
+                                                <XAxis
+                                                    dataKey="groupe"
+                                                    angle={-45}
+                                                    textAnchor="end"
+                                                    height={80}
+                                                    fontSize={10}
+                                                />
+                                                <YAxis />
+                                                <Tooltip />
+                                                <Legend />
+                                                <Bar
+                                                    dataKey="refsTotal"
+                                                    name="Total Refs"
+                                                    fill="#FF9800"
+                                                />
+                                                <Bar
+                                                    dataKey="refsConservees"
+                                                    name="Refs Conservées"
+                                                    fill="#4CAF50"
+                                                />
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    </CardContent>
+                                </Card>
+                            </Grid>
+
+                            {/* ✅ Marge actuelle vs optimisée */}
+                            <Grid item xs={12} md={6}>
+                                <Card elevation={2}>
+                                    <CardContent>
+                                        <Typography variant="subtitle1" gutterBottom>
+                                            💰 Marge Actuelle vs Optimisée (6M)
+                                        </Typography>
+                                        <ResponsiveContainer width="100%" height={300}>
+                                            <BarChart data={gainsData.slice(0, 10)}>
+                                                <CartesianGrid strokeDasharray="3 3" />
+                                                <XAxis
+                                                    dataKey="groupe"
+                                                    angle={-45}
+                                                    textAnchor="end"
+                                                    height={80}
+                                                    fontSize={10}
+                                                />
+                                                <YAxis tickFormatter={formatCurrencyK} />
+                                                <Tooltip content={<CustomTooltip />} />
+                                                <Legend />
+                                                <Bar
+                                                    dataKey="margeActuelle6m"
+                                                    name="Marge Actuelle"
+                                                    fill="#FF5722"
+                                                />
+                                                <Bar
+                                                    dataKey="margeOptimisee6m"
+                                                    name="Marge Optimisée"
+                                                    fill="#4CAF50"
+                                                />
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    </CardContent>
+                                </Card>
+                            </Grid>
                         </Grid>
                     </motion.div>
                 )}
 
-                {/* Évolution Temporelle */}
+                {/* ✅ Évolution Temporelle corrigée */}
                 {activeTab === 1 && (
                     <motion.div
                         initial={{ opacity: 0 }}
@@ -260,56 +344,56 @@ const OptimizationChartsSection = ({ data, isLoading }) => {
                         transition={{ duration: 0.3 }}
                     >
                         <Grid container spacing={3}>
-                            <Grid item xs={12} md={6}>
+                            <Grid item xs={12}>
                                 <Card elevation={2}>
                                     <CardContent>
                                         <Typography variant="subtitle1" gutterBottom>
-                                            Historique 6 Derniers Mois
+                                            📈 Évolution Temporelle - Historique + Projections
                                         </Typography>
-                                        <ResponsiveContainer width="100%" height={300}>
-                                            <AreaChart data={historiqueData}>
+                                        <ResponsiveContainer width="100%" height={400}>
+                                            <LineChart data={timelineData}>
                                                 <CartesianGrid strokeDasharray="3 3" />
                                                 <XAxis dataKey="periode" />
-                                                <YAxis />
+                                                <YAxis tickFormatter={formatCurrencyK} />
                                                 <Tooltip content={<CustomTooltip />} />
                                                 <Legend />
-                                                <Area
+                                                {/* Historique */}
+                                                <Line
+                                                    type="monotone"
+                                                    dataKey="ca"
+                                                    name="CA"
+                                                    stroke="#2196F3"
+                                                    strokeWidth={2}
+                                                    dot={{ fill: '#2196F3', strokeWidth: 2, r: 4 }}
+                                                />
+                                                <Line
                                                     type="monotone"
                                                     dataKey="marge"
-                                                    name="Marge"
-                                                    stackId="1"
-                                                    stroke="#1976D2"
-                                                    fill="#1976D2"
-                                                    fillOpacity={0.6}
+                                                    name="Marge Historique"
+                                                    stroke="#FF9800"
+                                                    strokeWidth={2}
+                                                    dot={{ fill: '#FF9800', strokeWidth: 2, r: 4 }}
                                                 />
-                                            </AreaChart>
-                                        </ResponsiveContainer>
-                                    </CardContent>
-                                </Card>
-                            </Grid>
-                            <Grid item xs={12} md={6}>
-                                <Card elevation={2}>
-                                    <CardContent>
-                                        <Typography variant="subtitle1" gutterBottom>
-                                            Projection 6 Prochains Mois
-                                        </Typography>
-                                        <ResponsiveContainer width="100%" height={300}>
-                                            <AreaChart data={projectionData}>
-                                                <CartesianGrid strokeDasharray="3 3" />
-                                                <XAxis dataKey="periode" />
-                                                <YAxis />
-                                                <Tooltip content={<CustomTooltip />} />
-                                                <Legend />
-                                                <Area
+                                                {/* Projections */}
+                                                <Line
                                                     type="monotone"
-                                                    dataKey="marge"
-                                                    name="Marge Projetée"
-                                                    stackId="1"
-                                                    stroke="#388E3C"
-                                                    fill="#388E3C"
-                                                    fillOpacity={0.6}
+                                                    dataKey="margeActuelle"
+                                                    name="Marge Actuelle Projetée"
+                                                    stroke="#F44336"
+                                                    strokeWidth={2}
+                                                    strokeDasharray="5 5"
+                                                    dot={{ fill: '#F44336', strokeWidth: 2, r: 4 }}
                                                 />
-                                            </AreaChart>
+                                                <Line
+                                                    type="monotone"
+                                                    dataKey="margeOptimisee"
+                                                    name="Marge Optimisée Projetée"
+                                                    stroke="#4CAF50"
+                                                    strokeWidth={2}
+                                                    strokeDasharray="5 5"
+                                                    dot={{ fill: '#4CAF50', strokeWidth: 2, r: 4 }}
+                                                />
+                                            </LineChart>
                                         </ResponsiveContainer>
                                     </CardContent>
                                 </Card>
@@ -318,7 +402,7 @@ const OptimizationChartsSection = ({ data, isLoading }) => {
                     </motion.div>
                 )}
 
-                {/* Répartition par Qualité */}
+                {/* ✅ Répartition par Qualité corrigée */}
                 {activeTab === 2 && (
                     <motion.div
                         initial={{ opacity: 0 }}
@@ -342,7 +426,7 @@ const OptimizationChartsSection = ({ data, isLoading }) => {
                                                     cy="50%"
                                                     outerRadius={100}
                                                     label={({ qualite, value }) =>
-                                                        `${qualite}: ${formatCurrency(value)}`
+                                                        `${qualite}: ${formatCurrencyK(value)}`
                                                     }
                                                 >
                                                     {qualiteData.map((entry, index) => (
@@ -380,7 +464,10 @@ const OptimizationChartsSection = ({ data, isLoading }) => {
                                                         </Typography>
                                                     </Box>
                                                     <Typography variant="body2" color="text.secondary">
-                                                        {item.groupes} groupes • {item.refs} références
+                                                        {item.groupes} groupes • {item.refs} références totales
+                                                    </Typography>
+                                                    <Typography variant="body2" color="primary.main">
+                                                        📦 {item.refsConservees} références conservées
                                                     </Typography>
                                                     <Typography variant="body2" color="success.main">
                                                         Projection 6M: {formatCurrency(item.gain6m)}

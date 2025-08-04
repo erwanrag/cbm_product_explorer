@@ -212,7 +212,7 @@ const OptimizationFiltersSection = ({
                     </Typography>
                     <Typography variant="body2" component="div">
                         • <strong>Économie immédiate</strong> : Réduction coûts d'achat si rationalisation appliquée aujourd'hui<br />
-                        • <strong>Projection 6 mois</strong> : Basée sur tendance historique (⚠️ données août partielles)<br />
+                        • <strong>Projection 6 mois</strong> : Basée sur tendance historique (⚠️ données du mois en cours partielles)<br />
                         • <strong>PMQ + PMV</strong> : Analysés ensemble, priorité PMV si disponible<br />
                         • <strong>Calcul</strong> : (Prix vente moyen - Prix achat minimum) × Volume total
                     </Typography>

@@ -1,24 +1,21 @@
 // ===================================
-// 📁 frontend/src/features/optimization/components/OptimizationKPISection.jsx
+// 📁 frontend/src/features/optimization/components/OptimizationKPISection.jsx - COMPLET
 // ===================================
 
 import React from 'react';
 import {
-    Box, Grid, Card, CardContent, Typography,
-    Skeleton, Chip, LinearProgress, 
-    Accordion, AccordionSummary, AccordionDetails
+    Box, Grid, Card, CardContent, Typography, Skeleton,
+    Chip, Stack
 } from '@mui/material';
 import {
-    TrendingUp, TrendingDown, Assessment,
-    Insights, MonetizationOn, Inventory
+    TrendingUp, TrendingDown, Euro, Inventory, Assessment, Timeline
 } from '@mui/icons-material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { motion } from 'framer-motion';
 
 const OptimizationKPISection = ({ data, totals, isLoading }) => {
     // Formatage des devises
     const formatCurrency = (value) => {
-        if (!value) return '0 €';
+        if (!value && value !== 0) return '0 €';
         return new Intl.NumberFormat('fr-FR', {
             style: 'currency',
             currency: 'EUR',
@@ -33,315 +30,133 @@ const OptimizationKPISection = ({ data, totals, isLoading }) => {
         return `${(value * 100).toFixed(2)}%`;
     };
 
-    const kpiData = [
-        {
-            title: 'Qualités Analysées',
-            value: totals?.totalGroups || 0,
-            icon: Assessment,
-            color: 'primary',
-            bgColor: 'primary.light',
-            suffix: '',
-            description: 'Groupes d\'optimisation identifiés'
-        },
-        {
-            title: 'Gain Immédiat',
-            value: formatCurrency(totals?.totalGainImmediat || 0),
-            icon: MonetizationOn,
-            color: 'success',
-            bgColor: 'success.light',
-            suffix: '',
-            description: 'Gain potentiel immédiat',
-            trend: totals?.totalGainImmediat > 0 ? 'up' : 'neutral'
-        },
-        {
-            title: 'Gain 6 Mois',
-            value: formatCurrency(totals?.totalGain6m || 0),
-            icon: TrendingUp,
-            color: 'info',
-            bgColor: 'info.light',
-            suffix: '',
-            description: 'Projection à 6 mois',
-            trend: totals?.totalGain6m > 0 ? 'up' : 'neutral'
-        },
-        {
-            title: 'Références Total',
-            value: totals?.totalRefs || 0,
-            icon: Inventory,
-            color: 'warning',
-            bgColor: 'warning.light',
-            suffix: '',
-            description: 'Références dans l\'analyse'
-        },
-        {
-            title: 'Croissance Moyenne',
-            value: formatPercentage(totals?.avgTauxCroissance || 0),
-            icon: totals?.avgTauxCroissance > 0 ? TrendingUp : TrendingDown,
-            color: totals?.avgTauxCroissance > 0 ? 'success' : 'error',
-            bgColor: totals?.avgTauxCroissance > 0 ? 'success.light' : 'error.light',
-            suffix: '',
-            description: 'Taux de croissance moyen',
-            trend: totals?.avgTauxCroissance > 0 ? 'up' : 'down'
-        },
-        {
-            title: 'Potentiel ROI',
-            value: totals?.totalGainImmediat && totals?.totalRefs > 0
-                ? `${Math.round(totals.totalGainImmediat / totals.totalRefs)}€/ref`
-                : '0€/ref',
-            icon: Insights,
-            color: 'secondary',
-            bgColor: 'secondary.light',
-            suffix: '',
-            description: 'Gain moyen par référence'
-        }
-    ];
+    // Composant KPI Card
+    const KPICard = ({ title, value, subtitle, icon, color = 'primary', trend = null, isLoading = false }) => (
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+        >
+            <Card sx={{ height: '100%' }}>
+                <CardContent>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                        <Box sx={{ color: `${color}.main` }}>
+                            {icon}
+                        </Box>
+                        {trend !== null && (
+                            <Chip
+                                size="small"
+                                icon={trend >= 0 ? <TrendingUp fontSize="small" /> : <TrendingDown fontSize="small" />}
+                                label={formatPercentage(Math.abs(trend))}
+                                color={trend >= 0 ? 'success' : 'error'}
+                                variant="outlined"
+                            />
+                        )}
+                    </Box>
 
-    if (isLoading) {
-        return (
-            <Box sx={{ mb: 4 }}>
-                <Grid container spacing={3}>
-                    {Array.from({ length: 6 }, (_, index) => (
-                        <Grid item xs={12} sm={6} md={4} lg={2} key={index}>
-                            <Card elevation={2}>
-                                <CardContent>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                                        <Skeleton variant="circular" width={40} height={40} />
-                                        <Box sx={{ ml: 2, flex: 1 }}>
-                                            <Skeleton variant="text" width="80%" />
-                                            <Skeleton variant="text" width="60%" />
-                                        </Box>
-                                    </Box>
-                                    <Skeleton variant="text" height={32} width="100%" />
-                                </CardContent>
-                            </Card>
-                        </Grid>
-                    ))}
-                </Grid>
-            </Box>
-        );
-    }
+                    <Typography variant="h4" sx={{ fontWeight: 700, color: `${color}.main`, mb: 1 }}>
+                        {isLoading ? <Skeleton width="80%" /> : value}
+                    </Typography>
+
+                    <Typography variant="body2" color="text.secondary">
+                        {title}
+                    </Typography>
+
+                    {subtitle && (
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                            {subtitle}
+                        </Typography>
+                    )}
+                </CardContent>
+            </Card>
+        </motion.div>
+    );
 
     return (
         <Box sx={{ mb: 4 }}>
             <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
-                Indicateurs Clés d'Optimisation
+                📊 Indicateurs Clés d'Optimisation
             </Typography>
 
             <Grid container spacing={3}>
-                {kpiData.map((kpi, index) => {
-                    const Icon = kpi.icon;
+                {/* Nombre de groupes analysés */}
+                <Grid item xs={12} sm={6} md={2.4}>
+                    <KPICard
+                        title="Groupes Analysés"
+                        value={isLoading ? <Skeleton /> : (totals?.totalGroups || 0)}
+                        subtitle="Familles de produits"
+                        icon={<Assessment fontSize="large" />}
+                        color="primary"
+                        isLoading={isLoading}
+                    />
+                </Grid>
 
-                    return (
-                        <Grid item xs={12} sm={6} md={4} lg={2} key={index}>
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.3, delay: index * 0.1 }}
-                            >
-                                <Card
-                                    elevation={2}
-                                    sx={{
-                                        height: '100%',
-                                        position: 'relative',
-                                        overflow: 'visible',
-                                        transition: 'all 0.3s ease',
-                                        '&:hover': {
-                                            elevation: 4,
-                                            transform: 'translateY(-2px)'
-                                        }
-                                    }}
-                                >
-                                    <CardContent sx={{ pb: 2 }}>
-                                        {/* Header avec icône */}
-                                        <Box sx={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            mb: 2,
-                                            position: 'relative'
-                                        }}>
-                                            <Box
-                                                sx={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    width: 40,
-                                                    height: 40,
-                                                    borderRadius: '50%',
-                                                    bgcolor: kpi.bgColor,
-                                                    color: kpi.color + '.main'
-                                                }}
-                                            >
-                                                <Icon fontSize="small" />
-                                            </Box>
+                {/* Gain potentiel immédiat */}
+                <Grid item xs={12} sm={6} md={2.4}>
+                    <KPICard
+                        title="Gain Immédiat"
+                        value={isLoading ? <Skeleton /> : formatCurrency(totals?.totalGainImmediat || 0)}
+                        subtitle="Optimisation instantanée"
+                        icon={<Euro fontSize="large" />}
+                        color="success"
+                        isLoading={isLoading}
+                    />
+                </Grid>
 
-                                            <Box sx={{ ml: 2, flex: 1 }}>
-                                                <Typography
-                                                    variant="body2"
-                                                    color="text.secondary"
-                                                    sx={{ fontSize: '0.75rem', fontWeight: 500 }}
-                                                >
-                                                    {kpi.title}
-                                                </Typography>
-                                            </Box>
+                {/* Gain projeté 6 mois */}
+                <Grid item xs={12} sm={6} md={2.4}>
+                    <KPICard
+                        title="Projection 6 Mois"
+                        value={isLoading ? <Skeleton /> : formatCurrency(totals?.totalGain6m || 0)}
+                        subtitle="Gain projeté avec nouvelles ventes"
+                        icon={<TrendingUp fontSize="large" />}
+                        color="info"
+                        trend={totals?.avgTauxCroissance}
+                        isLoading={isLoading}
+                    />
+                </Grid>
 
-                                            {/* Indicateur de tendance */}
-                                            {kpi.trend && (
-                                                <Box sx={{ position: 'absolute', top: -8, right: -8 }}>
-                                                    <Chip
-                                                        size="small"
-                                                        icon={kpi.trend === 'up' ? <TrendingUp fontSize="small" /> : <TrendingDown fontSize="small" />}
-                                                        label=""
-                                                        sx={{
-                                                            bgcolor: kpi.trend === 'up' ? 'success.main' : 'error.main',
-                                                            color: 'white',
-                                                            width: 24,
-                                                            height: 24,
-                                                            '& .MuiChip-icon': {
-                                                                margin: 0,
-                                                                fontSize: '0.875rem'
-                                                            }
-                                                        }}
-                                                    />
-                                                </Box>
-                                            )}
-                                        </Box>
+                {/* ✅ NOUVEAU: Marge optimisée 6M */}
+                <Grid item xs={12} sm={6} md={2.4}>
+                    <KPICard
+                        title="Marge Optimisée 6M"
+                        value={isLoading ? <Skeleton /> : formatCurrency(totals?.totalMargeOptimisee6m || 0)}
+                        subtitle={`vs ${formatCurrency(totals?.totalMargeActuelle6m || 0)} actuelle`}
+                        icon={<Timeline fontSize="large" />}
+                        color="secondary"
+                        isLoading={isLoading}
+                    />
+                </Grid>
 
-                                        {/* Valeur principale */}
-                                        <Typography
-                                            variant="h5"
-                                            component="div"
-                                            sx={{
-                                                fontWeight: 700,
-                                                color: kpi.color + '.main',
-                                                mb: 1,
-                                                fontSize: '1.5rem'
-                                            }}
-                                        >
-                                            {kpi.value}
-                                            {kpi.suffix && (
-                                                <Typography
-                                                    component="span"
-                                                    variant="body2"
-                                                    color="text.secondary"
-                                                    sx={{ ml: 0.5 }}
-                                                >
-                                                    {kpi.suffix}
-                                                </Typography>
-                                            )}
-                                        </Typography>
-
-                                        {/* Description */}
-                                        <Typography
-                                            variant="caption"
-                                            color="text.secondary"
-                                            sx={{
-                                                display: 'block',
-                                                fontSize: '0.7rem',
-                                                lineHeight: 1.2
-                                            }}
-                                        >
-                                            {kpi.description}
-                                        </Typography>
-
-                                        {/* Barre de progression pour certains KPI */}
-                                        {(kpi.title === 'Potentiel ROI' && totals?.totalGainImmediat > 0) && (
-                                            <Box sx={{ mt: 1 }}>
-                                                <LinearProgress
-                                                    variant="determinate"
-                                                    value={Math.min((totals.totalGainImmediat / 100000) * 100, 100)}
-                                                    sx={{
-                                                        height: 4,
-                                                        borderRadius: 2,
-                                                        bgcolor: 'grey.200',
-                                                        '& .MuiLinearProgress-bar': {
-                                                            bgcolor: kpi.color + '.main'
-                                                        }
-                                                    }}
-                                                />
-                                            </Box>
-                                        )}
-                                    </CardContent>
-                                </Card>
-                            </motion.div>
-                        </Grid>
-                    );
-                })}
+                {/* Références totales */}
+                <Grid item xs={12} sm={6} md={2.4}>
+                    <KPICard
+                        title="Références Totales"
+                        value={isLoading ? <Skeleton /> : (totals?.totalRefs || 0)}
+                        subtitle="Produits dans l'analyse"
+                        icon={<Inventory fontSize="large" />}
+                        color="warning"
+                        isLoading={isLoading}
+                    />
+                </Grid>
             </Grid>
 
-            {/* Résumé textuel */}
-            {totals && totals.totalGroups > 0 && (
+            {/* ✅ Résumé des gains */}
+            {!isLoading && totals && (
                 <Box sx={{ mt: 3, p: 2, bgcolor: 'grey.50', borderRadius: 2 }}>
-                    <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
-                        <strong>{totals.totalGroups}</strong> qualités analysées avec un potentiel de gain de{' '}
-                        <strong>{formatCurrency(totals.totalGainImmediat)}</strong> immédiatement et{' '}
-                        <strong>{formatCurrency(totals.totalGain6m)}</strong> sur 6 mois.
-                        {totals.avgTauxCroissance > 0 && (
-                            <> Croissance moyenne : <strong>{formatPercentage(totals.avgTauxCroissance)}</strong>.</>
-                        )}
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        💰 <strong>Résumé des gains potentiels :</strong> Gain immédiat de {formatCurrency(totals.totalGainImmediat)}
+                        + projection 6 mois de {formatCurrency(totals.totalGain6m)} sur {totals.totalGroups} groupe(s) analysé(s)
                     </Typography>
+                    {totals.totalMargeOptimisee6m > totals.totalMargeActuelle6m && (
+                        <Typography variant="body2" color="success.main" sx={{ fontWeight: 600 }}>
+                            📈 Amélioration de marge de {formatCurrency(totals.totalMargeOptimisee6m - totals.totalMargeActuelle6m)}
+                            sur 6 mois grâce à l'optimisation
+                        </Typography>
+                    )}
                 </Box>
             )}
-            {data?.items?.length > 0 && (
-                <Box sx={{ mt: 2 }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
-                        Références à conserver par qualité :
-                    </Typography>
-
-                    <Box sx={{ mt: 1 }}>
-
-                        {['OEM', 'PMQ', 'PMV'].map((qualite) => {
-                            const groupes = data.items.filter(item => item.qualite === qualite);
-                            const refs = groupes.flatMap(g => g.refs_to_keep || []);
-                            if (refs.length === 0) return null;
-
-                            return (
-                                <Box key={qualite} sx={{ mb: 1 }}>
-                                    <Typography
-                                        variant="body2"
-                                        sx={{ fontWeight: 600, color: 'text.primary', mb: 0.5 }}
-                                    >
-                                        {qualite} • {refs.length} référence{refs.length > 1 ? 's' : ''}
-                                    </Typography>
-
-                                    <Box
-                                        sx={{
-                                            display: 'flex',
-                                            flexWrap: 'wrap',
-                                            gap: 1,
-                                            alignItems: 'center'
-                                        }}
-                                    >
-                                        {refs.map((ref, idx) => (
-                                            <Box
-                                                key={idx}
-                                                sx={{
-                                                    px: 1.2,
-                                                    py: 0.4,
-                                                    borderRadius: 1,
-                                                    bgcolor: 'grey.100',
-                                                    border: '1px solid',
-                                                    borderColor: 'grey.300',
-                                                    fontFamily: 'monospace',
-                                                    fontSize: '0.75rem'
-                                                }}
-                                            >
-                                                {ref.refint ?? '?'} ({ref.cod_pro})
-                                            </Box>
-                                        ))}
-                                    </Box>
-                                </Box>
-                            );
-                        })}
-                    </Box>
-
-                </Box>
-            )}
-
-
-
-
-
         </Box>
-
     );
 };
 
