@@ -196,7 +196,10 @@ async def evaluate_group_optimization(
             qte_total = sum(p["qte"] for p in products)
             ca_total = sum(p["ca"] for p in products)
             px_vente_pondere = (ca_total / qte_total) if qte_total > 0 else 0
-
+            pmp_pondere = (
+                sum(p["px_achat"] * p["qte"] for p in products if p["qte"] > 0) / qte_total
+                if qte_total > 0 else px_min
+            )
             # Calcul gain de marge
             marge_actuelle = sum([p["ca"] - p["px_achat"] * p["qte"] for p in products])
             marge_simulee = px_vente_pondere * qte_total - px_min * qte_total
@@ -204,7 +207,9 @@ async def evaluate_group_optimization(
 
             # ✅ PROJECTIONS AVEC SCORING INTÉGRÉ
             historique_6m = _format_historique_6m(history, g, qual, px_vente_pondere, px_min)
-            projection_6m = _project_next_6_months_with_scoring(history, g, qual, px_vente_pondere, px_min)
+            projection_6m = _project_next_6_months_with_scoring(
+                history, g, qual, px_vente_pondere, px_min, pmp_pondere
+            )
 
             # Sélection des références
             kept = sorted(products, key=lambda x: (-x["ca"] / max(x["px_achat"], 1)))[:2]
@@ -232,8 +237,9 @@ async def evaluate_group_optimization(
                 
                 # ✅ NOMS HARMONISÉS AVEC LE FRONTEND
                 "gain_potentiel": round(gain_potentiel, 2),                              # Gain immédiat
-                "gain_potentiel_6m": round(projection_6m["totaux"]["marge"], 2),       # Gain projeté 6M
-                
+                "gain_potentiel_6m": round(projection_6m["totaux"]["marge_optimisee"], 2),       # Gain projeté 6M
+                "marge_optimisee_6m": round(projection_6m["totaux"]["marge_optimisee"], 2),
+                "marge_actuelle_6m": round(projection_6m["totaux"]["marge_actuelle"], 2),
                 "historique_6m": historique_6m,
                 "projection_6m": projection_6m,  # ✅ MAINTENANT AVEC MÉTADONNÉES DE SCORING
                 "refs_to_keep": kept,
@@ -285,7 +291,11 @@ async def _get_sales_history_for_trend(cod_pro_list, db: AsyncSession):
 
         # Liste des 12 derniers mois (YYYY-MM)
         today = datetime.today()
-        mois_ref = [(today.replace(day=1) - relativedelta(months=i)).strftime("%Y-%m") for i in reversed(range(12))]
+        mois_ref = [
+            (today.replace(day=1) - relativedelta(months=i + 1)).strftime("%Y-%m")
+            for i in reversed(range(12))
+        ]
+
 
         # Groupes détectés
         data = {}
@@ -331,28 +341,41 @@ def _format_historique_6m(history, grouping_crn, qualite, px_vente_pondere, px_a
     return historique
 
 
-def _project_next_6_months_with_scoring(history, grouping_crn, qualite, px_vente_pondere, px_achat_min):
+def _project_next_6_months_with_scoring(history, grouping_crn, qualite, px_vente_pondere, px_achat_min, pmp_pondere):
+
     """
     ✅ PROJECTION AVEC SCORING INTÉGRÉ - NOUVELLE FONCTION
     """
     key = (grouping_crn, qualite)
     series = history.get(key, [])
     
-    if not series:
+    if not series or all(qte <= 0 for _, qte in series):
+        logger.warning(f"📉 Historique vide ou nul pour {grouping_crn}-{qualite} → projections nulles forcées")
         return {
             "taux_croissance": 0.0,
-            "mois": [],
+            "mois": [
+                {
+                    "periode": (datetime.today().replace(day=1) + relativedelta(months=i)).strftime("%Y-%m"),
+                    "qte": 0,
+                    "ca": 0,
+                    "marge": 0
+                }
+                for i in range(6)
+            ],
             "totaux": {"qte": 0, "ca": 0, "marge": 0},
             "metadata": {
-                "method": "empty",
+                "method": "empty_forced",
                 "quality_score": 0.0,
                 "confidence_level": "none",
-                "data_points": 0,
-                "summary": "Aucune donnée historique",
-                "warnings": ["Pas de données historiques"],
-                "recommendations": ["Collecter des données de ventes"]
+                "data_points": len(series),
+                "summary": "Aucune vente significative",
+                "warnings": ["Toutes les ventes sont nulles sur la période"],
+                "recommendations": ["Vérifier les ventes sur 12 mois", "Supprimer si inactive"],
+                "evaluation_timestamp": datetime.now().isoformat(),
+                "validator_available": VALIDATOR_AVAILABLE
             }
         }
+
     
     # Validation des données d'entrée
     if len(series) > 50:
@@ -421,25 +444,28 @@ def _project_next_6_months_with_scoring(history, grouping_crn, qualite, px_vente
     
     # Construction des mois de projection
     projections = []
-    total_qte = total_ca = total_marge = 0
+    total_qte = total_ca = total_marge_optimisee = total_marge_actuelle = 0
     current_month = datetime.today().replace(day=1)
-    
+    logger.debug(f"💡 Proj {grouping_crn}-{qualite} | predictions={predictions} | vente_pond={px_vente_pondere} | achat_min={px_achat_min}")
     for i, qte_pred in enumerate(predictions):
         qte_pred = max(0, round(qte_pred))  # Entier positif
         ca = qte_pred * px_vente_pondere
-        marge = (px_vente_pondere - px_achat_min) * qte_pred
+        marge_optimisee = (px_vente_pondere - px_achat_min) * qte_pred
+        marge_actuelle  = (px_vente_pondere - pmp_pondere) * qte_pred
         
         periode = (current_month + relativedelta(months=i)).strftime("%Y-%m")
         projections.append({
             "periode": periode,
             "qte": qte_pred,
             "ca": round(ca, 2),
-            "marge": round(marge, 2)
+            "marge_optimisee": round(marge_optimisee, 2),
+            "marge_actuelle": round(marge_actuelle, 2)
         })
         
         total_qte += qte_pred
         total_ca += ca
-        total_marge += marge
+        total_marge_optimisee += marge_optimisee
+        total_marge_actuelle += marge_actuelle
     
     # Calcul du taux de croissance
     if method_used == 'linear_regression' and 'slope' in projection_result:
@@ -492,7 +518,8 @@ def _project_next_6_months_with_scoring(history, grouping_crn, qualite, px_vente
         "totaux": {
             "qte": int(total_qte),
             "ca": round(total_ca, 2),
-            "marge": round(total_marge, 2)
+            "marge_optimisee": round(total_marge_optimisee, 2),
+            "marge_actuelle": round(total_marge_actuelle, 2)
         },
         "metadata": metadata  # ✅ MÉTADONNÉES ENRICHIES AVEC SCORING
     }
