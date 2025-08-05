@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Autocomplete, TextField, CircularProgress } from '@mui/material';
 import { getRefCrnByCodPro } from '@/api/services/suggestionService';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@/store/contexts/LanguageContext'
 
 export default function AutocompleteRefCrnFromCodpro({
     cod_pro,
@@ -50,7 +50,7 @@ export default function AutocompleteRefCrnFromCodpro({
             renderInput={(params) => (
                 <TextField
                     {...params}
-                    label={t('filters.labels.ref_crn')}
+                    label={t('filters.labels.ref_crn', 'Référence Constructeu')}
                     size="small"
                     placeholder="Sélectionner"
                     InputProps={{

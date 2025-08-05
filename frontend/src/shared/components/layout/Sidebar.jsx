@@ -21,7 +21,7 @@ import {
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useLayout } from '@/store/hooks/useLayout';
 import FiltersPanel from '@/shared/components/layout/FiltersPanel';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@/store/contexts/LanguageContext';
 
 const Sidebar = ({ width, open, variant = 'persistent' }) => {
     const theme = useTheme();
@@ -43,33 +43,33 @@ const Sidebar = ({ width, open, variant = 'persistent' }) => {
 
     const navigationItems = [
         {
-            text: t('sidebar.dashboard'),
+            text: t('sidebar.dashboard', 'Dashboard'),
             path: '/dashboard',
             icon: <DashboardIcon />,
-            description: t('sidebar.dashboard_desc'),
+            description: t('sidebar.dashboard_desc', 'Vue d\'ensemble et KPIs'),
         },
         {
-            text: t('sidebar.matrix'),
+            text: t('sidebar.matrix', 'Matrice'),
             path: '/matrix',
             icon: <MatrixIcon />,
-            description: t('sidebar.matrix_desc'),
+            description: t('sidebar.matrix_desc', 'Analyse des correspondances'),
         },
         {
-            text: t('sidebar.optimization'),
+            text: t('sidebar.optimization', 'Optimisation'),
             path: '/optimization',
             icon: <OptimizationIcon />,
-            description: t('sidebar.optimization_desc'),
+            description: t('sidebar.optimization_desc', 'Outils d\'optimisation'),
         },
     ];
 
     const secondaryItems = [
         {
-            text: t('sidebar.settings'),
+            text: t('sidebar.settings', 'Paramètres'),
             path: '/settings',
             icon: <SettingsIcon />,
         },
         {
-            text: t('sidebar.help'),
+            text: t('sidebar.help', 'Aide'),
             path: '/help',
             icon: <HelpIcon />,
         },
@@ -93,12 +93,7 @@ const Sidebar = ({ width, open, variant = 'persistent' }) => {
                 <Box sx={{ height: theme.mixins.toolbar.minHeight }} />
 
                 <Box sx={{ p: 2, borderBottom: `1px solid ${theme.palette.divider}` }}>
-                    <Typography variant="h6" sx={{ fontWeight: 600, color: 'primary.main' }}>
-                        CBM GRC
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                        v2.0.0
-                    </Typography>
+                    
                 </Box>
 
                 <Box sx={{ flexGrow: 1, overflow: 'auto' }}>

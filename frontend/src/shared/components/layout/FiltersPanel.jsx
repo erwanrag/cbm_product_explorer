@@ -7,8 +7,7 @@ import { ClearAll, FilterList, Save, History } from '@mui/icons-material';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
-import { useTranslation } from 'react-i18next';
-
+import { useTranslation } from '@/store/contexts/LanguageContext';
 import { useLayout } from '@/store/hooks/useLayout';
 import AutocompleteRefint from '@/shared/components/inputs/autocomplete/AutocompleteRefint';
 import AutocompleteRefCrn from '@/shared/components/inputs/autocomplete/AutocompleteRefCrn';
@@ -71,7 +70,7 @@ const FiltersPanel = () => {
         clearFilters();
         setResetCount((c) => c + 1);
         navigate('/dashboard', { replace: true });
-        toast.info(t('filters.cleared'));
+        oast.info(t('filters.toast.clear', 'Filtres effacés'));
     };
 
     const handleSubmit = () => {
@@ -96,11 +95,11 @@ const FiltersPanel = () => {
         });
 
         navigate(`?${urlParams.toString()}`, { replace: true });
-        toast.success(t('filters.applied'));
+        toast.success(t('filters.toast.apply', 'Filtres appliqués'));
     };
 
     const handleSaveFilters = () => {
-        const name = `${t('filters.saved')} ${new Date().toLocaleDateString()}`;
+        const name = `${t('filters.saved', 'Filtres sauvegardés')} ${new Date().toLocaleDateString()}`;
         const newSaved = {
             name,
             filters: localFilters,
@@ -110,7 +109,7 @@ const FiltersPanel = () => {
         const updated = [...savedFilters, newSaved].slice(-5);
         setSavedFilters(updated);
         localStorage.setItem('cbm-saved-filters', JSON.stringify(updated));
-        toast.success(`${t('filters.savedAs')} "${name}"`);
+        toast.success(t('filters.toast.save', 'Filtres sauvegardés sous "{{name}}"').replace('{{name}}', name));
     };
 
     const handleLoadSavedFilters = (saved) => {
@@ -127,18 +126,18 @@ const FiltersPanel = () => {
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'primary.main', display: 'flex', alignItems: 'center', gap: 1 }}>
                     <FilterList fontSize="small" />
-                    {t('filters.title')}
+                    {t('filters.title', 'Filtres de Recherche')}
                 </Typography>
 
                 <Box sx={{ display: 'flex', gap: 0.5 }}>
                     {hasActiveFilters && (
-                        <Tooltip title={t('filters.save')}>
+                        <Tooltip title={t('filters.save', 'Sauvegarder')}>
                             <IconButton size="small" onClick={handleSaveFilters}>
                                 <Save fontSize="small" />
                             </IconButton>
                         </Tooltip>
                     )}
-                    <Tooltip title={t('filters.history')}>
+                    <Tooltip title={t('filters.history', 'Historique')}>
                         <IconButton
                             size="small"
                             onClick={() => setIsExpanded(!isExpanded)}
@@ -160,7 +159,7 @@ const FiltersPanel = () => {
                     >
                         <Box sx={{ mb: 2, p: 1, bgcolor: 'grey.50', borderRadius: 1 }}>
                             <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
-                                {t('filters.savedList')}
+                                {t('filters.savedList', 'Filtres sauvegardés')}
                             </Typography>
                             <Stack direction="row" spacing={0.5} flexWrap="wrap">
                                 {savedFilters.map((saved, index) => (
@@ -204,7 +203,7 @@ const FiltersPanel = () => {
                 <AutocompleteRefExt value={localFilters.ref_ext} onChange={(value) => setLocalFilters((prev) => ({ ...prev, ref_ext: value }))} resetCount={resetCount} size="small" />
                 <SelectQualite value={localFilters.qualite} onChange={(value) => setLocalFilters((prev) => ({ ...prev, qualite: value }))} resetCount={resetCount} size="small" />
 
-                <Tooltip title={t('filters.groupingLabel')}>
+                <Tooltip title={t('filters.groupingLabel', 'Grouper par CRN')}>
                     <FormControlLabel
                         control={
                             <Checkbox
@@ -220,7 +219,7 @@ const FiltersPanel = () => {
                                 size="small"
                             />
                         }
-                        label={<Typography variant="body2">{t('filters.groupingLabel')}</Typography>}
+                        label={<Typography variant="body2">{t('filters.groupingLabel', 'Grouper par CRN')}</Typography>}
                     />
                 </Tooltip>
 
@@ -228,11 +227,11 @@ const FiltersPanel = () => {
 
                 <Stack spacing={1}>
                     <Button variant="contained" fullWidth onClick={handleSubmit} disabled={!hasActiveFilters} sx={{ borderRadius: 2, fontWeight: 600, textTransform: 'none' }}>
-                        {t('filters.apply')}
+                        {t('filters.apply', 'Filtres appliqués')}
                     </Button>
                     {hasActiveFilters && (
                         <Button variant="outlined" fullWidth onClick={handleClear} startIcon={<ClearAll />} sx={{ borderRadius: 2, textTransform: 'none' }}>
-                            {t('filters.clear')}
+                            {t('filters.clear', 'Filtres effacés')}
                         </Button>
                     )}
                 </Stack>

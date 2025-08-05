@@ -1,12 +1,12 @@
 // ===================================
 // 📁 frontend/src/features/optimization/pages/OptimizationPage.jsx - COMPLET
 // ===================================
-
 import React, { useState, useMemo } from 'react';
 import { Box, Container, Typography, Alert } from '@mui/material';
 import { motion } from 'framer-motion';
 import { useLayout } from '@/store/hooks/useLayout';
 import { useOptimizationData } from '@/features/optimization/hooks/useOptimizationData';
+import { useTranslation } from '@/store/contexts/LanguageContext'; // ✅ Import correct
 
 // Components
 import OptimizationKPISection from '@/features/optimization/components/OptimizationKPISection';
@@ -17,6 +17,8 @@ import OptimizationDetailPanel from '@/features/optimization/components/Optimiza
 import OptimizationSimulationModal from '@/features/optimization/components/OptimizationSimulationModal';
 
 export default function OptimizationPage() {
+    const { t } = useTranslation(); // ✅ Hook de traduction
+
     // ✅ Hooks
     const { filters } = useLayout();
     const { data: optimizationData, isLoading, isError, error } = useOptimizationData(filters);
@@ -31,7 +33,6 @@ export default function OptimizationPage() {
     // ✅ Filtrage des données par qualité
     const filteredData = useMemo(() => {
         if (!optimizationData?.items) return optimizationData;
-
         if (!selectedQualite) return optimizationData;
 
         return {
@@ -43,7 +44,7 @@ export default function OptimizationPage() {
     // Vérification des données
     const hasData = filteredData?.items?.length > 0;
 
-    // ✅ Calculs des totaux - AVEC LES NOUVEAUX CHAMPS
+    // ✅ Calculs des totaux
     const totals = useMemo(() => {
         if (!filteredData?.items?.length) return null;
 
@@ -55,8 +56,6 @@ export default function OptimizationPage() {
         const avgTauxCroissance = totalGroups > 0
             ? items.reduce((sum, item) => sum + (item.taux_croissance || 0), 0) / totalGroups
             : 0;
-
-        // ✅ NOUVEAUX CHAMPS du backend
         const totalMargeActuelle6m = items.reduce((sum, item) => sum + (item.marge_actuelle_6m || 0), 0);
         const totalMargeOptimisee6m = items.reduce((sum, item) => sum + (item.marge_optimisee_6m || 0), 0);
 
@@ -96,13 +95,13 @@ export default function OptimizationPage() {
         setViewMode(mode);
     };
 
-    // ✅ Rendu conditionnel
+    // ✅ Rendu conditionnel TRADUIT
     const renderContent = () => {
         if (isLoading) {
             return (
                 <Box sx={{ textAlign: 'center', py: 8 }}>
                     <Typography variant="h6" color="text.secondary">
-                        Chargement de l'analyse d'optimisation...
+                        {t('optimization.loading', 'Chargement de l\'analyse d\'optimisation...')}
                     </Typography>
                 </Box>
             );
@@ -112,11 +111,11 @@ export default function OptimizationPage() {
             return (
                 <Alert severity="error" sx={{ mb: 3 }}>
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        Erreur lors du chargement des données d'optimisation
+                        {t('optimization.error.title', 'Erreur lors du chargement des données d\'optimisation')}
                     </Typography>
                     {error && (
                         <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>
-                            Erreur: {error.message}
+                            {t('optimization.error.message', 'Erreur: {{message}}').replace('{{message}}', error.message)}
                         </Typography>
                     )}
                 </Alert>
@@ -127,7 +126,7 @@ export default function OptimizationPage() {
             return (
                 <Alert severity="info" sx={{ mb: 3 }}>
                     <Typography variant="body2">
-                        Aucune donnée d'optimisation disponible pour les filtres sélectionnés.
+                        {t('optimization.no_data', 'Aucune donnée d\'optimisation disponible pour les filtres sélectionnés.')}
                     </Typography>
                 </Alert>
             );
@@ -187,7 +186,7 @@ export default function OptimizationPage() {
         );
     };
 
-    // ✅ Rendu principal
+    // ✅ Rendu principal TRADUIT
     return (
         <Container maxWidth="xl" sx={{ py: 3 }}>
             <motion.div
@@ -197,10 +196,10 @@ export default function OptimizationPage() {
             >
                 <Box sx={{ mb: 4 }}>
                     <Typography variant="h4" component="h1" gutterBottom>
-                        Optimisation Catalogue
+                        {t('optimization.title', 'Optimisation Catalogue')}
                     </Typography>
                     <Typography variant="subtitle1" color="text.secondary">
-                        Analyse des économies potentielles par rationalisation gamme
+                        {t('optimization.subtitle', 'Analyse des économies potentielles par rationalisation gamme')}
                     </Typography>
                 </Box>
 

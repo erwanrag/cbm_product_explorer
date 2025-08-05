@@ -3,9 +3,9 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from '@/app/App';
 import { AppStateProvider } from '@/store/contexts/AppStateContext';
+import { LanguageProvider } from '@/store/contexts/LanguageContext';
 // Styles globaux
 import '@/styles/global.css';
-import './i18n';
 
 // Vérification de la compatibilité navigateur
 if (!window.fetch || !window.Promise) {
@@ -18,9 +18,11 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 try {
     root.render(
         <React.StrictMode>
-            <AppStateProvider>
-                <App />
-            </AppStateProvider>
+            <LanguageProvider>
+                <AppStateProvider>
+                    <App />
+                </AppStateProvider>
+            </LanguageProvider>
         </React.StrictMode>
     );
 } catch (error) {

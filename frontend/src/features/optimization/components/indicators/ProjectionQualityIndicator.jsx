@@ -1,5 +1,5 @@
 // ===================================
-// 📁 frontend/src/features/optimization/components/indicators/ProjectionQualityIndicator.jsx
+// 📁 2. TRADUCTION ProjectionQualityIndicator.jsx
 // ===================================
 
 import React from 'react';
@@ -9,12 +9,15 @@ import {
 import {
     CheckCircle, Warning, Cancel, Info, TrendingUp, HelpOutline
 } from '@mui/icons-material';
+import { useTranslation } from '@/store/contexts/LanguageContext'; // ✅ AJOUT
 
 const ProjectionQualityIndicator = ({ projection, compact = false }) => {
+    const { t, language } = useTranslation(); // ✅ AJOUT
+
     // Sécurité : gestion des cas où projection ou metadata sont undefined
     if (!projection || !projection.metadata) {
         return compact ? (
-            <Chip size="small" label="N/A" color="default" variant="outlined" />
+            <Chip size="small" label={t('projection.quality.na', 'N/A')} color="default" variant="outlined" />
         ) : null;
     }
 
@@ -24,101 +27,88 @@ const ProjectionQualityIndicator = ({ projection, compact = false }) => {
     const score = metadata.quality_score || 0;
     const confidence = metadata.confidence_level || 'unknown';
     const warnings = metadata.warnings || [];
-    const summary = metadata.summary || 'Projection disponible';
+    const summary = metadata.summary || t('projection.quality.available', 'Projection disponible');
 
-    // Configuration des indicateurs de qualité selon le backend
+    // ✅ Configuration des indicateurs TRADUITE
     const getQualityConfig = (quality) => {
-        switch (quality) {
-            case 'excellent':
-                return {
-                    color: 'success',
-                    icon: <CheckCircle fontSize="small" />,
-                    label: 'Excellente',
-                    description: 'Modèle très fiable avec historique riche'
-                };
-            case 'good':
-                return {
-                    color: 'primary',
-                    icon: <TrendingUp fontSize="small" />,
-                    label: 'Bonne',
-                    description: 'Modèle fiable avec données suffisantes'
-                };
-            case 'fair':
-                return {
-                    color: 'warning',
-                    icon: <Info fontSize="small" />,
-                    label: 'Correcte',
-                    description: 'Modèle basique, données limitées'
-                };
-            case 'basic':
-                return {
-                    color: 'default',
-                    icon: <Info fontSize="small" />,
-                    label: 'Basique',
-                    description: 'Projection simple sans modélisation avancée'
-                };
-            case 'poor':
-            case 'none':
-                return {
-                    color: 'error',
-                    icon: <Warning fontSize="small" />,
-                    label: 'Faible',
-                    description: 'Modèle peu fiable, données insuffisantes'
-                };
-            default:
-                return {
-                    color: 'default',
-                    icon: <HelpOutline fontSize="small" />,
-                    label: 'Inconnue',
-                    description: 'Qualité de projection indéterminée'
-                };
-        }
+        const configs = {
+            excellent: {
+                color: 'success',
+                icon: <CheckCircle fontSize="small" />,
+                label: t('projection.quality.excellent', 'Excellente'),
+                description: t('projection.quality.excellent_desc', 'Modèle très fiable avec historique riche')
+            },
+            good: {
+                color: 'primary',
+                icon: <TrendingUp fontSize="small" />,
+                label: t('projection.quality.good', 'Bonne'),
+                description: t('projection.quality.good_desc', 'Modèle fiable avec données suffisantes')
+            },
+            fair: {
+                color: 'warning',
+                icon: <Info fontSize="small" />,
+                label: t('projection.quality.fair', 'Correcte'),
+                description: t('projection.quality.fair_desc', 'Modèle basique, données limitées')
+            },
+            basic: {
+                color: 'default',
+                icon: <Info fontSize="small" />,
+                label: t('projection.quality.basic', 'Basique'),
+                description: t('projection.quality.basic_desc', 'Projection simple sans modélisation avancée')
+            },
+            poor: {
+                color: 'error',
+                icon: <Warning fontSize="small" />,
+                label: t('projection.quality.poor', 'Faible'),
+                description: t('projection.quality.poor_desc', 'Modèle peu fiable, données insuffisantes')
+            }
+        };
+
+        return configs[quality] || {
+            color: 'default',
+            icon: <HelpOutline fontSize="small" />,
+            label: t('projection.quality.unknown', 'Inconnue'),
+            description: t('projection.quality.unknown_desc', 'Qualité de projection indéterminée')
+        };
     };
 
-    // Configuration des méthodes de projection selon le backend
+    // ✅ Configuration des méthodes TRADUITE
     const getMethodConfig = (method) => {
-        switch (method) {
-            case 'linear_regression':
-                return {
-                    label: 'Régression Linéaire',
-                    description: 'Projection basée sur une tendance linéaire'
-                };
-            case 'seasonal_decomposition':
-                return {
-                    label: 'Décomposition Saisonnière',
-                    description: 'Projection tenant compte de la saisonnalité'
-                };
-            case 'moving_average':
-                return {
-                    label: 'Moyenne Mobile',
-                    description: 'Projection basée sur une moyenne mobile'
-                };
-            case 'exponential_smoothing':
-                return {
-                    label: 'Lissage Exponentiel',
-                    description: 'Projection avec lissage exponentiel'
-                };
-            case 'linear_fallback':
-                return {
-                    label: 'Linéaire Simple',
-                    description: 'Projection linéaire de base (fallback)'
-                };
-            case 'empty_forced':
-                return {
-                    label: 'Ventes Nulles',
-                    description: 'Pas de ventes détectées'
-                };
-            case 'constant_fallback':
-                return {
-                    label: 'Constante',
-                    description: 'Projection constante basée sur 1 point'
-                };
-            default:
-                return {
-                    label: 'Méthode Inconnue',
-                    description: 'Méthode de projection non spécifiée'
-                };
-        }
+        const configs = {
+            linear_regression: {
+                label: t('projection.methods.linear_regression', 'Régression Linéaire'),
+                description: t('projection.methods.linear_regression_desc', 'Projection basée sur une tendance linéaire')
+            },
+            seasonal_decomposition: {
+                label: t('projection.methods.seasonal_decomposition', 'Décomposition Saisonnière'),
+                description: t('projection.methods.seasonal_decomposition_desc', 'Projection tenant compte de la saisonnalité')
+            },
+            moving_average: {
+                label: t('projection.methods.moving_average', 'Moyenne Mobile'),
+                description: t('projection.methods.moving_average_desc', 'Projection basée sur une moyenne mobile')
+            },
+            exponential_smoothing: {
+                label: t('projection.methods.exponential_smoothing', 'Lissage Exponentiel'),
+                description: t('projection.methods.exponential_smoothing_desc', 'Projection avec lissage exponentiel')
+            },
+            linear_fallback: {
+                label: t('projection.methods.linear_fallback', 'Linéaire Simple'),
+                description: t('projection.methods.linear_fallback_desc', 'Projection linéaire de base (fallback)')
+            },
+            empty_forced: {
+                label: t('projection.methods.empty_forced', 'Ventes Nulles'),
+                description: t('projection.methods.empty_forced_desc', 'Pas de ventes détectées')
+            },
+            constant_fallback: {
+                label: t('projection.methods.constant_fallback', 'Constante'),
+                description: t('projection.methods.constant_fallback_desc', 'Projection constante basée sur 1 point')
+            }
+        };
+
+        return configs[method] || {
+            label: t('projection.methods.unknown', 'Méthode Inconnue'),
+            description: t('projection.methods.unknown_desc', 'Méthode de projection non spécifiée')
+        };
     };
 
     const qualityConfig = getQualityConfig(modelQuality);
@@ -133,7 +123,7 @@ const ProjectionQualityIndicator = ({ projection, compact = false }) => {
                         {summary}
                     </Typography>
                     <Typography variant="body2" sx={{ mb: 1 }}>
-                        Qualité: {qualityConfig.label} • {methodConfig.label}
+                        {t('projection.quality.quality', 'Qualité')}: {qualityConfig.label} • {methodConfig.label}
                     </Typography>
                     {score > 0 && (
                         <Typography variant="body2">
@@ -165,7 +155,7 @@ const ProjectionQualityIndicator = ({ projection, compact = false }) => {
         <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'grey.200' }}>
             <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                 <TrendingUp color="primary" />
-                Qualité de la Projection
+                {t('projection.quality.title', 'Qualité de la Projection')}
             </Typography>
 
             {/* Résumé principal */}
@@ -191,7 +181,7 @@ const ProjectionQualityIndicator = ({ projection, compact = false }) => {
                 <Box sx={{ mb: 2 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
                         <Typography variant="body2" color="text.secondary">
-                            Score de Fiabilité
+                            {t('projection.quality.reliability_score', 'Score de Fiabilité')}
                         </Typography>
                         <Typography variant="body2" sx={{ fontWeight: 600 }}>
                             {(score * 100).toFixed(0)}%
@@ -209,10 +199,11 @@ const ProjectionQualityIndicator = ({ projection, compact = false }) => {
             {/* Informations techniques */}
             <Box sx={{ mb: 2 }}>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-                    Détails Techniques
+                    {t('projection.quality.technical_details', 'Détails Techniques')}
                 </Typography>
                 <Typography variant="body2">
-                    {metadata.data_points || 0} points de données • Confiance: {confidence}
+                    {t('projection.quality.data_points', '{{count}} points de données').replace('{{count}}', metadata.data_points || 0)} •
+                    {t('projection.quality.confidence', 'Confiance: {{level}}').replace('{{level}}', confidence)}
                 </Typography>
                 {metadata.method_used && (
                     <Typography variant="caption" color="text.secondary">
@@ -225,7 +216,7 @@ const ProjectionQualityIndicator = ({ projection, compact = false }) => {
             {warnings.length > 0 && (
                 <Alert severity="warning" size="small" sx={{ mt: 2 }}>
                     <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
-                        Points d'attention:
+                        {t('projection.quality.warnings_title', 'Points d\'attention:')}
                     </Typography>
                     <ul style={{ margin: 0, paddingLeft: '16px' }}>
                         {warnings.slice(0, 3).map((warning, index) => (
@@ -243,7 +234,7 @@ const ProjectionQualityIndicator = ({ projection, compact = false }) => {
             {metadata.recommendations && metadata.recommendations.length > 0 && (
                 <Box sx={{ mt: 2, p: 1, bgcolor: 'info.50', borderRadius: 1 }}>
                     <Typography variant="body2" sx={{ fontWeight: 600, mb: 1, color: 'info.main' }}>
-                        💡 Recommandations:
+                        {t('projection.quality.recommendations_title', '💡 Recommandations:')}
                     </Typography>
                     <ul style={{ margin: 0, paddingLeft: '16px' }}>
                         {metadata.recommendations.slice(0, 2).map((rec, index) => (
@@ -261,8 +252,11 @@ const ProjectionQualityIndicator = ({ projection, compact = false }) => {
             {process.env.NODE_ENV === 'development' && metadata.evaluation_timestamp && (
                 <Box sx={{ mt: 2, p: 1, bgcolor: 'grey.100', borderRadius: 1 }}>
                     <Typography variant="caption" color="text.secondary">
-                        Debug: {new Date(metadata.evaluation_timestamp).toLocaleString('fr-FR')}
-                        {metadata.validator_available ? ' • Validator OK' : ' • Validator manquant'}
+                        {t('projection.quality.debug_info', 'Debug: {{timestamp}}').replace('{{timestamp}}', new Date(metadata.evaluation_timestamp).toLocaleString(language === 'en' ? 'en-US' : 'fr-FR'))}
+                        {metadata.validator_available ?
+                            ` • ${t('projection.quality.validator_ok', 'Validator OK')}` :
+                            ` • ${t('projection.quality.validator_missing', 'Validator manquant')}`
+                        }
                     </Typography>
                 </Box>
             )}

@@ -1,6 +1,8 @@
 {
-  "app.title": "CBM GRC Matcher",
-  "app.subtitle": "Product analysis and matching system",
+  "app": {
+    "title": "CBM GRC Matcher",
+    "subtitle": "Product analysis and matching system"
+  },
 
   "sidebar": {
     "dashboard": "Dashboard",
@@ -12,8 +14,6 @@
     "settings": "Settings",
     "help": "Help"
   },
-
-
 
   "filters": {
     "title": "Search Filters",
@@ -45,37 +45,264 @@
     }
   },
 
+  "optimization": {
+    "title": "Catalog Optimization",
+    "subtitle": "Analysis of potential savings through range rationalization",
+    "loading": "Loading optimization analysis...",
+    "no_data": "No optimization data available for the selected filters.",
+    "error": {
+      "title": "Error loading optimization data",
+      "message": "Error: {{message}}"
+    },
+    "filters": {
+      "quality": "Quality",
+      "view_mode": "View Mode",
+      "table_view": "Table View",
+      "charts_view": "Charts View",
+      "all_qualities": "All Qualities"
+    },
+    "kpi": {
+      "total_groups": "Total Groups",
+      "immediate_gain": "Immediate Gain",
+      "projected_gain_6m": "6-Month Projected Gain",
+      "total_refs": "Total References",
+      "avg_growth": "Average Growth",
+      "current_margin_6m": "Current 6M Margin",
+      "optimized_margin_6m": "Optimized 6M Margin",
+      "margin_improvement": "Margin Improvement"
+    },
+    "charts": {
+      "title": "Optimization Graphical Analysis",
+      "gains_by_group": "Gains by Group",
+      "timeline": "Timeline Evolution",
+      "quality_distribution": "Quality Distribution",
+      "potential_gain": "Potential Gain by Group (Top 15)",
+      "immediate_gain": "Immediate Gain",
+      "gain_6m": "6M Gain",
+      "refs_analysis": "📦 References Kept vs Total",
+      "total_refs": "Total Refs",
+      "kept_refs": "Kept References",
+      "margin_comparison": "💰 Current vs Optimized Margin (6M)",
+      "current_margin": "Current Margin",
+      "optimized_margin": "Optimized Margin",
+      "temporal_evolution": "📈 Timeline Evolution - History + Projections",
+      "revenue": "Revenue",
+      "historical_margin": "Historical Margin",
+      "projected_current_margin": "Projected Current Margin",
+      "projected_optimized_margin": "Projected Optimized Margin",
+      "gain_distribution": "Gain Distribution by Quality",
+      "quality_stats": "Statistics by Quality",
+      "groups": "groups",
+      "total_references": "total references",
+      "kept_references": "📦 {{count}} references kept",
+      "projection_6m": "6M Projection: {{amount}}"
+    },
+    "table": {
+      "group": "Group",
+      "quality": "Quality",
+      "total_refs": "Total Refs",
+      "kept_refs": "Kept",
+      "immediate_gain": "Immediate Gain",
+      "gain_6m": "6M Gain",
+      "current_margin_6m": "Current 6M Margin",
+      "optimized_margin_6m": "Optimized 6M Margin",
+      "growth_rate": "Growth Rate",
+      "actions": "Actions",
+      "view_details": "Details",
+      "simulate": "Simulate"
+    },
+    "detail": {
+      "title": "Group {{group}} Optimization",
+      "subtitle": "Quality {{quality}} • {{refs}} references",
+      "immediate_gain": "Immediate gain",
+      "growth": "Growth",
+      "projection_reliability": "Projection reliability",
+      "tabs": {
+        "overview": "Overview",
+        "references": "References",
+        "timeline": "Timeline",
+        "simulation": "Simulation"
+      },
+      "economic_metrics": "💰 Economic Metrics",
+      "min_purchase_price": "Min purchase price:",
+      "weighted_sale_price": "Weighted sale price:",
+      "immediate_gain_label": "Immediate gain:",
+      "gain_6m_label": "6-month gain:",
+      "current_margin_6m_label": "Current 6M margin:",
+      "optimized_margin_6m_label": "Optimized 6M margin:",
+      "projection_quality": "🎯 Projection Quality",
+      "score": "Score: {{score}}%",
+      "data_points": "{{count}} data points",
+      "warnings": "Warnings:",
+      "recommendations": "💡 Recommendations:",
+      "refs_distribution": "📦 References Distribution",
+      "to_keep": "✅ To Keep ({{count}})",
+      "low_sales": "⚠️ Low Sales ({{count}})",
+      "no_sales": "❌ No Sales ({{count}})",
+      "dead_stock": "Dead stock",
+      "refs_detail": "📋 References Detail",
+      "to_keep_refs": "✅ References to keep ({{count}})",
+      "low_sales_refs": "⚠️ Low sales references ({{count}})",
+      "no_sales_refs": "❌ No sales references ({{count}})",
+      "internal_ref": "Internal Ref",
+      "purchase_price": "Purchase Price",
+      "revenue": "Revenue",
+      "quantity": "Quantity",
+      "potential_gain": "Potential Gain",
+      "status": "Status",
+      "no_keep_refs": "No references to keep",
+      "no_low_sales_refs": "No low sales references",
+      "no_no_sales_refs": "No references without sales",
+      "timeline_evolution": "📈 Timeline Evolution",
+      "quantities": "Quantities",
+      "margins": "Margins",
+      "historical_margin": "Historical Margin",
+      "projected_current_margin": "Projected Current Margin",
+      "projected_optimized_margin": "Projected Optimized Margin",
+      "projection_info": "📊 Projection information:",
+      "method": "Method",
+      "confidence": "Confidence",
+      "trend": "Trend",
+      "units_per_month": "units/month",
+      "detailed_data": "📋 Detailed Data",
+      "period": "Period",
+      "optimized_margin": "Opt. Margin",
+      "type": "Type",
+      "historical": "historical",
+      "projection": "projection",
+      "simulation": "🎮 Optimization Simulation",
+      "rationalization_scenario": "Rationalization Scenario",
+      "current_situation": "📊 Current Situation",
+      "total_references": "Total references:",
+      "current_6m_margin": "Current 6M margin:",
+      "management_cost": "Management cost:",
+      "high_dispersed": "High (dispersed)",
+      "after_optimization": "🎯 After Optimization",
+      "kept_references": "References kept:",
+      "optimized_6m_margin": "Optimized 6M margin:",
+      "reduced_focused": "Reduced (focused)",
+      "financial_impact": "💰 Financial Impact",
+      "projected_gain_6m": "Projected 6M gain",
+      "margin_improvement": "Margin improvement",
+      "recommended_actions": "🎯 Recommended Actions:",
+      "keep_main_refs": "Keep {{count}} main references",
+      "evaluate_low_sales": "Evaluate {{count}} low sales references",
+      "remove_no_sales": "Remove {{count}} references without sales",
+      "actions": {
+        "export_csv": "Export CSV",
+        "close": "Close",
+        "simulate_optimization": "Simulate this Optimization"
+      }
+    },
+    "projection": {
+      "quality": {
+        "title": "Projection Quality",
+        "excellent": "Excellent",
+        "good": "Good",
+        "fair": "Fair",
+        "basic": "Basic",
+        "poor": "Poor",
+        "unknown": "Unknown",
+        "excellent_desc": "Very reliable model with rich history",
+        "good_desc": "Reliable model with sufficient data",
+        "fair_desc": "Basic model, limited data",
+        "basic_desc": "Simple projection without advanced modeling",
+        "poor_desc": "Unreliable model, insufficient data",
+        "na": "N/A",
+        "available": "Projection available",
+        "reliability_score": "Reliability Score",
+        "technical_details": "Technical Details",
+        "data_points": "{{count}} data points",
+        "confidence": "Confidence: {{level}}",
+        "warnings_title": "Attention points:",
+        "recommendations_title": "💡 Recommendations:",
+        "debug_info": "Debug: {{timestamp}}",
+        "validator_ok": "Validator OK",
+        "validator_missing": "Validator missing"
+      },
+      "methods": {
+        "linear_regression": "Linear Regression",
+        "seasonal_decomposition": "Seasonal Decomposition",
+        "moving_average": "Moving Average",
+        "exponential_smoothing": "Exponential Smoothing",
+        "linear_fallback": "Simple Linear",
+        "empty_forced": "No Sales",
+        "constant_fallback": "Constant",
+        "unknown": "Unknown Method",
+        "linear_regression_desc": "Projection based on linear trend",
+        "seasonal_decomposition_desc": "Projection accounting for seasonality",
+        "moving_average_desc": "Projection based on moving average",
+        "exponential_smoothing_desc": "Projection with exponential smoothing",
+        "linear_fallback_desc": "Basic linear projection (fallback)",
+        "empty_forced_desc": "No sales detected",
+        "constant_fallback_desc": "Constant projection based on 1 point",
+        "unknown_desc": "Unspecified projection method"
+      }
+    },
 
+    "charts": {
+      "loading": "Loading charts...",
+      "no_data": "No data available for charts",
+      "gains_by_group": "Gains by Group",
+      "timeline_evolution": "Timeline Evolution",
+      "quality_distribution": "Quality Distribution",
+      "potential_gain_top15": "Potential Gain by Group (Top 15)",
+      "refs_kept_vs_total": "📦 References Kept vs Total",
+      "margin_current_vs_optimized": "💰 Current vs Optimized Margin (6M)",
+      "temporal_evolution_history": "📈 Timeline Evolution - History + Projections",
+      "gain_distribution_quality": "Gain Distribution by Quality",
+      "quality_statistics": "Statistics by Quality",
+      "immediate_gain": "Immediate Gain",
+      "gain_6m": "6M Gain",
+      "total_refs": "Total Refs",
+      "kept_refs": "Kept References",
+      "current_margin": "Current Margin",
+      "optimized_margin": "Optimized Margin",
+      "revenue": "Revenue",
+      "historical_margin": "Historical Margin",
+      "projected_current_margin": "Projected Current Margin",
+      "projected_optimized_margin": "Projected Optimized Margin",
+      "groups": "groups",
+      "total_references": "total references",
+      "kept_references_count": "📦 {{count}} references kept",
+      "projection_6m_amount": "6M Projection: {{amount}}"
+    }
+  },
 
   "help": {
     "title": "Help & Documentation",
-    "purpose.title": "🧭 What is CBM GRC Matcher for?",
-    "purpose.text": "CBM GRC Matcher is a product analysis and matching tool based on various keys (manufacturer, internal and external references). It allows grouping, filtering and comparing products by quality, CRN group, and sales or stock history.",
-
-    "features.title": "📌 Main Features",
-    "features.list": [
-      "🔎 Search by cod_pro, ref_crn, refint, ref_ext",
-      "🧩 Smart grouping via grouping_crn",
-      "📊 Full dashboard: KPIs, stock, history, turnover",
-      "📥 Excel export, combined filters",
-      "⚡ Fast resolution using Grouping_crn_table (no more slow stored procedures)"
-    ],
-
-    "filters.title": "🧪 Available Filters",
-    "filters.list": {
-      "cod_pro": "cod_pro: Unique CBM product code",
-      "ref_crn": "ref_crn: Manufacturer reference",
-      "ref_ext": "ref_ext: External (or GRC) reference",
-      "refint": "refint: Internal CBM reference",
-      "qualite": "qualite: Product quality (OE, OEM, PMQ, PMV)",
-      "grouping_crn": "grouping_crn: Enables logical grouping by product family"
+    "subtitle": "Complete guide to using CBM GRC Matcher",
+    "purpose": {
+      "title": "🧭 What is CBM GRC Matcher for?",
+      "text": "CBM GRC Matcher is a product analysis and matching tool based on various keys (manufacturer, internal and external references). It allows grouping, filtering and comparing products by quality, CRN group, and sales or stock history."
     },
-
-    "grouping.title": "🧩 Understanding grouping_crn",
-    "grouping.text1": "The grouping_crn field is a logical key that links multiple CBM products (cod_pro) together, even if they don't directly share the same ref_crn, as long as they are connected via transitive links.",
-    "grouping.text2": "Example: product A is linked to ref_crn X, product B to X and Y, and product C to Y → A, B and C are grouped under the same grouping_crn.",
-    "grouping.text3": "This grouping is automatically computed from Bridge_cod_pro_ref_crn and propagated into Grouping_crn_table (with quality, refint, and ref_ext included).",
-
+    "features": {
+      "title": "📌 Main Features",
+      "list": [
+        "🔎 Search by cod_pro, ref_crn, refint, ref_ext",
+        "🧩 Smart grouping via grouping_crn",
+        "📊 Full dashboard: KPIs, stock, history, turnover",
+        "📥 Excel export, combined filters",
+        "⚡ Fast resolution using Grouping_crn_table (no more slow stored procedures)"
+      ]
+    },
+    "filters": {
+      "title": "🧪 Available Filters",
+      "list": {
+        "cod_pro": "cod_pro: Unique CBM product code",
+        "ref_crn": "ref_crn: Manufacturer reference",
+        "ref_ext": "ref_ext: External (or GRC) reference",
+        "refint": "refint: Internal CBM reference",
+        "qualite": "qualite: Product quality (OE, OEM, PMQ, PMV)",
+        "grouping_crn": "grouping_crn: Enables logical grouping by product family"
+      }
+    },
+    "grouping": {
+      "title": "🧩 Understanding grouping_crn",
+      "text1": "The grouping_crn field is a logical key that links multiple CBM products (cod_pro) together, even if they don't directly share the same ref_crn, as long as they are connected via transitive links.",
+      "text2": "Example: product A is linked to ref_crn X, product B to X and Y, and product C to Y → A, B and C are grouped under the same grouping_crn.",
+      "text3": "This grouping is automatically computed from Bridge_cod_pro_ref_crn and propagated into Grouping_crn_table (with quality, refint, and ref_ext included)."
+    },
     "contact": "For technical issues, contact: e.ragueneau@cbmcompany.com"
   }
 }

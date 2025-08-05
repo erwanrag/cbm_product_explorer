@@ -1,25 +1,42 @@
 // src/shared/components/inputs/selects/SelectQualite.jsx
+import React from 'react';
 import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@/store/contexts/LanguageContext';
 
-export default function SelectQualite({ value, onChange, label = 'filters.qualite.label', sx = {}, fullWidth = true }) {
+export default function SelectQualite({
+    value,
+    onChange,
+    label, // ← Paramètre normal, pas défaut bizarre
+    sx = {},
+    fullWidth = true,
+    size = "small"
+}) {
     const { t } = useTranslation();
 
+    // Label par défaut ou passé en props
+    const displayLabel = label || t('filters.qualite.label', 'Qualité');
+
     const options = [
-        { value: 'OE', label: t('filters.qualite.oe') },
-        { value: 'OEM', label: t('filters.qualite.oem') },
-        { value: 'PMQ', label: t('filters.qualite.pmq') },
-        { value: 'PMV', label: t('filters.qualite.pmv') },
+        { value: 'OE', label: t('filters.qualite.oe', 'OE - Origine') },
+        { value: 'OEM', label: t('filters.qualite.oem', 'OEM - Équipementier') },
+        { value: 'PMQ', label: t('filters.qualite.pmq', 'PMQ - Qualité Pro') },
+        { value: 'PMV', label: t('filters.qualite.pmv', 'PMV - Dév. Interne') },
     ];
 
     return (
-        <FormControl fullWidth={fullWidth} sx={sx} size="small">
-            <InputLabel>{t(label)}</InputLabel>
-            <Select value={value ?? ''} onChange={(e) => onChange(e.target.value)} label={t(label)}>
-                <MenuItem value="">{t('filters.qualite.all')}</MenuItem>
-                {options.map((q) => (
-                    <MenuItem key={q.value} value={q.value}>
-                        {q.label}
+        <FormControl fullWidth={fullWidth} sx={sx} size={size}>
+            <InputLabel>{displayLabel}</InputLabel>
+            <Select
+                value={value ?? ''}
+                onChange={(e) => onChange(e.target.value)}
+                label={displayLabel}
+            >
+                <MenuItem value="">
+                    {t('filters.qualite.all', '(Toutes)')}
+                </MenuItem>
+                {options.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                        {option.label}
                     </MenuItem>
                 ))}
             </Select>

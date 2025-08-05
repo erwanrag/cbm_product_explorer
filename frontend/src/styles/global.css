@@ -305,3 +305,32 @@ body {
   outline: 2px solid #1976d2;
   outline-offset: 2px;
 }
+
+
+/* ===== THEMING PERSONNALISÉ CBM ===== */
+
+:root {
+    --animation-duration: 0.3s;
+    --spacing-scale: 1;
+}
+
+[data-theme='dark'] {
+    --background-color: #121212;
+    --text-color: #e0e0e0;
+}
+
+[data-theme='light'] {
+    --background-color: #ffffff;
+    --text-color: #333333;
+}
+
+body {
+    background-color: var(--background-color);
+    color: var(--text-color);
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.cbm-spacing {
+    padding: calc(16px * var(--spacing-scale));
+}
+
