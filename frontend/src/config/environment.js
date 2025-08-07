@@ -1,7 +1,7 @@
 // frontend/src/config/environment.js - CONFIGURATION FINALE UNIFIÉE
 
 /**
- * Configuration d'environnement centralisée pour CBM GRC Matcher
+ * Configuration d'environnement centralisée pour CBM Product Explorer
  * Remplace et unifie tous les fichiers de config éparpillés
  */
 class EnvironmentConfig {
@@ -189,7 +189,7 @@ class EnvironmentConfig {
   // ===== LOGGING =====
   logEnvironmentInfo() {
     if (this.features.enableDebugLogs) {
-      console.group('🔧 Configuration CBM GRC Matcher');
+      console.group('🔧 Configuration CBM Product Explorer');
       console.log('🌍 Environnement:', this.env);
       console.log('🔗 API URL:', this.apiBaseUrl);
       console.log(

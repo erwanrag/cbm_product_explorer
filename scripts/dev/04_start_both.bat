@@ -3,10 +3,10 @@ REM 📁 scripts/dev/04_start_both.bat
 REM ============================================
 @echo off
 title CBM - Contrôleur Principal
-cd /d D:\Projet\CBM_GRC_Matcher
+cd /d D:\Projet\CBM_Product_Explorer
 
 echo ============================================
-echo    DEMARRAGE COMPLET CBM GRC MATCHER
+echo    DEMARRAGE COMPLET CBM Product Explorer
 echo ============================================
 
 REM Vérification des prérequis
@@ -19,13 +19,13 @@ echo 🚀 Démarrage des services...
 echo.
 
 echo [1/2] Démarrage Backend...
-start "CBM Backend (DEV)" cmd /k "cd /d D:\Projet\CBM_GRC_Matcher && scripts\dev\02_start_backend.bat"
+start "CBM Backend (DEV)" cmd /k "cd /d D:\Projet\CBM_Product_Explorer && scripts\dev\02_start_backend.bat"
 
 echo [2/2] Attente backend puis démarrage Frontend...
 echo Attente 8 secondes pour le démarrage du backend...
 timeout /t 8 /nobreak >nul
 
-start "CBM Frontend (DEV)" cmd /k "cd /d D:\Projet\CBM_GRC_Matcher && scripts\dev\03_start_frontend.bat"
+start "CBM Frontend (DEV)" cmd /k "cd /d D:\Projet\CBM_Product_Explorer && scripts\dev\03_start_frontend.bat"
 
 echo.
 echo ============================================

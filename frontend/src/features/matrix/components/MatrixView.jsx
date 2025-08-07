@@ -299,7 +299,7 @@ export default function MatrixView({
     }
 
     function handleCellClick(product, columnRef) {
-        console.log('🔍 Clic cellule:', {
+        //console.log('🔍 Clic cellule:', {
             product: product.cod_pro,
             ref: columnRef.ref
         });

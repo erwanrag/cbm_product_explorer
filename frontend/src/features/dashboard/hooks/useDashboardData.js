@@ -1,4 +1,7 @@
-// frontend/src/features/dashboard/hooks/useDashboardData.js
+// ===================================
+// 📁 frontend/src/features/dashboard/hooks/useDashboardData.js - VERSION ORIGINALE QUI MARCHE
+// ===================================
+
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { dashboardService } from '@/api/services/dashboardService';
@@ -32,7 +35,7 @@ export function useDashboardData(filters) {
 
         const { details, sales, stock, purchase, matches, history } = query.data;
 
-        // ✅ KPIs corrects - que 3 utiles
+        // KPIs corrects - que 3 utiles
         const kpis = {
             totalProducts: details.length,
             totalRevenue: sales.reduce((sum, s) => sum + (s.ca_total || 0), 0),

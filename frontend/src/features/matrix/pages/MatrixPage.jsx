@@ -189,7 +189,7 @@ const MatrixPage = () => {
 
     // ✅ GESTIONNAIRES
     const handleInspectProduct = (product) => {
-        console.log('🔍 Inspection produit:', product);
+        //console.log('🔍 Inspection produit:', product);
         // TODO: Ouvrir modal ou naviguer vers détail produit
     };
 
@@ -283,14 +283,17 @@ const MatrixPage = () => {
                 </Grid>
                 <Grid item>
                     <Tooltip title="Exporter les données">
-                        <IconButton
-                            onClick={handleExportData}
-                            color="secondary"
-                            disabled={!hasData}
-                        >
-                            <FileDownload />
-                        </IconButton>
+                        <span>
+                            <IconButton
+                                onClick={handleExportData}
+                                color="secondary"
+                                disabled={!hasData}
+                            >
+                                <FileDownload />
+                            </IconButton>
+                        </span>
                     </Tooltip>
+
                 </Grid>
                 <Grid item>
                     <Tooltip title="Aide complète">

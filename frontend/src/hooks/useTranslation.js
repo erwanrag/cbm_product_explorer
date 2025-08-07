@@ -6,12 +6,12 @@ import { useState, useEffect } from 'react';
 
 // Traductions critiques (header et éléments essentiels)
 const coreTranslations = {
-    "app.title": "CBM GRC Matcher",
+    "app.title": "CBM Product Explorer",
     "app.subtitle": "Product analysis and matching system",
 
     // Help
     "help.title": "Help & Documentation",
-    "help.subtitle": "Complete guide to using CBM GRC Matcher",
+    "help.subtitle": "Complete guide to using CBM Product Explorer",
 
     // OPTIMIZATION 
     "optimization.title": "Catalog Optimization",

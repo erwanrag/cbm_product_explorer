@@ -82,7 +82,7 @@ const OptimizationDetailPanel = ({ optimization, onClose, optimizationData }) =>
         };
 
         if (format === 'excel') {
-            console.log('📥 Export Excel demandé pour:', exportData);
+            //console.log('📥 Export Excel demandé pour:', exportData);
 
             // Créer un CSV simple pour simulation
             const csvContent = [

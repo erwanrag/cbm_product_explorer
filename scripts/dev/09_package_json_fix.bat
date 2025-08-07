@@ -3,7 +3,7 @@ REM 📁 scripts/dev/09_package_json_fix.bat
 REM ============================================
 @echo off
 title CBM - Fix Package.json
-cd /d D:\Projet\CBM_GRC_Matcher\frontend
+cd /d D:\Projet\CBM_Product_Explorer\frontend
 
 echo ============================================
 echo    RÉPARATION PACKAGE.JSON

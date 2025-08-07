@@ -176,7 +176,7 @@ const Sidebar = ({ width, open, variant = 'persistent' }) => {
 
                 <Box sx={{ p: 2, borderTop: `1px solid ${theme.palette.divider}` }}>
                     <Typography variant="caption" color="text.secondary" align="center" display="block">
-                        © 2025 CBM GRC Matcher
+                        © 2025 CBM Product Explorer
                     </Typography>
                 </Box>
             </Box>

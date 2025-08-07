@@ -188,8 +188,8 @@ const APISection = ({ onSettingChange }) => {
                                 variant="outlined"
                                 startIcon={<Security />}
                                 onClick={() => {
-                                    console.log('🔐 Test timeout API:', settings.apiTimeout);
-                                    toast.info(`🔐 Test timeout: ${settings.apiTimeout / 1000}s`);
+                                    //console.log('🔐 Test timeout API:', settings.apiTimeout);
+                                    //toast.info(`🔐 Test timeout: ${settings.apiTimeout / 1000}s`);
                                 }}
                             >
                                 Tester Timeout API

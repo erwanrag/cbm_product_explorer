@@ -1,9 +1,6 @@
-REM ============================================
-REM 📁 scripts/dev/03_start_frontend.bat
-REM ============================================
 @echo off
 title CBM Frontend (DEV)
-cd /d D:\Projet\CBM_GRC_Matcher\frontend
+cd /d D:\Projet\CBM_Product_Explorer\frontend
 
 echo ============================================
 echo    DEMARRAGE FRONTEND CBM
@@ -29,10 +26,22 @@ echo - Port: 5181
 echo - API: http://127.0.0.1:5180/api/v1
 echo.
 
+echo 🧹 Nettoyage du cache Vite...
+
+if exist ".vite" (
+    echo - Suppression de .vite
+    rmdir /s /q .vite
+)
+
+if exist "node_modules\.vite" (
+    echo - Suppression de node_modules\.vite
+    rmdir /s /q node_modules\.vite
+)
+
 echo 🚀 Démarrage serveur Vite...
 echo    URL: http://127.0.0.1:5181
 echo.
 echo 💡 CTRL+C pour arrêter
-echo ==========================================
+echo ============================================
 
 npm run dev

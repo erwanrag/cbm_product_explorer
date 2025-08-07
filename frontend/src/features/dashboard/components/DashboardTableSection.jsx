@@ -1,4 +1,4 @@
-// 📁 DashboardTableSection.jsx
+// 📁 DashboardTableSection.jsx - Version avec Export
 import React, { useState, useMemo } from 'react';
 import {
     Box,
@@ -19,12 +19,17 @@ import {
     MenuItem,
     FormControlLabel,
     Checkbox,
-    Divider
+    Divider,
+    Button
 } from '@mui/material';
 import { FileDownload, ViewColumn, Settings } from '@mui/icons-material';
 import { motion } from 'framer-motion';
+import { toast } from 'react-toastify';
 import { formatCurrency } from '@/lib/formatUtils';
 import { getQualiteColor, getMargeColor, getMatchPercentColor, getStatutColor, getStatutLabel } from '@/constants/colors';
+
+// Import du composant d'export mutualisé
+import { ExportExcelButton } from '@/shared/components/export';
 
 export default function DashboardTableSection({ data, onProductSelect }) {
     const [page, setPage] = useState(0);
@@ -92,6 +97,28 @@ export default function DashboardTableSection({ data, onProductSelect }) {
 
     const paginatedData = sortedData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
+    // ✅ Données formatées pour export
+    const exportData = useMemo(() => {
+        return sortedData.map(product => ({
+            'Code Produit': product.cod_pro,
+            'Référence Interne': product.refint || '',
+            'Référence Externe': product.ref_ext || '',
+            'Nom Produit': product.nom_pro || '',
+            'Qualité': product.qualite || '',
+            'Statut': product.statut === 0 ? 'Actif' : 'Inactif',
+            'Fournisseur': product.nom_fou || '',
+            'Prix Vente (€)': product.quantite_total > 0 ?
+                formatCurrency(product.ca_total / product.quantite_total, 'EUR', false) : '0',
+            'Prix Achat (€)': formatCurrency(product.px_achat_eur || 0, 'EUR', false),
+            'Quantité Vendue': product.quantite_total || 0,
+            'CA Total (€)': formatCurrency(product.ca_total || 0, 'EUR', false),
+            'Marge (%)': `${(product.marge_percent_total || 0).toFixed(1)}%`,
+            'Stock Total': product.stock_total || 0,
+            'PMP Dépôt 1 (€)': formatCurrency(product.pmp || 0, 'EUR', false),
+            '% Matching': `${codProToMatchPercent[product.cod_pro]?.toFixed(1) ?? '0'}%`,
+        }));
+    }, [sortedData, codProToMatchPercent]);
+
     const handleRequestSort = (property) => {
         const isAsc = orderBy === property && order === 'asc';
         setOrder(isAsc ? 'desc' : 'asc');
@@ -134,19 +161,34 @@ export default function DashboardTableSection({ data, onProductSelect }) {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
             <Paper elevation={2} sx={{ mt: 2 }}>
                 <Box sx={{ p: 2, pb: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="h6" sx={{ fontSize: '1rem', fontWeight: 600 }}>
-                        Produits ({data.details.length})
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="h6" sx={{ fontSize: '1rem', fontWeight: 600 }}>
+                            Produits ({data.details.length})
+                        </Typography>
                         {orderBy === 'qualite_ca' && (
                             <Chip label="Tri: Qualité + CA" size="small" sx={{ ml: 1, bgcolor: '#e3f2fd', fontSize: '0.7rem' }} />
                         )}
-                    </Typography>
+                    </Box>
 
-      
-                    <Tooltip title="Afficher/masquer les colonnes">
-                        <IconButton onClick={handleColumnMenuOpen} color="primary" size="small">
-                            <ViewColumn fontSize="small" />
-                        </IconButton>
-                    </Tooltip>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                        {/* ✅ Bouton d'export multi-format */}
+                        <ExportExcelButton
+                            data={exportData}
+                            filename={`dashboard-produits-${new Date().toISOString().split('T')[0]}`}
+                            formats={['csv', 'json', 'html']}
+                            size="small"
+                            variant="outlined"
+                            disabled={exportData.length === 0}
+                        />
+
+                        {/* Bouton colonnes */}
+                        <Tooltip title="Afficher/masquer les colonnes">
+                            <IconButton onClick={handleColumnMenuOpen} color="primary" size="small">
+                                <ViewColumn fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+                    </Box>
+
                     <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleColumnMenuClose} PaperProps={{ sx: { minWidth: 200 } }}>
                         <MenuItem disabled>
                             <Settings fontSize="small" sx={{ mr: 1 }} />

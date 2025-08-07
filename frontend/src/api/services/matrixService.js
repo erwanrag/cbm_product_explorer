@@ -1,71 +1,46 @@
 // frontend/src/services/api/matrixService.js
 
-import apiClient from '@/api/core/client';
-/**
- * Service API pour la vue matricielle
- */
-export const matrixService = {
+import BaseApiService from '@/api/core/BaseApiService';
+
+export class MatrixService extends BaseApiService {
+    constructor() {
+        super('/matrix');
+    }
+
     /**
      * Récupère les données de la vue matricielle
-     * @param {Object} payload - Critères d'identification (cod_pro, ref_crn, refint, etc.)
+     * @param {Object} filters - Critères d'identification
      * @returns {Promise<Object>} Données de la matrice
      */
-    async getMatrixView(payload) {
-        try {
-            const response = await apiClient.post('/matrix/view', payload);
-            return response.data;
-        } catch (error) {
-            console.error('❌ Erreur API getMatrixView:', error);
-            throw new Error(
-                error.response?.data?.detail ||
-                error.message ||
-                'Erreur lors de la récupération de la vue matricielle'
-            );
-        }
-    },
+    async getMatrixView(filters = {}) {
+        const payload = this.buildPayload(filters);
+        return await this.post('view', payload);
+    }
 
     /**
-     * Récupère la vue matricielle avec filtres
-     * @param {Object} payload - Critères de base
-     * @param {Object} filters - Filtres additionnels (qualite, famille, statut, search_term)
-     * @returns {Promise<Object>} Données de la matrice filtrée
+     * Vue matricielle avec filtres additionnels
+     * @param {Object} filters - Critères de base
+     * @param {Object} additionalFilters - Filtres additionnels
+     * @returns {Promise<Object>}
      */
-    async getMatrixViewFiltered(payload, filters = {}) {
-        try {
-            const requestBody = {
-                ...payload,
-                ...filters
-            };
+    async getMatrixViewFiltered(filters = {}, additionalFilters = {}) {
+        const payload = {
+            ...this.buildPayload(filters),
+            ...additionalFilters
+        };
 
-            const response = await apiClient.post('/matrix/view/filtered', requestBody);
-            return response.data;
-        } catch (error) {
-            console.error('❌ Erreur API getMatrixViewFiltered:', error);
-            throw new Error(
-                error.response?.data?.detail ||
-                error.message ||
-                'Erreur lors de la récupération de la vue matricielle filtrée'
-            );
-        }
-    },
+        return await this.post('view/filtered', payload);
+    }
 
     /**
-     * Récupère les détails d'une cellule spécifique
+     * Détails d'une cellule spécifique
      * @param {number} codPro - Code produit
      * @param {string} ref - Référence colonne
-     * @returns {Promise<Object>} Détails de la cellule
+     * @returns {Promise<Object>}
      */
     async getCellDetails(codPro, ref) {
-        try {
-            const response = await apiClient.get(`/matrix/cell/${codPro}/${encodeURIComponent(ref)}`);
-            return response.data;
-        } catch (error) {
-            console.error('❌ Erreur API getCellDetails:', error);
-            throw new Error(
-                error.response?.data?.detail ||
-                error.message ||
-                'Erreur lors de la récupération des détails de la cellule'
-            );
-        }
+        return await this.get(`cell/${codPro}/${encodeURIComponent(ref)}`);
     }
-};
+}
+
+export const matrixService = new MatrixService();

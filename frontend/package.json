@@ -1,7 +1,7 @@
 {
   "name": "cbm-grc-matcher-frontend",
   "version": "2.0.0",
-  "description": "Frontend React pour CBM GRC Matcher - Application d'analyse et matching produits",
+  "description": "Frontend React pour CBM Product Explorer - Application d'analyse et matching produits",
   "type": "module",
   "private": true,
   "engines": {

@@ -1,4 +1,4 @@
-# CBM GRC Matcher - Backend API
+# CBM Product Explorer - Backend API
 
 ## 🚀 **Overview**
 

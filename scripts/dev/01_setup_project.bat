@@ -3,11 +3,11 @@ REM 📁 scripts/dev/01_setup_project.bat
 REM ============================================
 @echo off
 title CBM - Setup Initial
-cd /d D:\Projet\CBM_GRC_Matcher
+cd /d D:\Projet\CBM_Product_Explorer
 
 echo ============================================
-echo    SETUP INITIAL CBM GRC MATCHER
-echo ============================================
+echo    SETUP INITIAL CBM Product Explorer
+echo ======= =====================================
 
 echo [1/5] Creation environnement Python...
 if not exist "backend\venv" (

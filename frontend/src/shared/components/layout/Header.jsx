@@ -51,7 +51,7 @@ const Header = () => {
 
                 <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
                     <Typography variant="h6" component="div" sx={{ fontWeight: 600, color: theme.palette.primary.main }}>
-                        {t('app.title', 'CBM GRC Matcher')}
+                        {t('app.title', 'CBM Product Explorer')}
                         
                     </Typography>
                     {!isMobile && (

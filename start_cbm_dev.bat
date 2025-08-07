@@ -1,8 +1,8 @@
 @echo off
-REM start_cbm_dev.bat - Script de démarrage CBM GRC Matcher avec détection auto du projet
+REM start_cbm_dev.bat - Script de démarrage CBM Product Explorer avec détection auto du projet
 setlocal enabledelayedexpansion
 
-echo 🚀 Démarrage CBM GRC Matcher - Environnement DEV
+echo 🚀 Démarrage CBM Product Explorer - Environnement DEV
 echo ==================================================
 
 REM Détection automatique de la racine du projet
@@ -20,11 +20,11 @@ if exist "%SCRIPT_DIR%.env.dev" (
     set "PROJECT_ROOT=%SCRIPT_DIR%..\.."
     echo 📁 Racine détectée: %SCRIPT_DIR%..\..
 ) else (
-    echo ❌ Impossible de trouver la racine du projet CBM GRC Matcher
+    echo ❌ Impossible de trouver la racine du projet CBM Product Explorer
     echo    Le fichier .env.dev doit être présent dans le dossier racine
     echo.
     echo 💡 Structure attendue:
-    echo    CBM_GRC_Matcher/
+    echo    CBM_Product_Explorer/
     echo    ├── .env.dev          ^<-- Ce fichier est requis
     echo    ├── backend/
     echo    ├── frontend/
@@ -258,7 +258,7 @@ timeout /t 5 /nobreak >nul
 
 REM Affichage des informations finales
 echo.
-echo 🎉 CBM GRC Matcher démarré avec succès !
+echo 🎉 CBM Product Explorer démarré avec succès !
 echo ==========================================
 echo.
 echo 📱 Frontend:      http://127.0.0.1:5181
@@ -297,6 +297,6 @@ echo ✅ Services arrêtés
 
 cd ..
 echo.
-echo 👋 CBM GRC Matcher arrêté
+echo 👋 CBM Product Explorer arrêté
 echo    Vous pouvez fermer cette fenêtre
 pause

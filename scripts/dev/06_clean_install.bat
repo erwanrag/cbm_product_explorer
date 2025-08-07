@@ -3,7 +3,7 @@ REM 📁 scripts/dev/06_clean_install.bat
 REM ============================================
 @echo off
 title CBM - Installation Propre
-cd /d D:\Projet\CBM_GRC_Matcher
+cd /d D:\Projet\CBM_Product_Explorer
 
 echo ============================================
 echo    INSTALLATION PROPRE CBM

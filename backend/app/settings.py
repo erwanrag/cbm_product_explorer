@@ -6,7 +6,7 @@ import os
 
 
 class Settings(BaseSettings):
-    """Configuration de l'application CBM GRC Matcher"""
+    """Configuration de l'application CBM Product Explorer"""
     
     # === Environnement ===
     CBM_ENV: str = Field(default="dev", description="Environnement (dev/staging/prod)")
@@ -36,7 +36,7 @@ class Settings(BaseSettings):
     
     # === API Configuration ===
     API_V1_PREFIX: str = Field(default="/api/v1", description="Préfixe API")
-    PROJECT_NAME: str = Field(default="CBM GRC Matcher API", description="Nom du projet")
+    PROJECT_NAME: str = Field(default="CBM Product Explorer API", description="Nom du projet")
     VERSION: str = Field(default="1.0.0", description="Version de l'API")
     
     # === Sécurité (CORRIGÉ) ===

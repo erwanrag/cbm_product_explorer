@@ -116,7 +116,7 @@ const HelpPage = () => {
                         {t('help.title', 'Aide & Documentation')}
                     </Typography>
                     <Typography variant="subtitle1" color="text.secondary">
-                        {t('help.subtitle', 'Guide complet d\'utilisation de CBM GRC Matcher')}
+                        {t('help.subtitle', 'Guide complet d\'utilisation de CBM Product Explorer')}
                     </Typography>
                 </Box>
             </Box>
@@ -124,12 +124,12 @@ const HelpPage = () => {
             {/* Section Objectif */}
             <Paper sx={{ p: 3, mb: 3, bgcolor: 'primary.50' }}>
                 <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-                    {t('help.purpose.title', '🧭 À quoi sert CBM GRC Matcher ?')}
+                    {t('help.purpose.title', '🧭 À quoi sert CBM Product Explorer ?')}
                 </Typography>
                 <Typography color="text.secondary" sx={{ lineHeight: 1.7 }}>
                     {language === 'en'
-                        ? 'CBM GRC Matcher is a product analysis and matching tool based on various keys (manufacturer, internal and external references). It allows grouping, filtering and comparing products by quality, CRN group, and sales or stock history.'
-                        : 'CBM GRC Matcher est un outil d\'analyse et de correspondance des produits CBM à partir de différentes clés (références constructeur, internes, externes). Il permet de regrouper, filtrer, comparer les produits selon leur qualité, leur groupe CRN, et leur historique de ventes et de stock.'
+                        ? 'CBM Product Explorer is a product analysis and matching tool based on various keys (manufacturer, internal and external references). It allows grouping, filtering and comparing products by quality, CRN group, and sales or stock history.'
+                        : 'CBM Product Explorer est un outil d\'analyse et de correspondance des produits CBM à partir de différentes clés (références constructeur, internes, externes). Il permet de regrouper, filtrer, comparer les produits selon leur qualité, leur groupe CRN, et leur historique de ventes et de stock.'
                     }
                 </Typography>
             </Paper>

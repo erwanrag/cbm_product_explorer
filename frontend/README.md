@@ -1,5 +1,5 @@
 // frontend/README.md - DOCUMENTATION ENTERPRISE
-# CBM GRC Matcher - Frontend Enterprise
+# CBM Product Explorer - Frontend Enterprise
 
 ## 🏗️ Architecture
 

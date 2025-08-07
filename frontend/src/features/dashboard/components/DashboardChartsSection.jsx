@@ -24,9 +24,9 @@ export default function DashboardChartsSection({ data, loading }) {
     };
 
     // Loggers pour debug
-    console.log('📊 Dashboard data:', data);
-    console.log('📈 History data:', data.history);
-    console.log('💰 Sales data:', data.sales);
+    //console.log('📊 Dashboard data:', data);
+    //console.log('📈 History data:', data.history);
+    //console.log('💰 Sales data:', data.sales);
 
     // ✅ 1. CA par qualité avec couleurs fixes
     const caByQualite = useMemo(() => {
@@ -105,7 +105,7 @@ export default function DashboardChartsSection({ data, loading }) {
             .sort((a, b) => a.periode.localeCompare(b.periode))
             .slice(-12); // 12 derniers mois
 
-        console.log('📊 Monthly data processed:', result);
+        //console.log('📊 Monthly data processed:', result);
         return result;
     }, [data.history]);
 

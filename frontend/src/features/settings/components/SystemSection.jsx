@@ -47,7 +47,7 @@ const SystemSection = () => {
                                 Version de l'application
                             </Typography>
                             <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                                CBM GRC Matcher v1.0.0
+                                CBM Product Explorer v1.0.0
                             </Typography>
                         </Grid>
 

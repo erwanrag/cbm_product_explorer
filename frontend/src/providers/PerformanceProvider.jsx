@@ -29,7 +29,7 @@ export function PerformanceProvider({ children }) {
         const duration = measures[measures.length - 1].duration;
 
         if (config.features.enableDebugLogs) {
-          console.log(`⚡ ${name}: ${duration.toFixed(2)}ms`);
+          //console.log(`⚡ ${name}: ${duration.toFixed(2)}ms`);
         }
 
         // Alerte si performance dégradée

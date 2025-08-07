@@ -29,14 +29,14 @@ export default function DashboardDetailPanel({ product, onClose, dashboardData }
     if (!product) return null;
 
     // ✅ RÉCUPÉRATION DE L'HISTORIQUE DEPUIS DASHBOARD DATA
-    console.log('🔍 DashboardDetailPanel Debug:');
-    console.log('  - product.cod_pro:', product.cod_pro);
-    console.log('  - dashboardData?.history?.length:', dashboardData?.history?.length);
+    //console.log('🔍 DashboardDetailPanel Debug:');
+    //console.log('  - product.cod_pro:', product.cod_pro);
+    //console.log('  - dashboardData?.history?.length:', dashboardData?.history?.length);
 
     // Filtrer l'historique pour ce produit spécifique
     const productHistory = dashboardData?.history?.filter(h => h.cod_pro === product.cod_pro) || [];
-    console.log('  - productHistory.length:', productHistory.length);
-    console.log('  - productHistory sample:', productHistory.slice(0, 3));
+    //console.log('  - productHistory.length:', productHistory.length);
+    //console.log('  - productHistory sample:', productHistory.slice(0, 3));
 
     // Données pour les graphiques - Trier par date
     const sortedHistory = productHistory.sort((a, b) => (a.periode || '').localeCompare(b.periode || ''));
@@ -45,9 +45,9 @@ export default function DashboardDetailPanel({ product, onClose, dashboardData }
     const margePct = sortedHistory.map(h => h.marge_percent_total || h.marge_percent || 0) || [];
     const quantite = sortedHistory.map(h => h.quantite_total || h.quantite || 0) || [];
 
-    console.log('  - dates:', dates);
-    console.log('  - ca:', ca);
-    console.log('  - quantite:', quantite);
+    //console.log('  - dates:', dates);
+    //console.log('  - ca:', ca);
+    //console.log('  - quantite:', quantite);
 
     return (
         <Drawer

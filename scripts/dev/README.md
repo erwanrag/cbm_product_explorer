@@ -1,7 +1,7 @@
 REM ============================================
 REM 📁 scripts/dev/README.md
 REM ============================================
-# Scripts de Développement CBM GRC Matcher
+# Scripts de Développement CBM Product Explorer
 
 ## 🚀 Scripts Principaux
 

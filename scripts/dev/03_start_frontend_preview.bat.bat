@@ -1,7 +1,7 @@
 @echo off
 title CBM Frontend (PREVIEW)
 
-cd /d D:\Projet\CBM_GRC_Matcher\frontend
+cd /d D:\Projet\CBM_Product_Explorer\frontend
 
 echo ============================================
 echo    DEMARRAGE FRONTEND CBM (PREVIEW)

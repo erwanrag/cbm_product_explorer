@@ -116,7 +116,7 @@ const SettingsPage = () => {
                         )}
                     </Box>
                     <Typography variant="subtitle1" color="text.secondary">
-                        Configuration et personnalisation de l'application CBM GRC Matcher
+                        Configuration et personnalisation de l'application CBM Product Explorer
                     </Typography>
                 </Box>
 

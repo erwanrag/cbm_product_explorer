@@ -3,7 +3,7 @@
 // ===================================
 
 /**
- * Constantes métier CBM GRC Matcher
+ * Constantes métier CBM Product Explorer
  */
 
 // Limites métier

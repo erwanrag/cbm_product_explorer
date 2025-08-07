@@ -5,7 +5,7 @@ const OptimizationPage = createLazyPage(() => import('@/features/optimization/pa
 //const AnalyticsPage = createLazyPage(() => import('@/features/analytics/AnalyticsPage'));
 
 /**
- * Routes publiques de l'application CBM GRC Matcher
+ * Routes publiques de l'application CBM Product Explorer
  * Utilisent le lazy loading moderne avec error boundaries
  */
 export const publicRoutes = [

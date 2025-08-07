@@ -59,7 +59,7 @@ export default function StockAdvancedModal({
 
             try {
                 // ✅ Utiliser les filtres du dashboard (cod_pro, grouping_crn, etc.)
-                console.log('🔄 Fetching stock history with dashboard filters:', filters, 'months:', historyMonths);
+                //console.log('🔄 Fetching stock history with dashboard filters:', filters, 'months:', historyMonths);
 
                 const payload = {
                     ...filters, // Reprendre tous les filtres du dashboard
@@ -69,8 +69,8 @@ export default function StockAdvancedModal({
                 const response = await stockService.getHistory(payload, historyMonths);
                 const historyData = response?.items || [];
 
-                console.log('✅ Stock history received:', historyData.length, 'items');
-                console.log('📊 Sample history data:', historyData.slice(0, 3));
+                //console.log('✅ Stock history received:', historyData.length, 'items');
+                //console.log('📊 Sample history data:', historyData.slice(0, 3));
                 setStockHistory(historyData);
 
             } catch (error) {

@@ -3,7 +3,7 @@
 // ===================================
 
 /**
- * Couleurs CBM GRC Matcher - Basé sur votre logique métier
+ * Couleurs CBM Product Explorer - Basé sur votre logique métier
  */
 
 // Couleurs par qualité produit (votre logique existante)

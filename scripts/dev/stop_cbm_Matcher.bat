@@ -1,6 +1,6 @@
 @echo off
 echo ========================================
-echo    Fermeture de CBM GRC Matcher (local)
+echo    Fermeture de CBM Product Explorer (local)
 echo ========================================
 echo.
 
@@ -12,6 +12,6 @@ taskkill /FI "WINDOWTITLE eq CBM Frontend (DEV)" >nul 2>&1
 :: ℹ️ Ne pas fermer Redis car il est mutualisé
 
 echo.
-echo ✅ Backend et frontend CBM_GRC_Matcher arrêtés.
+echo ✅ Backend et frontend CBM_Product_Explorer arrêtés.
 echo ========================================
 pause

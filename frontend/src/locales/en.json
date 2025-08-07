@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "CBM GRC Matcher",
+    "title": "CBM Product Explorer",
     "subtitle": "Product analysis and matching system"
   },
 
@@ -271,10 +271,10 @@
 
   "help": {
     "title": "Help & Documentation",
-    "subtitle": "Complete guide to using CBM GRC Matcher",
+    "subtitle": "Complete guide to using CBM Product Explorer",
     "purpose": {
-      "title": "🧭 What is CBM GRC Matcher for?",
-      "text": "CBM GRC Matcher is a product analysis and matching tool based on various keys (manufacturer, internal and external references). It allows grouping, filtering and comparing products by quality, CRN group, and sales or stock history."
+      "title": "🧭 What is CBM Product Explorer for?",
+      "text": "CBM Product Explorer is a product analysis and matching tool based on various keys (manufacturer, internal and external references). It allows grouping, filtering and comparing products by quality, CRN group, and sales or stock history."
     },
     "features": {
       "title": "📌 Main Features",

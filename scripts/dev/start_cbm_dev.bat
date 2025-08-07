@@ -3,10 +3,10 @@ REM repair_cbm.bat - Script de réparation automatique
 setlocal enabledelayedexpansion
 
 echo ============================================
-echo REPARATION CBM GRC MATCHER
+echo REPARATION CBM Product Explorer
 echo ============================================
 
-cd /d "D:\Projet\CBM_GRC_Matcher"
+cd /d "D:\Projet\CBM_Product_Explorer"
 echo Dossier: %CD%
 
 echo.

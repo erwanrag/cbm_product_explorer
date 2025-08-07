@@ -1,7 +1,7 @@
 @echo off
 title CBM Backend (PROD)
 
-cd /d D:\Projet\CBM_GRC_Matcher\backend
+cd /d D:\Projet\CBM_Product_Explorer\backend
 
 echo ============================================
 echo     🚀 DEMARRAGE BACKEND CBM (PRODUCTION)

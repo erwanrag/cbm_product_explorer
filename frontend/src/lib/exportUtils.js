@@ -75,7 +75,7 @@ export function exportToJSON(data, filename = 'export_cbm', options = {}) {
  * Exporte un rapport HTML CBM
  */
 export function exportToHTML(reportData, filename = 'rapport_cbm') {
-  const { title = 'Rapport CBM GRC Matcher', data, summary } = reportData;
+  const { title = 'Rapport CBM Product Explorer', data, summary } = reportData;
 
   const htmlContent = `
 <!DOCTYPE html>
@@ -130,7 +130,7 @@ export function exportToHTML(reportData, filename = 'rapport_cbm') {
     }
     
     <div class="footer">
-        <p>Rapport généré par CBM GRC Matcher</p>
+        <p>Rapport généré par CBM Product Explorer</p>
     </div>
 </body>
 </html>`;

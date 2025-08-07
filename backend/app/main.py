@@ -35,7 +35,7 @@ limiter = Limiter(key_func=get_remote_address)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Cycle de vie de l'application avec vérifications de santé"""
-    logger.info("🚀 Initialisation backend CBM_GRC_Matcher...")
+    logger.info("🚀 Initialisation backend CBM_Product_Explorer...")
     
     # Tests de connexion
     redis_ok = False
@@ -64,11 +64,11 @@ async def lifespan(app: FastAPI):
     
     yield
     
-    logger.info("🛑 Arrêt du backend CBM_GRC_Matcher")
+    logger.info("🛑 Arrêt du backend CBM_Product_Explorer")
 
 # === FastAPI App ===
 app = FastAPI(
-    title="CBM GRC Matcher API",
+    title="CBM Product Explorer API",
     description="API pour le matching et l'analyse des produits CBM",
     version="1.0.0",
     lifespan=lifespan,
@@ -308,7 +308,7 @@ async def healthcheck():
 async def root():
     """Endpoint racine avec informations API"""
     return {
-        "name": "CBM GRC Matcher API",
+        "name": "CBM Product Explorer API",
         "version": "1.0.0",
         "environment": settings.CBM_ENV,
         "docs": "/docs" if settings.CBM_ENV == "dev" else "disabled",

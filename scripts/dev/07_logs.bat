@@ -3,7 +3,7 @@ REM 📁 scripts/dev/07_logs.bat
 REM ============================================
 @echo off
 title CBM - Logs
-cd /d D:\Projet\CBM_GRC_Matcher
+cd /d D:\Projet\CBM_Product_Explorer
 
 echo ============================================
 echo    CONSULTATION LOGS CBM

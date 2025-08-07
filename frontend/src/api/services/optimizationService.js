@@ -35,11 +35,11 @@ export const OptimizationService = {
             payload.grouping_crn = filters.grouping_crn ? parseInt(filters.grouping_crn, 10) : 0;
             payload.single_cod_pro = filters.single_cod_pro || false;
 
-            console.log('📤 Payload optimisation:', payload);
+            //console.log('📤 Payload optimisation:', payload);
 
             const response = await apiClient.post('/optimisation/optimisation', payload);
 
-            console.log('📥 Réponse optimisation:', response.data);
+            //console.log('📥 Réponse optimisation:', response.data);
 
             return response.data;
         } catch (error) {

@@ -4,7 +4,7 @@ import axios from 'axios';
 import { config } from '@/config/environment';
 
 /**
- * Instance Axios configurée pour l'API CBM GRC Matcher
+ * Instance Axios configurée pour l'API CBM Product Explorer
  * ✅ Compatible avec votre backend sur port 5180
  */
 const apiClient = axios.create({

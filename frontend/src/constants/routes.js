@@ -3,7 +3,7 @@
 // ===================================
 
 /**
- * Routes et navigation CBM GRC Matcher
+ * Routes et navigation CBM Product Explorer
  */
 
 export const ROUTES = {
@@ -15,7 +15,7 @@ export const ROUTES = {
 };
 
 export const ROUTE_TITLES = {
-  [ROUTES.ROOT]: 'CBM GRC Matcher',
+  [ROUTES.ROOT]: 'CBM Product Explorer',
   [ROUTES.DASHBOARD]: 'Analyse Produit',
   [ROUTES.MATRIX]: 'Matrice Produits',
   [ROUTES.OPTIMIZATION]: 'Optimisation',
