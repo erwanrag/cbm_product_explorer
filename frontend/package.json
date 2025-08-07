@@ -1,5 +1,5 @@
 {
-  "name": "cbm-grc-matcher-frontend",
+  "name": "cbm-product-explorer-frontend",
   "version": "2.0.0",
   "description": "Frontend React pour CBM Product Explorer - Application d'analyse et matching produits",
   "type": "module",
@@ -75,8 +75,7 @@
     "react",
     "vite",
     "cbm",
-    "grc",
-    "matcher",
+    "product-explorer",
     "frontend",
     "material-ui"
   ],

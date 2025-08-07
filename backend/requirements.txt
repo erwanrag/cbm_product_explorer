@@ -1,40 +1,59 @@
-fastapi>=0.110.0
-slowapi>=0.1.8
+# CBM Product Explorer Backend - Dépendances Python COMPLÈTES
+# Version: 2.0.0 - TOUTES LES DÉPENDANCES IDENTIFIÉES
 
-uvicorn[standard]>=0.27.0
-
-# Database
-pyodbc
-sqlalchemy[asyncio,pyodbc]>=2.0.0
-aioodbc
-
-# Env / Config
-python-dotenv
-pydantic[email]>=2.4,<3
+# === CORE FRAMEWORK ===
+fastapi>=0.110.0,<0.111.0
+uvicorn[standard]>=0.27.0,<0.28.0
+pydantic>=2.4,<3
 pydantic-settings>=2.0,<3
 
-# Sécurité / Auth
-passlib[bcrypt]
-bcrypt==4.0.1
+# === LOGGING ===
+loguru>=0.7.2,<1.0.0
 
-# Outils web / Dev
-python-multipart
+# === RATE LIMITING ===
+slowapi>=0.1.5,<0.2.0
+
+# === DATABASE & ASYNC ===
+sqlalchemy[asyncio,pyodbc]>=2.0.0,<3.0.0
+aioodbc>=0.4.0,<0.5.0
+pyodbc>=5.0.1,<6.0.0
+
+# === CACHE & REDIS ===
 redis>=4.2,<6
-loguru
-aiofiles
+hiredis>=2.3.2,<3.0.0
 
-# Analyse / Data
-prophet>=1.1.4
-scikit-learn==1.3.2  
-pandas==2.0.3
-numpy==1.24.3         # ✅ Compatible avec Prophet 1.1.4
-plotly
+# === HTTP & API ===
+httpx>=0.25.2,<0.26.0
+python-multipart>=0.0.6,<0.1.0
+aiofiles>=23.0.0,<24.0.0
 
-# Tests
+# === SECURITY & AUTH ===
+passlib[bcrypt]>=1.7.4,<2.0.0
+bcrypt==4.0.1
+python-jose[cryptography]>=3.3.0,<4.0.0
+
+# === CONFIGURATION & ENV ===
+python-dotenv>=1.0.0,<2.0.0
+
+# === DATA PROCESSING ===
+pandas>=2.1.4,<3.0.0
+numpy>=1.26.2,<2.0.0
+openpyxl>=3.1.2,<4.0.0
+
+# === UTILITIES ===
+pytz>=2023.3
+click>=8.1.7,<9.0.0
+
+# === PREDICTION (OPTIONAL) ===
+prophet>=1.1.5,<2.0.0
+
+# === TESTING ===
 pytest>=7.4,<8
 pytest-asyncio>=0.23,<1
 pytest-cov>=4.0
-httpx
+httpx  # Already listed above but needed for testing
 
-# Code style
-black
+# === DEVELOPMENT TOOLS ===
+black>=23.11.0,<24.0.0
+flake8>=6.1.0,<7.0.0
+mypy>=1.0.0,<2.0.0
