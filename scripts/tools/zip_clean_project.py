@@ -15,7 +15,7 @@ def should_exclude(path):
         return True
     return False
 
-with zipfile.ZipFile(OUTPUT_ZIP, 'w', zipfile.ZIP_DEFLATED) as zipf:
+with zipfile.ZipFile(OUTPUT_ZIP, Non du'w', zipfile.ZIP_DEFLATED) as zipf:
     for foldername, subfolders, filenames in os.walk(BASE_DIR):
         subfolders[:] = [d for d in subfolders if d not in EXCLUDE_DIRS]
         for filename in filenames:

@@ -63,7 +63,20 @@ async def lifespan(app: FastAPI):
         logger.info("✅ Backend prêt - Tous les services sont opérationnels")
     
     yield
-    
+    # Fermeture propre de Redis
+    import inspect
+    try:
+        if hasattr(redis_client, "close"):
+            res = redis_client.close()
+            if inspect.isawaitable(res):
+                await res
+        if hasattr(redis_client, "wait_closed"):
+            res2 = redis_client.wait_closed()
+            if inspect.isawaitable(res2):
+                await res2
+    except Exception as e:
+        logger.warning(f"Redis close: {e}")
+
     logger.info("🛑 Arrêt du backend CBM_Product_Explorer")
 
 # === FastAPI App ===
@@ -77,11 +90,8 @@ app = FastAPI(
 )
 
 # === Middlewares ===
-allow_origins = [
-    f"http://{settings.FRONTEND_HOST}:{settings.FRONTEND_PORTS}",
-    "http://localhost:5181",
-    "http://127.0.0.1:5181"
-]
+allow_origins = settings.ALLOWED_ORIGINS
+
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.add_middleware(
     CORSMiddleware,
