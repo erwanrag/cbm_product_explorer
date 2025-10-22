@@ -4,7 +4,10 @@ import zipfile
 BASE_DIR = r"D:\Projet\CBM_Product_Explorer"
 OUTPUT_ZIP = r"D:\Projet\CBM_Product_Explorer_dev.zip"
 
-EXCLUDE_DIRS = {'.git', 'node_modules', '__pycache__', '.venv', 'venv', '.pytest_cache', '.idea', '.vs', 'dist', 'build'}
+EXCLUDE_DIRS = {
+    '.git', 'node_modules', '__pycache__', '.venv', 'venv',
+    '.pytest_cache', '.idea', '.vs', 'dist', 'build'
+}
 EXCLUDE_EXTS = {'.pyc', '.log', '.vsidx'}
 
 def should_exclude(path):
@@ -15,7 +18,7 @@ def should_exclude(path):
         return True
     return False
 
-with zipfile.ZipFile(OUTPUT_ZIP, Non du'w', zipfile.ZIP_DEFLATED) as zipf:
+with zipfile.ZipFile(OUTPUT_ZIP, mode='w', compression=zipfile.ZIP_DEFLATED) as zipf:
     for foldername, subfolders, filenames in os.walk(BASE_DIR):
         subfolders[:] = [d for d in subfolders if d not in EXCLUDE_DIRS]
         for filename in filenames:

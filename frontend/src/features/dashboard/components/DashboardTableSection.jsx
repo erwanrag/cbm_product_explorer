@@ -1,42 +1,24 @@
-// 📁 DashboardTableSection.jsx - Version avec Export
+// 📁 DashboardTableSection.jsx - CORRIGÉ
 import React, { useState, useMemo } from 'react';
 import {
-    Box,
-    Paper,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-    TablePagination,
-    Typography,
-    Chip,
-    TableSortLabel,
-    Tooltip,
-    IconButton,
-    Menu,
-    MenuItem,
-    FormControlLabel,
-    Checkbox,
-    Divider,
-    Button
+    Box, Paper, Table, TableBody, TableCell, TableContainer,
+    TableHead, TableRow, TablePagination, Typography, Chip,
+    TableSortLabel, Tooltip, IconButton, Menu, MenuItem,
+    FormControlLabel, Checkbox, Divider, Button
 } from '@mui/material';
 import { FileDownload, ViewColumn, Settings } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
 import { formatCurrency } from '@/lib/formatUtils';
 import { getQualiteColor, getMargeColor, getMatchPercentColor, getStatutColor, getStatutLabel } from '@/constants/colors';
-
-// Import du composant d'export mutualisé
 import { ExportExcelButton } from '@/shared/components/export';
 
 export default function DashboardTableSection({ data, onProductSelect }) {
+    // ✅ TOUS LES HOOKS EN PREMIER - TOUJOURS
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(25);
     const [orderBy, setOrderBy] = useState('qualite_ca');
     const [order, setOrder] = useState('desc');
-
     const [anchorEl, setAnchorEl] = useState(null);
     const [visibleColumns, setVisibleColumns] = useState({
         cod_pro: true,
@@ -56,11 +38,9 @@ export default function DashboardTableSection({ data, onProductSelect }) {
         match_percent: true,
     });
 
-    if (!data?.details || data.details.length === 0) return null;
-
-    // ✅ Calcul du % de matching pour chaque produit
+    // ✅ Calcul du % de matching
     const codProToMatchPercent = useMemo(() => {
-        if (!data.matches || data.matches.length === 0) return {};
+        if (!data?.matches || data.matches.length === 0) return {};
         const allRefCrnSet = new Set(data.matches.map(m => m.ref_crn));
         const totalRefCrn = allRefCrnSet.size;
         const codProMap = {};
@@ -73,9 +53,10 @@ export default function DashboardTableSection({ data, onProductSelect }) {
             result[cod_pro] = +(100 * refs.size / totalRefCrn).toFixed(1);
         });
         return result;
-    }, [data.matches]);
+    }, [data?.matches]);
 
     const sortedData = useMemo(() => {
+        if (!data?.details) return [];
         return [...data.details].sort((a, b) => {
             if (orderBy === 'qualite_ca') {
                 const qualiteOrder = ['OE', 'OEM', 'PMQ', 'PMV'];
@@ -93,11 +74,13 @@ export default function DashboardTableSection({ data, onProductSelect }) {
             return order === 'asc' ? (aVal < bVal ? -1 : aVal > bVal ? 1 : 0)
                 : (aVal > bVal ? -1 : aVal < bVal ? 1 : 0);
         });
-    }, [data.details, orderBy, order]);
+    }, [data?.details, orderBy, order]);
 
-    const paginatedData = sortedData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+    const paginatedData = useMemo(() => 
+        sortedData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
+        [sortedData, page, rowsPerPage]
+    );
 
-    // ✅ Données formatées pour export
     const exportData = useMemo(() => {
         return sortedData.map(product => ({
             'Code Produit': product.cod_pro,
@@ -119,6 +102,28 @@ export default function DashboardTableSection({ data, onProductSelect }) {
         }));
     }, [sortedData, codProToMatchPercent]);
 
+    const visibleColumnsArray = useMemo(() => {
+        const allColumns = [
+            { id: 'cod_pro', label: 'Code', sortable: true, width: 80, align: 'left' },
+            { id: 'refint', label: 'Ref Int', sortable: true, width: 120, align: 'left' },
+            { id: 'ref_ext', label: 'Ref Ext', sortable: true, width: 110, align: 'left' },
+            { id: 'nom_pro', label: 'Nom Produit', sortable: true, width: 180, align: 'left' },
+            { id: 'qualite', label: 'Qualité', sortable: true, width: 80, align: 'center' },
+            { id: 'statut', label: 'Statut', sortable: true, width: 70, align: 'center' },
+            { id: 'nom_fou', label: 'Fournisseur', sortable: true, width: 140, align: 'left' },
+            { id: 'px_vente_calcule', label: 'PV (€)', sortable: false, width: 90, align: 'right' },
+            { id: 'px_achat_eur', label: 'PA (€)', sortable: true, width: 90, align: 'right' },
+            { id: 'quantite_total', label: 'Qté', sortable: true, width: 80, align: 'right' },
+            { id: 'ca_total', label: 'CA (€)', sortable: true, width: 100, align: 'right' },
+            { id: 'marge_percent_total', label: 'Marge', sortable: true, width: 80, align: 'right' },
+            { id: 'stock_total', label: 'Stock', sortable: true, width: 80, align: 'right' },
+            { id: 'pmp', label: 'PMP (€)', sortable: true, width: 90, align: 'right' },
+            { id: 'match_percent', label: '% Match', sortable: false, width: 90, align: 'right' },
+        ];
+        return allColumns.filter(col => visibleColumns[col.id]);
+    }, [visibleColumns]);
+
+    // ✅ HANDLERS
     const handleRequestSort = (property) => {
         const isAsc = orderBy === property && order === 'asc';
         setOrder(isAsc ? 'desc' : 'asc');
@@ -137,65 +142,41 @@ export default function DashboardTableSection({ data, onProductSelect }) {
         setVisibleColumns(prev => ({ ...prev, [columnId]: !prev[columnId] }));
     };
 
-    const allColumns = [
-        { id: 'cod_pro', label: 'Code', sortable: true, width: 80, align: 'left' },
-        { id: 'refint', label: 'Ref Int', sortable: true, width: 120, align: 'left' },
-        { id: 'ref_ext', label: 'Ref Ext', sortable: true, width: 110, align: 'left' },
-        { id: 'nom_pro', label: 'Nom Produit', sortable: true, width: 180, align: 'left' },
-        { id: 'qualite', label: 'Qualité', sortable: true, width: 80, align: 'center' },
-        { id: 'statut', label: 'Statut', sortable: true, width: 80, align: 'center' },
-        { id: 'nom_fou', label: 'Fournisseur', sortable: true, width: 150, align: 'left' },
-        { id: 'px_vente_calcule', label: 'PV Cal.', sortable: false, width: 90, align: 'right' },
-        { id: 'px_achat_eur', label: 'PA EUR', sortable: true, width: 90, align: 'right' },
-        { id: 'quantite_total', label: 'Qté Vendue', sortable: true, width: 100, align: 'right' },
-        { id: 'ca_total', label: 'CA Total', sortable: true, width: 100, align: 'right' },
-        { id: 'marge_percent_total', label: 'Marge %', sortable: true, width: 80, align: 'right' },
-        { id: 'stock_total', label: 'Stock', sortable: true, width: 80, align: 'right' },
-        { id: 'pmp', label: 'PMP Dépôt 1', sortable: true, width: 100, align: 'right' },
-        { id: 'match_percent', label: '% Matching', sortable: false, width: 100, align: 'right' }
-    ];
+    // ✅ EARLY RETURN APRÈS TOUS LES HOOKS
+    if (!data?.details || data.details.length === 0) {
+        return null;
+    }
 
-    const visibleColumnsArray = allColumns.filter(col => visibleColumns[col.id]);
-
+    // ✅ RENDU PRINCIPAL
     return (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-            <Paper elevation={2} sx={{ mt: 2 }}>
-                <Box sx={{ p: 2, pb: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Typography variant="h6" sx={{ fontSize: '1rem', fontWeight: 600 }}>
-                            Produits ({data.details.length})
-                        </Typography>
-                        {orderBy === 'qualite_ca' && (
-                            <Chip label="Tri: Qualité + CA" size="small" sx={{ ml: 1, bgcolor: '#e3f2fd', fontSize: '0.7rem' }} />
-                        )}
-                    </Box>
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+        >
+            <Paper elevation={2} sx={{ mt: 3 }}>
+                <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e0e0e0' }}>
+                    <Typography variant="h6" sx={{ fontSize: '1rem', fontWeight: 600 }}>
+                        📊 Produits ({sortedData.length})
+                    </Typography>
 
                     <Box sx={{ display: 'flex', gap: 1 }}>
-                        {/* ✅ Bouton d'export multi-format */}
                         <ExportExcelButton
                             data={exportData}
-                            filename={`dashboard-produits-${new Date().toISOString().split('T')[0]}`}
-                            formats={['csv', 'json', 'html']}
-                            size="small"
-                            variant="outlined"
-                            disabled={exportData.length === 0}
+                            filename="cbm-dashboard-export"
+                            sheetName="Produits"
                         />
-
-                        {/* Bouton colonnes */}
-                        <Tooltip title="Afficher/masquer les colonnes">
-                            <IconButton onClick={handleColumnMenuOpen} color="primary" size="small">
-                                <ViewColumn fontSize="small" />
-                            </IconButton>
-                        </Tooltip>
+                        <IconButton size="small" onClick={handleColumnMenuOpen}>
+                            <ViewColumn />
+                        </IconButton>
                     </Box>
 
-                    <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleColumnMenuClose} PaperProps={{ sx: { minWidth: 200 } }}>
+                    <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleColumnMenuClose}>
                         <MenuItem disabled>
-                            <Settings fontSize="small" sx={{ mr: 1 }} />
-                            Colonnes visibles
+                            <Typography variant="subtitle2">Colonnes visibles</Typography>
                         </MenuItem>
                         <Divider />
-                        {allColumns.map((column) => (
+                        {visibleColumnsArray.map((column) => (
                             <MenuItem key={column.id} onClick={() => toggleColumn(column.id)}>
                                 <FormControlLabel
                                     control={<Checkbox checked={visibleColumns[column.id]} size="small" />}

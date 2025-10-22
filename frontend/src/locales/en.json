@@ -1,50 +1,98 @@
 {
   "app": {
     "title": "CBM Product Explorer",
-    "subtitle": "Product analysis and matching system"
+    "subtitle": "Product Analysis and Matching System"
   },
-
-  "sidebar": {
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "no_data": "No data available",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "close": "Close",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "details": "Details",
+    "actions": "Actions",
+    "refresh": "Refresh",
+    "reset": "Reset",
+    "apply": "Apply",
+    "clear": "Clear"
+  },
+  "navigation": {
     "dashboard": "Dashboard",
-    "dashboard_desc": "Overview and KPIs",
     "matrix": "Matrix",
-    "matrix_desc": "Matching analysis",
     "optimization": "Optimization",
-    "optimization_desc": "Optimization tools",
     "settings": "Settings",
     "help": "Help"
   },
-
-  "filters": {
-    "title": "Search Filters",
-    "save": "Save",
-    "history": "History",
-    "saved": "Saved Filters",
-    "apply": "Apply Filters",
-    "clear": "Clear",
-    "groupingLabel": "Group by CRN",
-    "toast": {
-      "clear": "Filters cleared",
-      "apply": "Filters applied",
-      "save": "Filters saved as \"{{name}}\"",
-      "load": "Filters \"{{name}}\" loaded"
+  "dashboard": {
+    "title": "Product Dashboard",
+    "subtitle": "Overview of products and KPIs",
+    "loading": "Loading dashboard...",
+    "no_data": "No product data available for the selected filters.",
+    "error": {
+      "title": "Error loading dashboard",
+      "message": "Unable to load product data"
     },
-    "labels": {
-      "refint": "Internal Ref. / Product Code",
+    "kpis": {
+      "total_products": "Total Products",
+      "total_revenue": "Total Revenue",
+      "total_stock": "Total Stock",
+      "avg_price": "Average Price"
+    },
+    "charts": {
+      "sales_history": "Sales History",
+      "stock_evolution": "Stock Evolution",
+      "revenue_by_quality": "Revenue by Quality"
+    },
+    "filters": {
+      "cod_pro": "Product Code",
       "ref_crn": "Manufacturer Reference",
       "ref_ext": "External Reference",
-      "select": "Select"
+      "qualite": "Quality",
+      "grouping": "Group by"
     },
-    "qualite": {
-      "label": "Quality",
-      "oe": "OE - Original",
-      "oem": "OEM - Equipment Manufacturer",
-      "pmq": "PMQ - Pro Quality",
-      "pmv": "PMV - Internal Dev",
-      "all": "(All)"
+    "table": {
+      "cod_pro": "Product Code",
+      "ref_crn": "Manufacturer Ref",
+      "ref_ext": "External Ref",
+      "qualite": "Quality",
+      "stock": "Stock",
+      "price": "Price",
+      "revenue": "Revenue"
     }
   },
-
+  "matrix": {
+    "title": "Product Matrix",
+    "subtitle": "Product correspondence matrix",
+    "loading": "Loading matrix...",
+    "no_data": "No matrix data available.",
+    "error": {
+      "title": "Error loading matrix",
+      "message": "Unable to load correspondence data"
+    },
+    "legend": {
+      "title": "Legend",
+      "oem": "OEM - Original Equipment Manufacturer",
+      "pmq": "PMQ - Premium Aftermarket",
+      "pmv": "PMV - Standard Aftermarket",
+      "oe": "OE - Original Equipment"
+    },
+    "filters": {
+      "quality": "Filter by quality",
+      "group": "Filter by group"
+    },
+    "export": {
+      "button": "Export Matrix",
+      "filename": "matrix_export"
+    }
+  },
   "optimization": {
     "title": "Catalog Optimization",
     "subtitle": "Analysis of potential savings through range rationalization",
@@ -52,50 +100,29 @@
     "no_data": "No optimization data available for the selected filters.",
     "error": {
       "title": "Error loading optimization data",
-      "message": "Error: {{message}}"
+      "message": "Unable to load optimization analysis"
     },
-    "filters": {
-      "quality": "Quality",
-      "view_mode": "View Mode",
-      "table_view": "Table View",
-      "charts_view": "Charts View",
-      "all_qualities": "All Qualities"
-    },
-    "kpi": {
+    "kpis": {
       "total_groups": "Total Groups",
-      "immediate_gain": "Immediate Gain",
-      "projected_gain_6m": "6-Month Projected Gain",
-      "total_refs": "Total References",
-      "avg_growth": "Average Growth",
-      "current_margin_6m": "Current 6M Margin",
-      "optimized_margin_6m": "Optimized 6M Margin",
-      "margin_improvement": "Margin Improvement"
+      "total_gain": "Total Potential Gain",
+      "gain_6m": "6-Month Gain",
+      "avg_growth": "Average Growth Rate"
+    },
+    "summary": {
+      "title": "Optimization Summary",
+      "total_gain": "Total Immediate Gain",
+      "gain_6m": "Total 6M Gain",
+      "groups": "{{count}} groups analyzed",
+      "refs_to_keep": "{{count}} references to keep",
+      "refs_to_remove": "{{count}} references to remove"
     },
     "charts": {
-      "title": "Optimization Graphical Analysis",
-      "gains_by_group": "Gains by Group",
-      "timeline": "Timeline Evolution",
-      "quality_distribution": "Quality Distribution",
-      "potential_gain": "Potential Gain by Group (Top 15)",
-      "immediate_gain": "Immediate Gain",
-      "gain_6m": "6M Gain",
-      "refs_analysis": "📦 References Kept vs Total",
-      "total_refs": "Total Refs",
-      "kept_refs": "Kept References",
+      "gain_by_group": "Potential Gain by Group (Top 15)",
+      "refs_kept_vs_total": "📦 References Kept vs Total",
       "margin_comparison": "💰 Current vs Optimized Margin (6M)",
-      "current_margin": "Current Margin",
-      "optimized_margin": "Optimized Margin",
       "temporal_evolution": "📈 Timeline Evolution - History + Projections",
-      "revenue": "Revenue",
-      "historical_margin": "Historical Margin",
-      "projected_current_margin": "Projected Current Margin",
-      "projected_optimized_margin": "Projected Optimized Margin",
       "gain_distribution": "Gain Distribution by Quality",
-      "quality_stats": "Statistics by Quality",
-      "groups": "groups",
-      "total_references": "total references",
-      "kept_references": "📦 {{count}} references kept",
-      "projection_6m": "6M Projection: {{amount}}"
+      "quality_stats": "Statistics by Quality"
     },
     "table": {
       "group": "Group",
@@ -238,37 +265,36 @@
         "constant_fallback_desc": "Constant projection based on 1 point",
         "unknown_desc": "Unspecified projection method"
       }
-    },
-
-    "charts": {
-      "loading": "Loading charts...",
-      "no_data": "No data available for charts",
-      "gains_by_group": "Gains by Group",
-      "timeline_evolution": "Timeline Evolution",
-      "quality_distribution": "Quality Distribution",
-      "potential_gain_top15": "Potential Gain by Group (Top 15)",
-      "refs_kept_vs_total": "📦 References Kept vs Total",
-      "margin_current_vs_optimized": "💰 Current vs Optimized Margin (6M)",
-      "temporal_evolution_history": "📈 Timeline Evolution - History + Projections",
-      "gain_distribution_quality": "Gain Distribution by Quality",
-      "quality_statistics": "Statistics by Quality",
-      "immediate_gain": "Immediate Gain",
-      "gain_6m": "6M Gain",
-      "total_refs": "Total Refs",
-      "kept_refs": "Kept References",
-      "current_margin": "Current Margin",
-      "optimized_margin": "Optimized Margin",
-      "revenue": "Revenue",
-      "historical_margin": "Historical Margin",
-      "projected_current_margin": "Projected Current Margin",
-      "projected_optimized_margin": "Projected Optimized Margin",
-      "groups": "groups",
-      "total_references": "total references",
-      "kept_references_count": "📦 {{count}} references kept",
-      "projection_6m_amount": "6M Projection: {{amount}}"
     }
   },
-
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Configure application preferences",
+    "sections": {
+      "ui": "User Interface",
+      "performance": "Performance",
+      "display": "Display",
+      "api": "API",
+      "system": "System"
+    },
+    "ui": {
+      "theme": "Theme",
+      "language": "Language",
+      "animations": "Animations",
+      "compact_mode": "Compact Mode"
+    },
+    "performance": {
+      "cache_timeout": "Cache Timeout",
+      "request_timeout": "Request Timeout",
+      "page_size": "Page Size"
+    },
+    "actions": {
+      "save": "Save Settings",
+      "reset": "Reset to Defaults",
+      "export": "Export Settings",
+      "import": "Import Settings"
+    }
+  },
   "help": {
     "title": "Help & Documentation",
     "subtitle": "Complete guide to using CBM Product Explorer",
@@ -288,14 +314,12 @@
     },
     "filters": {
       "title": "🧪 Available Filters",
-      "list": {
-        "cod_pro": "cod_pro: Unique CBM product code",
-        "ref_crn": "ref_crn: Manufacturer reference",
-        "ref_ext": "ref_ext: External (or GRC) reference",
-        "refint": "refint: Internal CBM reference",
-        "qualite": "qualite: Product quality (OE, OEM, PMQ, PMV)",
-        "grouping_crn": "grouping_crn: Enables logical grouping by product family"
-      }
+      "cod_pro": "cod_pro: Unique CBM product code",
+      "ref_crn": "ref_crn: Manufacturer reference",
+      "ref_ext": "ref_ext: External (or GRC) reference",
+      "refint": "refint: Internal CBM reference",
+      "qualite": "qualite: Product quality (OE, OEM, PMQ, PMV)",
+      "grouping_crn": "grouping_crn: Enables logical grouping by product family"
     },
     "grouping": {
       "title": "🧩 Understanding grouping_crn",

@@ -70,7 +70,7 @@ const FiltersPanel = () => {
         clearFilters();
         setResetCount((c) => c + 1);
         navigate('/dashboard', { replace: true });
-        oast.info(t('filters.toast.clear', 'Filtres effacés'));
+        toast.info(t('filters.toast.clear', 'Filtres effacés'));
     };
 
     const handleSubmit = () => {
@@ -78,17 +78,20 @@ const FiltersPanel = () => {
             cod_pro: localFilters.cod_pro?.cod_pro || localFilters.cod_pro || null,
             ref_crn: localFilters.ref_crn || null,
             ref_ext: localFilters.ref_ext || null,
-            grouping_crn: localFilters.use_grouping ? 1 : 0,
+            grouping_crn: localFilters.use_grouping ? 
+                (localFilters.cod_pro?.grouping_crn || localFilters.grouping_crn || 1) : 0,
             qualite: localFilters.qualite || null,
-            _forceRefresh: Date.now(),
+            _forceRefresh: Date.now(), // ✅ Force la réactivité
         };
 
         const cleanPayload = Object.fromEntries(
             Object.entries(payload).filter(([_, value]) => value !== null)
         );
 
+        // ✅ Mise à jour du contexte
         setFilters(cleanPayload);
 
+        // ✅ Update URL
         const urlParams = new URLSearchParams();
         Object.entries(cleanPayload).forEach(([key, value]) => {
             if (key !== '_forceRefresh') urlParams.set(key, value.toString());

@@ -13,14 +13,14 @@ class ProductStock(BaseModel):
 class ProductStockResponse(BaseModel):
     items: List[ProductStock]
 
-class ProductStockHistory(BaseModel):
-    depot: int
-    cod_pro: int
-    dat_deb: str   # YYYY-MM-DD
-    dat_fin: str   # YYYY-MM-DD
-    stock: float
-    pmp: Optional[float] = None
+# class ProductStockHistory(BaseModel):
+#     depot: int
+#     cod_pro: int
+#     dat_deb: str   # YYYY-MM-DD
+#     dat_fin: str   # YYYY-MM-DD
+#     stock: float
+#     pmp: Optional[float] = None
 
-class ProductStockHistoryResponse(BaseModel):
-    items: List[ProductStockHistory]
+# class ProductStockHistoryResponse(BaseModel):
+#     items: List[ProductStockHistory]
 

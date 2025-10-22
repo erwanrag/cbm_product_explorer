@@ -1,40 +1,46 @@
-// ===================================
-// 📁 frontend/src/features/matrix/hooks/useMatrixData.js - REFACTORISÉ
-// ===================================
-
+import { useMemo } from 'react';
 import { matrixService } from '@/api/services/matrixService';
-import { useApiData } from '@/store/hooks/useApiData';
+import { useFeatureData } from '@/store/hooks/useFeatureData';
 
 export function useMatrixData(filters, options = {}) {
-    const result = useApiData(
+    const transformMatrix = useMemo(() => (data) => {
+        if (!data) return null;
+
+        const products = data.products || [];
+        const columnRefs = data.column_refs || [];
+        const correspondences = data.correspondences || [];
+
+        const matchRate = (products.length && columnRefs.length)
+            ? ((correspondences.length || 0) / (products.length * columnRefs.length)) * 100
+            : 0;
+
+        return {
+            products,
+            columnRefs,
+            correspondences,
+            stats: {
+                totalProducts: products.length,
+                totalColumns: columnRefs.length,
+                totalCorrespondences: correspondences.length,
+                matchRate,
+            },
+        };
+    }, []);
+
+    const result = useFeatureData(
         'matrix',
-        matrixService.getMatrixView.bind(matrixService),
+        (filters) => matrixService.getMatrixView(filters),
         filters,
+        transformMatrix,
         options
     );
 
-    // Transformation spécifique à Matrix
-    const matrixData = result.data ? {
-        products: result.data.products || [],
-        columnRefs: result.data.column_refs || [],
-        correspondences: result.data.correspondences || [],
-        stats: {
-            totalProducts: result.data.products?.length || 0,
-            totalColumns: result.data.column_refs?.length || 0,
-            totalCorrespondences: result.data.correspondences?.length || 0,
-            matchRate: (result.data.products?.length && result.data.column_refs?.length) ?
-                ((result.data.correspondences?.length || 0) /
-                    (result.data.products.length * result.data.column_refs.length)) * 100 : 0
-        }
-    } : null;
-
     return {
         ...result,
-        matrixData,
-        // Compatibilité avec l'ancienne API
-        hasData: !!matrixData && matrixData.products.length > 0,
-        productsCount: matrixData?.products?.length || 0,
-        columnsCount: matrixData?.columnRefs?.length || 0,
-        correspondencesCount: matrixData?.correspondences?.length || 0
+        matrixData: result.data,
+        hasData: !!result.data && result.data.products.length > 0,
+        productsCount: result.data?.products?.length || 0,
+        columnsCount: result.data?.columnRefs?.length || 0,
+        correspondencesCount: result.data?.correspondences?.length || 0,
     };
 }

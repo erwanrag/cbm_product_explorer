@@ -1,9 +1,5 @@
-// ===================================
-// 📁 frontend/src/features/dashboard/pages/DashboardPage.jsx - VERSION FINALE COMPLÈTE
-// ===================================
-
-import React, { useState, useMemo } from 'react';
-import { Box, Container, Typography, Alert } from '@mui/material';
+import React, { useState, useMemo, useCallback } from 'react';
+import { Box, Typography, Alert } from '@mui/material';
 import { motion } from 'framer-motion';
 import { useLayout } from '@/store/hooks/useLayout';
 import { useDashboardData } from '@/features/dashboard/hooks/useDashboardData';
@@ -18,18 +14,45 @@ import DashboardDetailPanel from '@/features/dashboard/components/DashboardDetai
 import StockAdvancedModal from '@/features/dashboard/components/StockAdvancedModal';
 
 export default function DashboardPage() {
-    // ✅ 1. TOUS LES HOOKS EN PREMIER - ORDRE FIXE
+    // ✅ 1. TOUS LES HOOKS DANS L'ORDRE STRICT - NE JAMAIS CHANGER
     const { filters } = useLayout();
     const { dashboardData, isLoading, isError } = useDashboardData(filters);
 
-    // ✅ 2. TOUS LES useState ENSEMBLE
+    // ✅ 2. TOUS LES useState
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [selectedRefCrn, setSelectedRefCrn] = useState('');
     const [selectedRefExt, setSelectedRefExt] = useState('');
     const [stockModalOpen, setStockModalOpen] = useState(false);
     const [selectedDepotData, setSelectedDepotData] = useState(null);
 
-    // ✅ 3. TOUS LES useMemo/useCallback ENSEMBLE
+    // ✅ 3. TOUS LES useCallback
+    const handleProductSelect = useCallback((product) => {
+        setSelectedProduct(product);
+    }, []);
+
+    const handleRefCrnChange = useCallback((refCrn) => {
+        setSelectedRefCrn(refCrn);
+    }, []);
+
+    const handleRefExtChange = useCallback((refExt) => {
+        setSelectedRefExt(refExt);
+    }, []);
+
+    const handleStockModalOpen = useCallback((depotData) => {
+        setSelectedDepotData(depotData);
+        setStockModalOpen(true);
+    }, []);
+
+    const handleStockModalClose = useCallback(() => {
+        setStockModalOpen(false);
+        setSelectedDepotData(null);
+    }, []);
+
+    const handleAdvancedAnalysis = useCallback(() => {
+        setStockModalOpen(true);
+    }, []);
+
+    // ✅ 4. TOUS LES useMemo
     const hasData = useMemo(() => {
         return dashboardData && (
             (dashboardData.details && dashboardData.details.length > 0) ||
@@ -43,14 +66,12 @@ export default function DashboardPage() {
 
         let filtered = { ...dashboardData };
 
-        // Filtrage par REF_CRN
         if (selectedRefCrn) {
             filtered.details = filtered.details?.filter(item =>
                 item.ref_crn && item.ref_crn.toLowerCase().includes(selectedRefCrn.toLowerCase())
             ) || [];
         }
 
-        // Filtrage par REF_EXT
         if (selectedRefExt) {
             filtered.details = filtered.details?.filter(item =>
                 item.ref_ext && item.ref_ext.toLowerCase().includes(selectedRefExt.toLowerCase())
@@ -60,43 +81,13 @@ export default function DashboardPage() {
         return filtered;
     }, [dashboardData, selectedRefCrn, selectedRefExt]);
 
-    // ✅ 4. FONCTIONS HANDLERS
-    const handleProductSelect = (product) => {
-        setSelectedProduct(product);
-    };
-
-    const handleRefCrnChange = (value) => {
-        setSelectedRefCrn(value);
-    };
-
-    const handleRefExtChange = (value) => {
-        setSelectedRefExt(value);
-    };
-
-    const handleStockModalOpen = (depotData) => {
-        setSelectedDepotData(depotData);
-        setStockModalOpen(true);
-    };
-
-    const handleAdvancedAnalysis = (stockData) => {
-        setSelectedDepotData(null); // Pas de dépôt spécifique
-        setStockModalOpen(true);
-    };
-
-    const handleStockModalClose = () => {
-        setStockModalOpen(false);
-        setSelectedDepotData(null);
-    };
-
-    // ✅ 5. RENDU CONDITIONNEL SANS EARLY RETURN AVANT LES HOOKS
+    // ✅ 5. FONCTIONS DE RENDU (pas de hooks ici)
     const renderContent = () => {
         if (isLoading) {
             return (
-                <Box sx={{ textAlign: 'center', py: 8 }}>
-                    <Typography variant="h6" color="text.secondary">
-                        Chargement des données...
-                    </Typography>
-                </Box>
+                <Alert severity="info" sx={{ mb: 3 }}>
+                    Chargement des données...
+                </Alert>
             );
         }
 
@@ -118,13 +109,8 @@ export default function DashboardPage() {
 
         return (
             <>
-                {/* Section KPI */}
-                <DashboardKPISection
-                    data={filteredData}
-                    isLoading={isLoading}
-                />
-
-                {/* Filtres de référence */}
+                <DashboardKPISection data={filteredData} isLoading={isLoading} />
+                
                 <RefFiltersSection
                     selectedRefCrn={selectedRefCrn}
                     selectedRefExt={selectedRefExt}
@@ -132,27 +118,20 @@ export default function DashboardPage() {
                     onRefExtChange={handleRefExtChange}
                     data={dashboardData}
                 />
-
-                {/* Graphiques */}
-                <DashboardChartsSection
-                    data={filteredData}
-                    isLoading={isLoading}
-                />
-
-                {/* Graphique Stock par Dépôt avec bouton Modal */}
+                
+                <DashboardChartsSection data={filteredData} isLoading={isLoading} />
+                
                 <StockDepotChart
                     data={filteredData}
                     onDepotClick={handleStockModalOpen}
                     onAdvancedAnalysis={handleAdvancedAnalysis}
                 />
-
-                {/* Section Tableau */}
+                
                 <DashboardTableSection
                     data={filteredData}
                     onProductSelect={handleProductSelect}
                 />
 
-                {/* Panel de détail avec historique */}
                 {selectedProduct && (
                     <DashboardDetailPanel
                         product={selectedProduct}
@@ -161,7 +140,6 @@ export default function DashboardPage() {
                     />
                 )}
 
-                {/* Modal Stock Avancé avec appel à getHistory */}
                 <StockAdvancedModal
                     open={stockModalOpen}
                     onClose={handleStockModalClose}

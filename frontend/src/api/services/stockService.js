@@ -18,18 +18,18 @@ export class StockService extends BaseApiService {
         return await this.post('current', payload);
     }
 
-    /**
-     * Historique du stock
-     * @param {Object} filters - Filtres produit
-     * @param {number} lastNMonths - Nombre de mois
-     * @returns {Promise<{items: Array}>}
-     */
-    async getHistory(filters = {}, lastNMonths = 12) {
-        const payload = this.buildPayload(filters);
-        return await this.post('history', payload, {
-            params: { last_n_months: lastNMonths }
-        });
-    }
-}
+//     /**
+//      * Historique du stock
+//      * @param {Object} filters - Filtres produit
+//      * @param {number} lastNMonths - Nombre de mois
+//      * @returns {Promise<{items: Array}>}
+//      */
+//     async getHistory(filters = {}, lastNMonths = 12) {
+//         const payload = this.buildPayload(filters);
+//         return await this.post('history', payload, {
+//             params: { last_n_months: lastNMonths }
+//         });
+//     }
+ }
 
 export const stockService = new StockService();

@@ -52,6 +52,10 @@ export default function BaseRemoteAutocomplete({
             sx={sx}
             disabled={disabled}
             renderInput={(params) => <TextField {...params} label={label} size={size} />}
+            isOptionEqualToValue={(option, value) => {
+                if (!value) return false;
+                return option === value || option?.value === value;
+            }}
         />
     );
 }

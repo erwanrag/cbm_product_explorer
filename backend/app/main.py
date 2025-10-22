@@ -89,16 +89,23 @@ app = FastAPI(
     redoc_url="/redoc" if settings.CBM_ENV == "dev" else None
 )
 
-# === Middlewares ===
-allow_origins = settings.ALLOWED_ORIGINS
+
+# ✅ CORS - Configuration CORRIGÉE
+# Utilise get_allowed_origins_list() au lieu de ALLOWED_ORIGINS directement
+allowed_origins = settings.get_allowed_origins_list()
+
+# En dev, accepter tout si "*" est dans la liste
+if settings.CBM_ENV == "dev" and "*" in allowed_origins:
+    allowed_origins = ["*"]
 
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allow_origins,
-    allow_credentials=True,
+    allow_origins=allowed_origins,
+    allow_credentials=False if "*" in allowed_origins else True,  # ✅ Fix
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # === Middleware de traçabilité et métriques ===

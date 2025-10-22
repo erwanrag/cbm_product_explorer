@@ -40,13 +40,16 @@ export default function AutocompleteRefCrnFromCodpro({
     return (
         <Autocomplete
             options={options}
-            value={value || ''}
+            value={value || null}
             onChange={(_, newVal) => onChange(newVal)}
             disabled={disabled || !cod_pro}
             loading={loading}
             sx={sx}
             getOptionLabel={(option) => (typeof option === 'string' ? option : '')}
-            isOptionEqualToValue={(option, val) => option === val}
+            isOptionEqualToValue={(option, val) => {
+                if (!val) return false;
+                return option === val || option?.value === val;
+            }}
             renderInput={(params) => (
                 <TextField
                     {...params}

@@ -1,41 +1,59 @@
-// ===================================
-// 📁 frontend/src/features/dashboard/hooks/useDashboardData.js - VERSION ORIGINALE QUI MARCHE
-// ===================================
-
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { dashboardService } from '@/api/services/dashboardService';
 import { toast } from 'react-toastify';
 
 export function useDashboardData(filters) {
-    const hasActiveFilters = Object.keys(filters || {}).length > 0;
+    const extractedCodPro = useMemo(() => {
+        if (!filters?.cod_pro) return null;
+        if (typeof filters.cod_pro === 'object' && filters.cod_pro.cod_pro) {
+            return filters.cod_pro.cod_pro;
+        }
+        if (typeof filters.cod_pro === 'number') return filters.cod_pro;
+        if (typeof filters.cod_pro === 'string') {
+            const parsed = parseInt(filters.cod_pro, 10);
+            return isNaN(parsed) ? null : parsed;
+        }
+        return null;
+    }, [filters?.cod_pro]);
+
+    const queryKey = useMemo(() => [
+        'dashboard', 'fiche',
+        extractedCodPro,
+        filters?.ref_crn || null,
+        filters?.ref_ext || null,
+        filters?.grouping_crn || 0,
+        filters?.qualite || null,
+        filters?._forceRefresh || 0
+    ], [
+        extractedCodPro,
+        filters?.ref_crn,
+        filters?.ref_ext,
+        filters?.grouping_crn,
+        filters?.qualite,
+        filters?._forceRefresh
+    ]);
+
+    const hasActiveFilters = useMemo(() => {
+        return !!(extractedCodPro || filters?.ref_crn || filters?.ref_ext);
+    }, [extractedCodPro, filters?.ref_crn, filters?.ref_ext]);
 
     const query = useQuery({
-        queryKey: ['dashboard', 'fiche', filters],
-        queryFn: () => dashboardService.getFiche(filters),
+        queryKey,
+        queryFn: () => dashboardService.getFiche({
+            ...filters,
+            cod_pro: extractedCodPro
+        }),
         enabled: hasActiveFilters,
-        staleTime: 5 * 60 * 1000,
+        staleTime: 2 * 60 * 1000, // 2 min
         refetchOnWindowFocus: false,
-        onSuccess: (data) => {
-            const count = data?.details?.length || 0;
-            if (count === 0) {
-                toast.info('Aucun produit trouvé');
-            } else {
-                toast.success(`${count} produit(s) chargé(s)`);
-            }
-        },
-        onError: (error) => {
-            console.error('Erreur dashboard:', error);
-            toast.error('Impossible de charger les données');
-        },
     });
-
+    
     const transformedData = useMemo(() => {
         if (!query.data) return null;
 
         const { details, sales, stock, purchase, matches, history } = query.data;
 
-        // KPIs corrects - que 3 utiles
         const kpis = {
             totalProducts: details.length,
             totalRevenue: sales.reduce((sum, s) => sum + (s.ca_total || 0), 0),
@@ -43,12 +61,10 @@ export function useDashboardData(filters) {
                 sales.reduce((sum, s) => sum + (s.marge_percent_total || 0), 0) / sales.length : 0,
         };
 
-        // Enrichissement des produits
         const enrichedProducts = details.map((product) => {
             const productSales = sales.find(s => s.cod_pro === product.cod_pro) || {};
             const productStock = stock.filter(s => s.cod_pro === product.cod_pro);
             const productPurchase = purchase.find(p => p.cod_pro === product.cod_pro) || {};
-
             const stockTotal = productStock.reduce((sum, s) => sum + (s.stock || 0), 0);
 
             return {

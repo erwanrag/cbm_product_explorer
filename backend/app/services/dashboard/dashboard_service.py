@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.utils.identifier_utils import resolve_codpro_list
 from app.services.products.detail_service import get_product_details
-from app.services.sales.sales_service import get_sales_aggregate, get_sales_history
+from app.services.sales.sales_service import get_sales_aggregate , get_sales_history
 from app.services.stock.stock_service import get_stock_actuel
 from app.services.purchase.purchase_service import get_purchase_price
 from app.services.products.match_service import get_codpro_match_list

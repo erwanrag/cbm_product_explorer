@@ -1,12 +1,10 @@
-// ===================================
-// 📁 frontend/src/features/optimization/pages/OptimizationPage.jsx - COMPLET
-// ===================================
-import React, { useState, useMemo } from 'react';
-import { Box, Container, Typography, Alert } from '@mui/material';
+import React, { useMemo } from 'react';
+import { Box, Container, Typography, Alert, CircularProgress } from '@mui/material';
 import { motion } from 'framer-motion';
 import { useLayout } from '@/store/hooks/useLayout';
 import { useOptimizationData } from '@/features/optimization/hooks/useOptimizationData';
-import { useTranslation } from '@/store/contexts/LanguageContext'; // ✅ Import correct
+import { useFeatureStates } from '@/store/hooks/useFeatureStates';
+import { useTranslation } from '@/store/contexts/LanguageContext';
 
 // Components
 import OptimizationKPISection from '@/features/optimization/components/OptimizationKPISection';
@@ -17,34 +15,29 @@ import OptimizationDetailPanel from '@/features/optimization/components/Optimiza
 import OptimizationSimulationModal from '@/features/optimization/components/OptimizationSimulationModal';
 
 export default function OptimizationPage() {
-    const { t } = useTranslation(); // ✅ Hook de traduction
-
-    // ✅ Hooks
+    const { t } = useTranslation();
     const { filters } = useLayout();
     const { data: optimizationData, isLoading, isError, error } = useOptimizationData(filters);
 
-    // ✅ États locaux
-    const [selectedOptimization, setSelectedOptimization] = useState(null);
-    const [selectedQualite, setSelectedQualite] = useState('');
-    const [simulationModalOpen, setSimulationModalOpen] = useState(false);
-    const [selectedSimulationData, setSelectedSimulationData] = useState(null);
-    const [viewMode, setViewMode] = useState('table');
+    const states = useFeatureStates({
+        enableDetailModal: true,
+        enableSimulationModal: true,
+        enableInsights: true,
+        defaultViewMode: 'table',
+    });
 
-    // ✅ Filtrage des données par qualité
     const filteredData = useMemo(() => {
         if (!optimizationData?.items) return optimizationData;
-        if (!selectedQualite) return optimizationData;
+        if (!states.qualiteFilter) return optimizationData;
 
         return {
             ...optimizationData,
-            items: optimizationData.items.filter(item => item.qualite === selectedQualite)
+            items: optimizationData.items.filter(item => item.qualite === states.qualiteFilter)
         };
-    }, [optimizationData, selectedQualite]);
+    }, [optimizationData, states.qualiteFilter]);
 
-    // Vérification des données
     const hasData = filteredData?.items?.length > 0;
 
-    // ✅ Calculs des totaux
     const totals = useMemo(() => {
         if (!filteredData?.items?.length) return null;
 
@@ -56,8 +49,6 @@ export default function OptimizationPage() {
         const avgTauxCroissance = totalGroups > 0
             ? items.reduce((sum, item) => sum + (item.taux_croissance || 0), 0) / totalGroups
             : 0;
-        const totalMargeActuelle6m = items.reduce((sum, item) => sum + (item.marge_actuelle_6m || 0), 0);
-        const totalMargeOptimisee6m = items.reduce((sum, item) => sum + (item.marge_optimisee_6m || 0), 0);
 
         return {
             totalGroups,
@@ -65,128 +56,17 @@ export default function OptimizationPage() {
             totalGain6m,
             totalRefs,
             avgTauxCroissance,
-            totalMargeActuelle6m,
-            totalMargeOptimisee6m
         };
     }, [filteredData]);
 
-    // ✅ Handlers
-    const handleOptimizationSelect = (optimization) => {
-        setSelectedOptimization(optimization);
+    const handleOptimizationClick = (optimization) => {
+        states.detailModal.open(optimization);
     };
 
-    const handleQualiteChange = (value) => {
-        setSelectedQualite(value);
-        setSelectedOptimization(null);
+    const handleSimulationClick = (simulationData) => {
+        states.simulationModal.open(simulationData);
     };
 
-    const handleSimulationModalOpen = (optimizationData) => {
-        const dataArray = Array.isArray(optimizationData) ? optimizationData : [optimizationData];
-        setSelectedSimulationData(dataArray);
-        setSimulationModalOpen(true);
-    };
-
-    const handleSimulationModalClose = () => {
-        setSimulationModalOpen(false);
-        setSelectedSimulationData(null);
-    };
-
-    const handleViewModeChange = (mode) => {
-        setViewMode(mode);
-    };
-
-    // ✅ Rendu conditionnel TRADUIT
-    const renderContent = () => {
-        if (isLoading) {
-            return (
-                <Box sx={{ textAlign: 'center', py: 8 }}>
-                    <Typography variant="h6" color="text.secondary">
-                        {t('optimization.loading', 'Chargement de l\'analyse d\'optimisation...')}
-                    </Typography>
-                </Box>
-            );
-        }
-
-        if (isError) {
-            return (
-                <Alert severity="error" sx={{ mb: 3 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {t('optimization.error.title', 'Erreur lors du chargement des données d\'optimisation')}
-                    </Typography>
-                    {error && (
-                        <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>
-                            {t('optimization.error.message', 'Erreur: {{message}}').replace('{{message}}', error.message)}
-                        </Typography>
-                    )}
-                </Alert>
-            );
-        }
-
-        if (!hasData) {
-            return (
-                <Alert severity="info" sx={{ mb: 3 }}>
-                    <Typography variant="body2">
-                        {t('optimization.no_data', 'Aucune donnée d\'optimisation disponible pour les filtres sélectionnés.')}
-                    </Typography>
-                </Alert>
-            );
-        }
-
-        return (
-            <>
-                {/* Section Filtres */}
-                <OptimizationFiltersSection
-                    selectedQualite={selectedQualite}
-                    onQualiteChange={handleQualiteChange}
-                    data={optimizationData}
-                    viewMode={viewMode}
-                    onViewModeChange={handleViewModeChange}
-                />
-
-                {/* Section KPI */}
-                <OptimizationKPISection
-                    data={filteredData}
-                    totals={totals}
-                    isLoading={isLoading}
-                />
-
-                {/* Graphiques */}
-                {viewMode === 'charts' && (
-                    <OptimizationChartsSection
-                        data={filteredData}
-                        isLoading={isLoading}
-                    />
-                )}
-
-                {/* Tableau */}
-                {viewMode === 'table' && (
-                    <OptimizationTableSection
-                        data={filteredData}
-                        onOptimizationSelect={handleOptimizationSelect}
-                        onSimulationOpen={handleSimulationModalOpen}
-                    />
-                )}
-
-                {/* Panel de détail */}
-                {selectedOptimization && (
-                    <OptimizationDetailPanel
-                        optimization={selectedOptimization}
-                        onClose={() => setSelectedOptimization(null)}
-                        optimizationData={filteredData}
-                    />
-                )}
-
-                {/* Modal Simulation */}
-                <OptimizationSimulationModal
-                    open={simulationModalOpen}
-                    onClose={handleSimulationModalClose}
-                    data={selectedSimulationData}
-                />
-            </>
-        );
-    };
-
-    // ✅ Rendu principal TRADUIT
     return (
         <Container maxWidth="xl" sx={{ py: 3 }}>
             <motion.div
@@ -195,15 +75,74 @@ export default function OptimizationPage() {
                 transition={{ duration: 0.5 }}
             >
                 <Box sx={{ mb: 4 }}>
-                    <Typography variant="h4" component="h1" gutterBottom>
-                        {t('optimization.title', 'Optimisation Catalogue')}
+                    <Typography variant="h4" sx={{ fontWeight: 600, mb: 1 }}>
+                        {t('optimization.title', 'Optimisation du Catalogue')}
                     </Typography>
-                    <Typography variant="subtitle1" color="text.secondary">
-                        {t('optimization.subtitle', 'Analyse des économies potentielles par rationalisation gamme')}
+                    <Typography variant="body1" color="text.secondary">
+                        {t('optimization.subtitle', 'Analyse des gains potentiels')}
                     </Typography>
                 </Box>
 
-                {renderContent()}
+                {isLoading && (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+                        <CircularProgress />
+                    </Box>
+                )}
+
+                {isError && (
+                    <Alert severity="error" sx={{ mb: 3 }}>
+                        {t('optimization.error', 'Erreur lors du chargement')}
+                        {error?.message && `: ${error.message}`}
+                    </Alert>
+                )}
+
+                {!isLoading && !isError && !hasData && (
+                    <Alert severity="info" sx={{ mb: 3 }}>
+                        {t('optimization.no_data', 'Aucune donnée disponible')}
+                    </Alert>
+                )}
+
+                {!isLoading && !isError && hasData && (
+                    <>
+                        <OptimizationKPISection
+                            totals={totals}
+                            loading={isLoading}
+                        />
+
+                        <OptimizationFiltersSection
+                            selectedQualite={states.qualiteFilter}
+                            onQualiteChange={states.setQualiteFilter}
+                        />
+
+                        {states.insights.isVisible && (
+                            <OptimizationChartsSection
+                                data={filteredData}
+                                loading={isLoading}
+                            />
+                        )}
+
+                        <OptimizationTableSection
+                            data={filteredData}
+                            loading={isLoading}
+                            onOptimizationClick={handleOptimizationClick}
+                            onSimulationClick={handleSimulationClick}
+                            viewMode={states.viewMode}
+                            onViewModeChange={states.setViewMode}
+                        />
+                    </>
+                )}
+
+                <OptimizationDetailPanel
+                    optimization={states.selectedItem}
+                    open={states.detailModal.isOpen}
+                    onClose={states.detailModal.close}
+                />
+
+                <OptimizationSimulationModal
+                    open={states.simulationModal.isOpen}
+                    onClose={states.simulationModal.close}
+                    data={states.simulationModal.data}
+                />
             </motion.div>
         </Container>
     );

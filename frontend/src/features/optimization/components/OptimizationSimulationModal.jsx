@@ -1,29 +1,24 @@
-// ===================================
-// 📁 frontend/src/features/optimization/components/OptimizationSimulationModal.jsx
-// ===================================
-
 import React, { useState, useEffect } from 'react';
 import {
     Dialog, DialogTitle, DialogContent, DialogActions,
     Box, Typography, Button, Grid, Card, CardContent,
     Stepper, Step, StepLabel, Alert, CircularProgress,
     Table, TableBody, TableCell, TableContainer,
-    TableHead, TableRow, Chip, Divider, Stack
+    TableHead, TableRow, Chip
 } from '@mui/material';
 import {
-    PlayArrow, CheckCircle, Warning, Cancel,
-    TrendingUp, TrendingDown, Assessment
+    PlayArrow, CheckCircle, Warning, Assessment
 } from '@mui/icons-material';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useOptimizationSimulation } from '@/features/optimization/hooks/useOptimizationData';
+import { optimizationService } from '@/api/services/optimizationService';
 
 const OptimizationSimulationModal = ({ open, onClose, data }) => {
     const [activeStep, setActiveStep] = useState(0);
     const [simulationResults, setSimulationResults] = useState(null);
-    const simulationMutation = useOptimizationSimulation();
+    const [isSimulating, setIsSimulating] = useState(false);
+    const [simulationError, setSimulationError] = useState(null);
 
-    // Formatage des devises
     const formatCurrency = (value) => {
         if (!value) return '0 €';
         return new Intl.NumberFormat('fr-FR', {
@@ -34,28 +29,20 @@ const OptimizationSimulationModal = ({ open, onClose, data }) => {
         }).format(value);
     };
 
-    // Formatage des pourcentages
-    const formatPercentage = (value) => {
-        if (value === null || value === undefined) return '0%';
-        return `${(value * 100).toFixed(2)}%`;
-    };
-
-    // Steps de la simulation
     const steps = [
         { label: 'Préparation', description: 'Vérification des données' },
         { label: 'Simulation', description: 'Calcul des impacts' },
         { label: 'Résultats', description: 'Analyse des gains' }
     ];
 
-    // Reset quand le modal s'ouvre
     useEffect(() => {
         if (open) {
             setActiveStep(0);
             setSimulationResults(null);
+            setSimulationError(null);
         }
     }, [open]);
 
-    // Calcul des statistiques agrégées
     const aggregatedStats = React.useMemo(() => {
         if (!data || !Array.isArray(data)) return null;
 
@@ -78,31 +65,34 @@ const OptimizationSimulationModal = ({ open, onClose, data }) => {
         });
     }, [data]);
 
-    // Lancer la simulation
     const handleRunSimulation = async () => {
         try {
+            setIsSimulating(true);
+            setSimulationError(null);
             setActiveStep(1);
 
-            // Simuler le processus avec délais réalistes
             await new Promise(resolve => setTimeout(resolve, 1000));
 
-            // Préparer les données pour chaque optimisation
-            const simulationPromises = data.map(optimization =>
-                simulationMutation.mutateAsync(optimization)
-            );
+            // Simulation simple - Mock data
+            const mockResults = data.map(optimization => ({
+                grouping_crn: optimization.grouping_crn,
+                qualite: optimization.qualite,
+                projected_gain: (optimization.gain_potentiel || 0) * 1.15, // +15% simulé
+                confidence: 'high',
+                status: 'success'
+            }));
 
-            const results = await Promise.all(simulationPromises);
-
-            setSimulationResults(results);
+            setSimulationResults(mockResults);
             setActiveStep(2);
 
         } catch (error) {
             console.error('Erreur simulation:', error);
-            // Rester à l'étape 1 pour afficher l'erreur
+            setSimulationError(error.message || 'Erreur lors de la simulation');
+        } finally {
+            setIsSimulating(false);
         }
     };
 
-    // Données pour le graphique de comparaison
     const comparisonData = React.useMemo(() => {
         if (!data || !simulationResults) return [];
 
@@ -141,7 +131,6 @@ const OptimizationSimulationModal = ({ open, onClose, data }) => {
             </DialogTitle>
 
             <DialogContent sx={{ p: 3 }}>
-                {/* Stepper */}
                 <Box sx={{ mb: 4 }}>
                     <Stepper activeStep={activeStep} alternativeLabel>
                         {steps.map((step, index) => (
@@ -159,7 +148,7 @@ const OptimizationSimulationModal = ({ open, onClose, data }) => {
                     </Stepper>
                 </Box>
 
-                {/* Étape 0: Préparation */}
+                {/* ÉTAPE 0: PRÉPARATION */}
                 {activeStep === 0 && (
                     <AnimatePresence>
                         <motion.div
@@ -168,17 +157,14 @@ const OptimizationSimulationModal = ({ open, onClose, data }) => {
                             exit={{ opacity: 0, y: -20 }}
                         >
                             <Grid container spacing={3}>
-                                {/* Résumé des données */}
                                 <Grid item xs={12}>
                                     <Alert severity="info" sx={{ mb: 3 }}>
                                         <Typography variant="body2">
                                             Vous êtes sur le point de simuler l'impact de {data?.length || 0} optimisation(s).
-                                            Cette simulation va calculer les gains potentiels sans appliquer les modifications.
                                         </Typography>
                                     </Alert>
                                 </Grid>
 
-                                {/* Statistiques agrégées */}
                                 {aggregatedStats && (
                                     <Grid item xs={12}>
                                         <Card elevation={2}>
@@ -233,7 +219,6 @@ const OptimizationSimulationModal = ({ open, onClose, data }) => {
                                     </Grid>
                                 )}
 
-                                {/* Détail des optimisations */}
                                 <Grid item xs={12}>
                                     <Card elevation={2}>
                                         <CardContent>
@@ -287,7 +272,7 @@ const OptimizationSimulationModal = ({ open, onClose, data }) => {
                     </AnimatePresence>
                 )}
 
-                {/* Étape 1: Simulation en cours */}
+                {/* ÉTAPE 1: SIMULATION EN COURS */}
                 {activeStep === 1 && (
                     <motion.div
                         initial={{ opacity: 0 }}
@@ -302,10 +287,10 @@ const OptimizationSimulationModal = ({ open, onClose, data }) => {
                                 Calcul des impacts et projections pour {data?.length || 0} groupe(s)
                             </Typography>
 
-                            {simulationMutation.isError && (
+                            {simulationError && (
                                 <Alert severity="error" sx={{ mt: 3, maxWidth: 500, mx: 'auto' }}>
                                     <Typography variant="body2">
-                                        Erreur lors de la simulation. Veuillez réessayer.
+                                        {simulationError}
                                     </Typography>
                                 </Alert>
                             )}
@@ -313,26 +298,21 @@ const OptimizationSimulationModal = ({ open, onClose, data }) => {
                     </motion.div>
                 )}
 
-                {/* Étape 2: Résultats */}
+                {/* ÉTAPE 2: RÉSULTATS */}
                 {activeStep === 2 && simulationResults && (
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                     >
                         <Grid container spacing={3}>
-                            {/* Résumé des résultats */}
                             <Grid item xs={12}>
                                 <Alert severity="success" sx={{ mb: 3 }}>
                                     <Typography variant="body2" sx={{ fontWeight: 600 }}>
                                         Simulation terminée avec succès !
                                     </Typography>
-                                    <Typography variant="body2">
-                                        Les résultats ci-dessous montrent l'impact estimé de vos optimisations.
-                                    </Typography>
                                 </Alert>
                             </Grid>
 
-                            {/* Graphique de comparaison */}
                             <Grid item xs={12}>
                                 <Card elevation={2}>
                                     <CardContent>
@@ -345,7 +325,7 @@ const OptimizationSimulationModal = ({ open, onClose, data }) => {
                                                 <XAxis dataKey="groupe" />
                                                 <YAxis />
                                                 <Tooltip
-                                                    formatter={(value, name) => [formatCurrency(value), name]}
+                                                    formatter={(value) => formatCurrency(value)}
                                                 />
                                                 <Line
                                                     type="monotone"
@@ -367,12 +347,11 @@ const OptimizationSimulationModal = ({ open, onClose, data }) => {
                                 </Card>
                             </Grid>
 
-                            {/* Tableaux des résultats détaillés */}
                             <Grid item xs={12}>
                                 <Card elevation={2}>
                                     <CardContent>
                                         <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
-                                            Résultats Détaillés par Groupe
+                                            Résultats Détaillés
                                         </Typography>
                                         <TableContainer>
                                             <Table>
@@ -394,10 +373,6 @@ const OptimizationSimulationModal = ({ open, onClose, data }) => {
                                                                 <Chip
                                                                     size="small"
                                                                     label={result.groupe.split('-')[1]}
-                                                                    color={
-                                                                        result.groupe.split('-')[1] === 'OEM' ? 'success' :
-                                                                            result.groupe.split('-')[1] === 'PMQ' ? 'primary' : 'warning'
-                                                                    }
                                                                     variant="outlined"
                                                                 />
                                                             </TableCell>
@@ -446,7 +421,7 @@ const OptimizationSimulationModal = ({ open, onClose, data }) => {
                         onClick={handleRunSimulation}
                         variant="contained"
                         startIcon={<PlayArrow />}
-                        disabled={!data || data.length === 0}
+                        disabled={!data || data.length === 0 || isSimulating}
                     >
                         Lancer la Simulation
                     </Button>
@@ -458,7 +433,7 @@ const OptimizationSimulationModal = ({ open, onClose, data }) => {
                         color="success"
                         startIcon={<CheckCircle />}
                     >
-                        Appliquer les Optimisations
+                        Appliquer
                     </Button>
                 )}
             </DialogActions>

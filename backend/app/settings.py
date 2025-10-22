@@ -1,8 +1,10 @@
+# backend/app/settings.py
 from pydantic_settings import BaseSettings
-from pydantic import Field, validator
+from pydantic import Field, field_validator
 from functools import lru_cache
 from typing import List, Optional
 import os
+import json
 
 
 class Settings(BaseSettings):
@@ -39,7 +41,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = Field(default="CBM Product Explorer API", description="Nom du projet")
     VERSION: str = Field(default="1.0.0", description="Version de l'API")
     
-    # === Sécurité (CORRIGÉ) ===
+    # === Sécurité ===
     SECRET_KEY: str = Field(default="CBM_SUPER_SECRET_KEY_256BITS_MINIMUM_LENGTH_REQUIRED_FOR_SECURITY", description="Clé secrète pour JWT")
     ALGORITHM: str = Field(default="HS256", description="Algorithme JWT")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=60, ge=1, le=1440, description="Durée validité token")
@@ -47,11 +49,11 @@ class Settings(BaseSettings):
     # === CORS ===
     FRONTEND_HOST: str = Field(default="localhost", description="Host frontend")
     FRONTEND_PORTS: str = Field(default="5181", description="Ports frontend autorisés")
-    ALLOWED_ORIGINS: List[str] = Field(default=[], description="Origins CORS autorisées")
+    ALLOWED_ORIGINS: Optional[str] = Field(default=None, description="Origins CORS autorisées (JSON array)")
     
-    # === Logging (CORRIGÉ) ===
+    # === Logging ===
     LOG_LEVEL: str = Field(default="INFO", description="Niveau de log")
-    CBM_LOG_DIR: str = Field(default="./logs", description="Répertoire des logs")  # Nom corrigé
+    CBM_LOG_DIR: str = Field(default="./logs", description="Répertoire des logs")
     LOG_RETENTION_DAYS: int = Field(default=7, ge=1, le=365, description="Rétention logs (jours)")
     LOG_MAX_SIZE: str = Field(default="10MB", description="Taille max d'un fichier log")
     
@@ -69,27 +71,33 @@ class Settings(BaseSettings):
     METRICS_PORT: int = Field(default=8001, ge=1024, le=65535, description="Port métriques Prometheus")
     ENABLE_TRACING: bool = Field(default=False, description="Activer le tracing distribué")
     
-    # === Compatibilité ancienne version (AJOUTÉ) ===
+    # === Compatibilité ancienne version ===
     VITE_ENV: Optional[str] = Field(default=None, description="Env pour frontend (legacy)")
     VITE_API_URL: Optional[str] = Field(default=None, description="URL API pour frontend (legacy)")
     
-    @validator('CBM_ENV')
-    def validate_environment(cls, v):
+    # Propriété calculée pour ALLOWED_ORIGINS en liste
+    _allowed_origins_list: Optional[List[str]] = None
+    
+    @field_validator('CBM_ENV')
+    @classmethod
+    def validate_environment(cls, v: str) -> str:
         """Valide l'environnement"""
         if v not in ['dev', 'staging', 'prod']:
             raise ValueError('CBM_ENV doit être dev, staging ou prod')
         return v
     
-    @validator('DEBUG', pre=True, always=True)
-    def set_debug_from_env(cls, v, values):
+    @field_validator('DEBUG')
+    @classmethod
+    def set_debug_from_env(cls, v: bool, info) -> bool:
         """Configure DEBUG automatiquement selon l'environnement"""
-        env = values.get('CBM_ENV', 'dev')
+        env = info.data.get('CBM_ENV', 'dev')
         return env == 'dev'
     
-    @validator('LOG_LEVEL', pre=True, always=True)
-    def set_log_level_from_env(cls, v, values):
+    @field_validator('LOG_LEVEL')
+    @classmethod
+    def set_log_level_from_env(cls, v: str, info) -> str:
         """Configure le niveau de log selon l'environnement"""
-        env = values.get('CBM_ENV', 'dev')
+        env = info.data.get('CBM_ENV', 'dev')
         if env == 'dev':
             return 'DEBUG'
         elif env == 'staging':
@@ -97,28 +105,87 @@ class Settings(BaseSettings):
         else:  # prod
             return 'WARNING'
     
-    @validator('SECRET_KEY', pre=True, always=True)
-    def ensure_secret_key_length(cls, v):
+    @field_validator('SECRET_KEY')
+    @classmethod
+    def ensure_secret_key_length(cls, v: str) -> str:
         """S'assure que la clé secrète fait au minimum 32 caractères"""
         if not v or len(v) < 32:
-            # Génère une clé par défaut sécurisée
             return "CBM_SUPER_SECRET_KEY_256BITS_MINIMUM_LENGTH_REQUIRED_FOR_SECURITY_PURPOSES"
         return v
     
-    @validator('ALLOWED_ORIGINS', pre=True, always=True)
-    def build_allowed_origins(cls, v, values):
-        """Construit la liste des origins autorisées"""
-        if v:  # Si déjà défini, on garde
-            return v
+    @field_validator('ALLOWED_ORIGINS')
+    @classmethod
+    def parse_allowed_origins(cls, v: Optional[str], info) -> Optional[str]:
+        """
+        Parse et valide ALLOWED_ORIGINS avec gestion d'erreur robuste
         
-        host = values.get('FRONTEND_HOST', 'localhost')
-        ports = values.get('FRONTEND_PORTS', '5181')
+        Formats acceptés:
+        1. JSON array: ["http://localhost:3000","http://localhost:5181"]
+        2. Vide/None: génère automatiquement depuis FRONTEND_HOST et FRONTEND_PORTS
+        3. String vide: génère automatiquement
+        """
+        # Si vide ou None, on retourne None (génération auto dans get_allowed_origins_list)
+        if not v or v.strip() == "":
+            return None
         
+        # Tente de parser comme JSON
+        try:
+            parsed = json.loads(v)
+            if isinstance(parsed, list):
+                # Valide que ce sont des strings
+                if all(isinstance(origin, str) for origin in parsed):
+                    return v  # Garde la string JSON originale
+                else:
+                    raise ValueError("ALLOWED_ORIGINS doit contenir uniquement des strings")
+            else:
+                raise ValueError("ALLOWED_ORIGINS doit être un array JSON")
+        except json.JSONDecodeError as e:
+            # Erreur de parsing JSON
+            print(f"⚠️ ERREUR ALLOWED_ORIGINS: Format JSON invalide")
+            print(f"   Valeur reçue: {v}")
+            print(f"   Erreur: {str(e)}")
+            print(f"   Format attendu: [\"http://localhost:3000\",\"http://localhost:5181\"]")
+            print(f"   OU laisser vide pour génération automatique")
+            
+            # En mode dev, on continue avec None (génération auto)
+            if info.data.get('CBM_ENV') == 'dev':
+                print(f"   → Utilisation de la génération automatique (mode dev)")
+                return None
+            else:
+                # En prod, on lève l'erreur
+                raise ValueError(
+                    f"ALLOWED_ORIGINS invalide: {str(e)}. "
+                    f"Format attendu: [\"http://localhost:3000\",\"http://localhost:5181\"]"
+                )
+    
+    def get_allowed_origins_list(self) -> List[str]:
+        """
+        Retourne la liste des origins autorisées
+        Avec cache pour éviter le re-parsing
+        """
+        if self._allowed_origins_list is not None:
+            return self._allowed_origins_list
+        
+        # Si ALLOWED_ORIGINS est défini, on le parse
+        if self.ALLOWED_ORIGINS:
+            try:
+                self._allowed_origins_list = json.loads(self.ALLOWED_ORIGINS)
+                return self._allowed_origins_list
+            except json.JSONDecodeError:
+                # Fallback sur génération auto
+                pass
+        
+        # Génération automatique depuis FRONTEND_HOST et FRONTEND_PORTS
         origins = []
-        for port in ports.split(','):
-            origins.append(f"http://{host}:{port.strip()}")
-            origins.append(f"https://{host}:{port.strip()}")
+        host = self.FRONTEND_HOST
+        ports = self.FRONTEND_PORTS.split(',')
         
+        for port in ports:
+            port = port.strip()
+            origins.append(f"http://{host}:{port}")
+            origins.append(f"https://{host}:{port}")
+        
+        self._allowed_origins_list = origins
         return origins
     
     @property
@@ -152,7 +219,6 @@ class Settings(BaseSettings):
         )
         env_file_encoding = 'utf-8'
         case_sensitive = True
-        # CORRIGÉ: Permet les champs extra pour compatibilité
         extra = "allow"
 
 
