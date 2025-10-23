@@ -10,36 +10,36 @@ export default function OptimizationKPISection({ data, loading }) {
   const kpiConfig = [
     {
       title: t('optimization.kpis.total_groups', 'Groupes Totaux'),
-      value: data?.summary?.totalGroups || 0,
-      icon: <ShowChart />, // ✅ Rendu JSX
+      value: data?.totalGroups || data?.summary?.totalGroups || 0,
+      icon: <ShowChart />,
       color: '#1976d2',
       format: 'number',
-      delay: 0
+      delay: 0,
     },
     {
       title: t('optimization.kpis.total_gain', 'Gain Potentiel'),
-      value: data?.summary?.totalGainImmediat || 0,
-      icon: <TrendingUp />, // ✅ Rendu JSX
+      value: data?.totalGainImmediat || data?.summary?.totalGainImmediat || 0,
+      icon: <TrendingUp />,
       color: '#2e7d32',
       format: 'currency',
-      delay: 0.1
+      delay: 0.1,
     },
     {
       title: t('optimization.kpis.gain_6m', 'Gain 6M'),
-      value: data?.summary?.totalGain6m || 0,
-      icon: <AccountBalance />, // ✅ Rendu JSX
+      value: data?.totalGain6m || data?.summary?.totalGain6m || 0,
+      icon: <AccountBalance />,
       color: '#0288d1',
       format: 'currency',
-      delay: 0.2
+      delay: 0.2,
     },
     {
       title: t('optimization.kpis.avg_growth', 'Croissance Moy.'),
-      value: data?.summary?.avgTauxCroissance || 0,
-      icon: <Speed />, // ✅ Rendu JSX
+      value: (data?.avgTauxCroissance || 0) * 100, // convertir 0.05 → 5 %
+      icon: <Speed />,
       color: '#ed6c02',
       format: 'percentage',
-      delay: 0.3
-    }
+      delay: 0.3,
+    },
   ];
 
   return (

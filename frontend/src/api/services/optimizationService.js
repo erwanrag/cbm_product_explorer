@@ -2,7 +2,7 @@ import BaseApiService from '@/api/core/BaseApiService';
 
 export class OptimizationService extends BaseApiService {
     constructor() {
-        super('/optimization');
+        super('/optimisation');
     }
 
     /**
@@ -12,7 +12,7 @@ export class OptimizationService extends BaseApiService {
      */
     async getOptimizationData(filters = {}) {
         const payload = this.buildPayload(filters); // ✅ this est bien défini
-        return await this.post('analyze', payload);
+        return await this.post('optimisation', payload);
     }
 
     /**

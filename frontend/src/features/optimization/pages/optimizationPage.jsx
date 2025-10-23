@@ -84,7 +84,7 @@ export default function OptimizationPage() {
             totalGain6m: items.reduce((sum, item) => sum + (item.gain_potentiel_6m || 0), 0),
             totalRefs: items.reduce((sum, item) => sum + (item.refs_total || 0), 0),
             avgTauxCroissance: items.length > 0
-                ? items.reduce((sum, item) => sum + (item.taux_croissance_mo || 0), 0) / items.length
+                ? items.reduce((sum, item) => sum + (item.taux_croissance || 0), 0) / items.length
                 : 0
         };
     }, [filteredData]);
@@ -205,7 +205,7 @@ export default function OptimizationPage() {
                         {/* KPIs */}
                         {totals && (
                             <OptimizationKPISection
-                                totals={totals}
+                                data={totals}
                                 loading={isLoading}
                             />
                         )}

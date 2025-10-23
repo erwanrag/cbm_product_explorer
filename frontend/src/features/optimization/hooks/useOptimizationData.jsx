@@ -51,7 +51,7 @@ export function useOptimizationData(filters, options = {}) {
 
     return useFeatureData(
         'optimization',
-        optimizationService.getAnalysis,
+        optimizationService.getOptimizationData.bind(optimizationService),
         filters,
         transformOptimization,
         options
