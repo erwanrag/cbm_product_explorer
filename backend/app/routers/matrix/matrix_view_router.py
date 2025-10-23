@@ -1,7 +1,8 @@
 # backend/app/routers/matrix/matrix_view_router.py
 
-from fastapi import APIRouter, Depends, Body, Query
+from fastapi import APIRouter, Depends, Body, Query, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import text
 from app.db.dependencies import get_db
 from app.schemas.identifiers.identifier_schema import ProductIdentifierRequest
 from app.schemas.matrix.matrix_view_schema import (
@@ -13,6 +14,7 @@ from app.services.matrix.matrix_view_service import (
     get_matrix_view_filtered
 )
 from app.common.logger import logger
+
 
 router = APIRouter(prefix="/matrix", tags=["Matrix View"])
 
@@ -87,28 +89,50 @@ async def get_matrix_view_with_filters(
     )
 
 
-@router.get("/cell/{cod_pro}/{ref}")
-async def get_matrix_cell_details(
+@router.get("/cell/{cod_pro}/{ref}", response_model=dict)
+async def get_cell_detail(
     cod_pro: int,
     ref: str,
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Détails d'une cellule spécifique de la matrice.
-    
+    ✅ Détails de correspondance pour une cellule spécifique
     Utile pour les tooltips ou drill-down depuis une cellule.
-    
-    Args:
-        cod_pro: Code produit de la ligne
-        ref: Référence de la colonne
-        
-    Returns:
-        Détails de la correspondance pour cette cellule
     """
-    # Pour l'instant, renvoie une structure simple
-    # TODO: Implémenter si besoin de détails spécifiques par cellule
-    return {
-        "cod_pro": cod_pro,
-        "ref": ref,
-        "message": "Détails cellule à implémenter si nécessaire"
-    }
+    try:
+        query = text("""
+            SELECT 
+                dp.cod_pro,
+                dp.nom_pro,
+                dp.qualite,
+                dp.refint,
+                bp.ref_crn,
+                br.ref_ext
+            FROM [CBM_DATA].[Pricing].[Grouping_crn_table] dp WITH (NOLOCK)
+            LEFT JOIN [CBM_DATA].[DIM].[Bridge_cod_pro_ref_crn] bp WITH (NOLOCK) 
+                ON dp.cod_pro = bp.cod_pro
+            LEFT JOIN [CBM_DATA].[DIM].[Bridge_ref_crn_ref_ext] br WITH (NOLOCK)
+                ON bp.ref_crn = br.ref_crn
+            WHERE dp.cod_pro = :cod_pro
+            AND (bp.ref_crn = :ref OR br.ref_ext = :ref OR dp.refint = :ref)
+        """)
+        
+        result = await db.execute(query, {"cod_pro": cod_pro, "ref": ref})
+        row = result.first()
+        
+        if not row:
+            raise HTTPException(status_code=404, detail="Correspondance non trouvée")
+        
+        return {
+            "cod_pro": row.cod_pro,
+            "nom_pro": row.nom_pro,
+            "qualite": row.qualite,
+            "refint": row.refint,
+            "ref_crn": row.ref_crn,
+            "ref_ext": row.ref_ext,
+            "match_type": "direct"
+        }
+    
+    except Exception as e:
+        logger.error(f"Erreur get_cell_detail: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

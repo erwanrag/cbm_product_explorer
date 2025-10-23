@@ -1,29 +1,37 @@
-//src/shared/components/badges/MargeColorBox.jsx
+// frontend/src/shared/components/badges/MargeColorBox.jsx
+
+import React from 'react';
 import { Box, Tooltip, Typography } from '@mui/material';
 import { getMargeColor, getMargeLabel } from '@/lib/colors';
-import { safeFixed } from '@/lib/format';
 
-export default function MargeColorBox({ value }) {
-  const color = getMargeColor(value);
-  let text = '-';
-  if (value != null && value !== 0 && !isNaN(value)) {
-    text = `${safeFixed(value)}%`;
-  }
+// ✅ Fonction utilitaire locale (pas besoin d'import)
+const safeFixed = (val, decimals = 1) => {
+  if (val == null || isNaN(val)) return '0.0';
+  return Number(val).toFixed(decimals);
+};
+
+export default function MargeColorBox({ value, qualite }) {
+  const color = getMargeColor(value, qualite);
+  const label = getMargeLabel(value, qualite);
+
   return (
-    <Tooltip title={getMargeLabel(value)} arrow>
+    <Tooltip title={label}>
       <Box
         sx={{
-          px: 1,
-          py: 0.25,
-          borderRadius: '12px',
-          bgcolor: color,
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
           minWidth: 60,
-          textAlign: 'center',
+          height: 24,
+          px: 1,
+          borderRadius: 1,
+          bgcolor: color,
+          color: 'white',
+          fontWeight: 600,
+          fontSize: '0.75rem',
         }}
       >
-        <Typography variant="caption" fontWeight={500} color="white">
-          {text}
-        </Typography>
+        {safeFixed(value)}%
       </Box>
     </Tooltip>
   );

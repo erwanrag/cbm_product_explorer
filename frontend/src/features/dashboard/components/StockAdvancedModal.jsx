@@ -1,5 +1,5 @@
 // ===================================
-// 📁 frontend/src/features/dashboard/components/StockAdvancedModal.jsx
+// 📁 StockAdvancedModal.jsx - AVEC TRADUCTIONS
 // ===================================
 
 import React, { useState, useMemo } from 'react';
@@ -25,6 +25,7 @@ import { Close, Warehouse, TrendingUp } from '@mui/icons-material';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { formatCurrency } from '@/lib/formatUtils';
 import { useLayout } from '@/store/hooks/useLayout';
+import { useTranslation } from '@/store/contexts/LanguageContext';
 
 export default function StockAdvancedModal({
     open,
@@ -32,14 +33,14 @@ export default function StockAdvancedModal({
     data,
     selectedDepot = null
 }) {
+    const { t } = useTranslation();
     const { filters } = useLayout();
-    const [viewMode, setViewMode] = useState('valorisation'); // valorisation | quantite
+    const [viewMode, setViewMode] = useState('valorisation');
     const [selectedDepotFilter, setSelectedDepotFilter] = useState(selectedDepot?.depot || '');
     const [selectedProduct, setSelectedProduct] = useState('');
 
     if (!data?.stock) return null;
 
-    // ✅ LISTES POUR LES FILTRES
     const depotList = useMemo(() => {
         const depots = [...new Set(data.stock.map(s => s.depot))].filter(Boolean).sort();
         return depots;
@@ -50,7 +51,6 @@ export default function StockAdvancedModal({
         return products;
     }, [data.stock]);
 
-    // ✅ DONNÉES FILTRÉES (STOCK ACTUEL) - SEULEMENT STOCK > 0
     const filteredStock = useMemo(() => {
         return data.stock.filter(item => {
             const hasStock = (item.stock || 0) > 0;
@@ -60,7 +60,6 @@ export default function StockAdvancedModal({
         });
     }, [data.stock, selectedDepotFilter, selectedProduct]);
 
-    // ✅ KPI MÉTIER STOCK
     const stockKPIs = useMemo(() => {
         if (filteredStock.length === 0) return null;
 
@@ -88,7 +87,6 @@ export default function StockAdvancedModal({
         };
     }, [filteredStock, data.stock, selectedDepotFilter, selectedProduct]);
 
-    // ✅ DONNÉES POUR GRAPHIQUE STOCK ACTUEL
     const chartData = useMemo(() => {
         const groupBy = selectedDepotFilter ? 'cod_pro' : 'depot';
         const grouped = {};
@@ -117,24 +115,18 @@ export default function StockAdvancedModal({
         if (active && payload && payload.length) {
             const data = payload[0].payload;
             return (
-                <Box sx={{
-                    bgcolor: 'background.paper',
-                    p: 2,
-                    border: '1px solid #ddd',
-                    borderRadius: 1,
-                    boxShadow: 2
-                }}>
+                <Box sx={{ bgcolor: 'background.paper', p: 2, border: '1px solid #ddd', borderRadius: 1, boxShadow: 2 }}>
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {selectedDepotFilter ? `Produit ${label}` : `Dépôt ${label}`}
+                        {selectedDepotFilter ? `${t('dashboard.stock.product', 'Produit')} ${label}` : `${t('dashboard.stock.depot', 'Dépôt')} ${label}`}
                     </Typography>
                     <Typography variant="body2">
-                        Valorisation: {formatCurrency(data.valorisation)}
+                        {t('dashboard.stock.valuation', 'Valorisation')}: {formatCurrency(data.valorisation)}
                     </Typography>
                     <Typography variant="body2">
-                        Quantité: {data.quantite.toLocaleString('fr-FR')}
+                        {t('dashboard.stock.quantity', 'Quantité')}: {data.quantite.toLocaleString('fr-FR')}
                     </Typography>
                     <Typography variant="body2">
-                        Articles: {data.articles}
+                        {t('dashboard.stock.items', 'Articles')}: {data.articles}
                     </Typography>
                 </Box>
             );
@@ -143,42 +135,31 @@ export default function StockAdvancedModal({
     };
 
     return (
-        <Dialog
-            open={open}
-            onClose={onClose}
-            maxWidth="xl"
-            fullWidth
-            PaperProps={{ sx: { height: '90vh' } }}
-        >
+        <Dialog open={open} onClose={onClose} maxWidth="xl" fullWidth PaperProps={{ sx: { height: '90vh' } }}>
             <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Warehouse sx={{ mr: 1, color: 'primary.main' }} />
                     <Typography variant="h6">
-                        Analyse Stock Avancée
-                        {selectedDepot && ` - Dépôt ${selectedDepot.depot}`}
+                        {t('dashboard.stock.advanced_analysis', 'Analyse Stock Avancée')}
+                        {selectedDepot && ` - ${t('dashboard.stock.depot', 'Dépôt')} ${selectedDepot.depot}`}
                     </Typography>
                 </Box>
                 <Button onClick={onClose} startIcon={<Close />}>
-                    Fermer
+                    {t('common.close', 'Fermer')}
                 </Button>
             </DialogTitle>
 
             <DialogContent sx={{ p: 3 }}>
-                {/* ✅ FILTRES */}
                 <Paper sx={{ p: 2, mb: 3, bgcolor: '#f8f9fa' }}>
                     <Grid container spacing={2} alignItems="center">
                         <Grid item xs={12} sm={4}>
                             <FormControl fullWidth size="small">
-                                <InputLabel>Dépôt</InputLabel>
-                                <Select
-                                    value={selectedDepotFilter}
-                                    onChange={(e) => setSelectedDepotFilter(e.target.value)}
-                                    label="Dépôt"
-                                >
-                                    <MenuItem value="">Tous les dépôts</MenuItem>
+                                <InputLabel>{t('dashboard.stock.depot', 'Dépôt')}</InputLabel>
+                                <Select value={selectedDepotFilter} onChange={(e) => setSelectedDepotFilter(e.target.value)} label={t('dashboard.stock.depot', 'Dépôt')}>
+                                    <MenuItem value="">{t('dashboard.stock.all_depots', 'Tous les dépôts')}</MenuItem>
                                     {depotList.map(depot => (
                                         <MenuItem key={depot} value={depot}>
-                                            Dépôt {depot}
+                                            {t('dashboard.stock.depot', 'Dépôt')} {depot}
                                         </MenuItem>
                                     ))}
                                 </Select>
@@ -187,17 +168,11 @@ export default function StockAdvancedModal({
 
                         <Grid item xs={12} sm={4}>
                             <FormControl fullWidth size="small">
-                                <InputLabel>Produit</InputLabel>
-                                <Select
-                                    value={selectedProduct}
-                                    onChange={(e) => setSelectedProduct(e.target.value)}
-                                    label="Produit"
-                                >
-                                    <MenuItem value="">Tous les produits</MenuItem>
+                                <InputLabel>{t('dashboard.stock.product', 'Produit')}</InputLabel>
+                                <Select value={selectedProduct} onChange={(e) => setSelectedProduct(e.target.value)} label={t('dashboard.stock.product', 'Produit')}>
+                                    <MenuItem value="">{t('dashboard.stock.all_products', 'Tous les produits')}</MenuItem>
                                     {productList.slice(0, 50).map(cod_pro => (
-                                        <MenuItem key={cod_pro} value={cod_pro}>
-                                            {cod_pro}
-                                        </MenuItem>
+                                        <MenuItem key={cod_pro} value={cod_pro}>{cod_pro}</MenuItem>
                                     ))}
                                 </Select>
                             </FormControl>
@@ -205,26 +180,13 @@ export default function StockAdvancedModal({
 
                         <Grid item xs={12} sm={4}>
                             <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-                                <Chip
-                                    label="Valorisation"
-                                    clickable
-                                    onClick={() => setViewMode('valorisation')}
-                                    color={viewMode === 'valorisation' ? "primary" : "default"}
-                                    size="small"
-                                />
-                                <Chip
-                                    label="Quantité"
-                                    clickable
-                                    onClick={() => setViewMode('quantite')}
-                                    color={viewMode === 'quantite' ? "primary" : "default"}
-                                    size="small"
-                                />
+                                <Chip label={t('dashboard.stock.valuation', 'Valorisation')} clickable onClick={() => setViewMode('valorisation')} color={viewMode === 'valorisation' ? "primary" : "default"} size="small" />
+                                <Chip label={t('dashboard.stock.quantity', 'Quantité')} clickable onClick={() => setViewMode('quantite')} color={viewMode === 'quantite' ? "primary" : "default"} size="small" />
                             </Box>
                         </Grid>
                     </Grid>
                 </Paper>
 
-                {/* ✅ KPI MÉTIER */}
                 {stockKPIs && (
                     <Grid container spacing={2} sx={{ mb: 3 }}>
                         <Grid item xs={6} sm={2}>
@@ -233,7 +195,7 @@ export default function StockAdvancedModal({
                                     <Typography variant="h6" sx={{ color: '#1976d2', fontWeight: 700 }}>
                                         {stockKPIs.tauxDisponibilite.toFixed(1)}%
                                     </Typography>
-                                    <Typography variant="caption">Taux Disponibilité</Typography>
+                                    <Typography variant="caption">{t('dashboard.stock.availability_rate', 'Taux Disponibilité')}</Typography>
                                 </CardContent>
                             </Card>
                         </Grid>
@@ -244,7 +206,7 @@ export default function StockAdvancedModal({
                                     <Typography variant="h6" sx={{ color: '#2e7d32', fontWeight: 700 }}>
                                         {stockKPIs.produitsEnStock}
                                     </Typography>
-                                    <Typography variant="caption">Produits en stock</Typography>
+                                    <Typography variant="caption">{t('dashboard.stock.products_in_stock', 'Produits en stock')}</Typography>
                                 </CardContent>
                             </Card>
                         </Grid>
@@ -255,7 +217,7 @@ export default function StockAdvancedModal({
                                     <Typography variant="h6" sx={{ color: '#f57c00', fontWeight: 700 }}>
                                         {stockKPIs.articlesUniques}
                                     </Typography>
-                                    <Typography variant="caption">Articles uniques</Typography>
+                                    <Typography variant="caption">{t('dashboard.stock.unique_items', 'Articles uniques')}</Typography>
                                 </CardContent>
                             </Card>
                         </Grid>
@@ -266,7 +228,7 @@ export default function StockAdvancedModal({
                                     <Typography variant="h6" sx={{ color: '#9c27b0', fontWeight: 700 }}>
                                         {formatCurrency(stockKPIs.totalValorisation, 'EUR', true)}
                                     </Typography>
-                                    <Typography variant="caption">Valorisation totale</Typography>
+                                    <Typography variant="caption">{t('dashboard.stock.total_valuation', 'Valorisation totale')}</Typography>
                                 </CardContent>
                             </Card>
                         </Grid>
@@ -277,44 +239,26 @@ export default function StockAdvancedModal({
                                     <Typography variant="h6" sx={{ color: '#00695c', fontWeight: 700 }}>
                                         {formatCurrency(stockKPIs.pmpMoyen)}
                                     </Typography>
-                                    <Typography variant="caption">PMP Moyen</Typography>
+                                    <Typography variant="caption">{t('dashboard.stock.average_pmp', 'PMP Moyen')}</Typography>
                                 </CardContent>
                             </Card>
                         </Grid>
                     </Grid>
                 )}
 
-                {/* ✅ GRAPHIQUE STOCK ACTUEL */}
                 <Paper sx={{ p: 2 }}>
                     <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
                         <TrendingUp sx={{ mr: 1, color: 'primary.main' }} />
-                        Stock Actuel ({chartData.length} {selectedDepotFilter ? 'produits' : 'dépôts'})
+                        {t('dashboard.stock.current_stock', 'Stock Actuel')} ({chartData.length} {selectedDepotFilter ? t('dashboard.stock.products', 'produits') : t('dashboard.stock.depots', 'dépôts')})
                     </Typography>
 
                     <ResponsiveContainer width="100%" height={350}>
                         <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                             <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis
-                                dataKey="name"
-                                angle={-45}
-                                textAnchor="end"
-                                height={80}
-                                tick={{ fontSize: 10 }}
-                            />
-                            <YAxis
-                                tick={{ fontSize: 10 }}
-                                tickFormatter={
-                                    viewMode === 'valorisation'
-                                        ? (value) => formatCurrency(value, 'EUR', true)
-                                        : (value) => value.toLocaleString('fr-FR')
-                                }
-                            />
+                            <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 10 }} />
+                            <YAxis tick={{ fontSize: 10 }} tickFormatter={viewMode === 'valorisation' ? (value) => formatCurrency(value, 'EUR', true) : (value) => value.toLocaleString('fr-FR')} />
                             <Tooltip content={<CustomTooltip />} />
-                            <Bar
-                                dataKey={viewMode}
-                                fill="#1976d2"
-                                radius={[4, 4, 0, 0]}
-                            />
+                            <Bar dataKey={viewMode} fill="#1976d2" radius={[4, 4, 0, 0]} />
                         </BarChart>
                     </ResponsiveContainer>
                 </Paper>
@@ -322,7 +266,7 @@ export default function StockAdvancedModal({
 
             <DialogActions sx={{ px: 3, py: 2 }}>
                 <Button onClick={onClose} variant="outlined" startIcon={<Close />}>
-                    Fermer
+                    {t('common.close', 'Fermer')}
                 </Button>
             </DialogActions>
         </Dialog>

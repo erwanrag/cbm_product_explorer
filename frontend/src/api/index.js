@@ -1,12 +1,7 @@
-// ===================================
-// 📁 frontend/src/api/index.js - POINT D'ENTRÉE MODERNE
-// ===================================
+// frontend/src/api/index.js - POINT D'ENTRÉE API
 
-// Export de tous les services
-export * from '@/api/services';
+// Export clients
+export { apiClient, optimizedApiClient, BaseApiService } from './core';
 
-// Export du client principal
-export { default as apiClient } from '@/api/core/client';
-
-// Export des hooks React Query
-export * from '@/hooks';
+// Export services
+export * from './services';

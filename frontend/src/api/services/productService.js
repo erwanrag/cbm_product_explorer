@@ -1,52 +1,36 @@
-// ===================================
-// 📁 frontend/src/api/services/productService.js - REFACTORISÉ
-// ===================================
+// frontend/src/api/services/productService.js
 
-import BaseApiService from '@/api/core/BaseApiService';
+import { BaseApiService } from '@/api/core';
 
-export class ProductService extends BaseApiService {
-    constructor() {
-        super('/products');
-    }
+class ProductService extends BaseApiService {
+  constructor() {
+    super('/products', {
+      cacheTTL: 10 * 60 * 1000, // 10 minutes de cache
+      enableCache: true,
+    });
+  }
 
-    /**
-     * Détails de produits selon ProductDetailResponse
-     * @param {Object} filters - Filtres produit
-     * @returns {Promise<{products: Array}>}
-     */
-    async getDetails(filters = {}) {
-        const payload = this.buildPayload(filters);
-        return await this.post('details', payload);
-    }
+  // Méthodes avec cache automatique
+  async getAll(filters) {
+    return this.get('', filters, {
+      useCache: true, // Cache activé
+      cacheTTL: 10 * 60 * 1000,
+    });
+  }
 
-    /**
-     * Produit unique par cod_pro
-     * @param {number} codPro - Code produit
-     * @returns {Promise<Object>}
-     */
-    async getSingleDetail(codPro) {
-        return await this.get(`detail/${codPro}`);
-    }
+  // Méthode qui invalide le cache
+  async create(product) {
+    return this.post('', product, {
+      invalidateCache: ['/products'], // Invalide cache produits
+    });
+  }
 
-    /**
-     * Correspondances ref_crn/ref_ext
-     * @param {Object} filters - Filtres produit
-     * @returns {Promise<{matches: Array}>}
-     */
-    async getMatches(filters = {}) {
-        const payload = this.buildPayload(filters);
-        return await this.post('match', payload);
-    }
-
-    /**
-     * Matrice produits
-     * @param {Object} filters - Filtres produit
-     * @returns {Promise<Object>}
-     */
-    async getMatrix(filters = {}) {
-        const payload = this.buildPayload(filters);
-        return await this.post('matrix', payload);
-    }
+  // Forcer le refresh sans cache
+  async getAllFresh(filters) {
+    return this.get('', filters, {
+      forceRefresh: true, // Bypass le cache
+    });
+  }
 }
 
 export const productService = new ProductService();

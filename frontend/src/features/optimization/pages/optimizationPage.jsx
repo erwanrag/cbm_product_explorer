@@ -133,7 +133,7 @@ export default function OptimizationPage() {
                 )}
 
                 <OptimizationDetailPanel
-                    optimization={states.selectedItem}
+                    optimization={states.detailModal.data}
                     open={states.detailModal.isOpen}
                     onClose={states.detailModal.close}
                 />

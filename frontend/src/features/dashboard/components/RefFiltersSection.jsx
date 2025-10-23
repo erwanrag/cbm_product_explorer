@@ -1,24 +1,24 @@
 // ===================================
-// 📁 frontend/src/features/dashboard/components/RefFiltersSection.jsx - NOUVEAU
+// 📁 RefFiltersSection.jsx - AVEC TRADUCTIONS
 // ===================================
 
 import React, { useMemo } from 'react';
 import { Box, Paper, Grid, Typography } from '@mui/material';
 import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import { motion } from 'framer-motion';
+import { useTranslation } from '@/store/contexts/LanguageContext';
 
-// Composant RefCrnList
-function RefCrnList({ list = [], value, onChange }) {
+function RefCrnList({ list = [], value, onChange, t }) {
     return (
         <FormControl fullWidth size="small">
-            <InputLabel id="refcrn-label">Ref CRN</InputLabel>
+            <InputLabel id="refcrn-label">{t('dashboard.filters.ref_crn', 'Ref CRN')}</InputLabel>
             <Select
                 labelId="refcrn-label"
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
-                label="Ref CRN"
+                label={t('dashboard.filters.ref_crn', 'Ref CRN')}
             >
-                <MenuItem value="">Toutes ({list.length})</MenuItem>
+                <MenuItem value="">{t('dashboard.filters.all', 'Toutes')} ({list.length})</MenuItem>
                 {list.map((ref) => (
                     <MenuItem key={ref} value={ref}>
                         {ref}
@@ -29,18 +29,17 @@ function RefCrnList({ list = [], value, onChange }) {
     );
 }
 
-// Composant RefExtList
-function RefExtList({ list = [], value, onChange }) {
+function RefExtList({ list = [], value, onChange, t }) {
     return (
         <FormControl fullWidth size="small">
-            <InputLabel id="refext-label">Ref Ext</InputLabel>
+            <InputLabel id="refext-label">{t('dashboard.filters.ref_ext', 'Ref Ext')}</InputLabel>
             <Select
                 labelId="refext-label"
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
-                label="Ref Ext"
+                label={t('dashboard.filters.ref_ext', 'Ref Ext')}
             >
-                <MenuItem value="">Toutes ({list.length})</MenuItem>
+                <MenuItem value="">{t('dashboard.filters.all', 'Toutes')} ({list.length})</MenuItem>
                 {list.map((ref) => (
                     <MenuItem key={ref} value={ref}>
                         {ref}
@@ -51,7 +50,6 @@ function RefExtList({ list = [], value, onChange }) {
     );
 }
 
-// Composant principal
 export default function RefFiltersSection({
     data,
     selectedRefCrn,
@@ -59,14 +57,13 @@ export default function RefFiltersSection({
     onRefCrnChange,
     onRefExtChange
 }) {
+    const { t } = useTranslation();
+
     if (!data?.details || data.details.length === 0) return null;
 
-    // ✅ EXTRACTION DES LISTES REF_CRN ET REF_EXT
     const refCrnList = useMemo(() => {
-        // Extraire ref_crn depuis les matches si disponible
         const refCrnSet = new Set();
 
-        // Option 1: Depuis matches
         if (data.matches && data.matches.length > 0) {
             data.matches.forEach(match => {
                 if (match.ref_crn) {
@@ -75,7 +72,6 @@ export default function RefFiltersSection({
             });
         }
 
-        // Option 2: Fallback - essayer d'extraire depuis details si pas de matches
         if (refCrnSet.size === 0) {
             data.details.forEach(product => {
                 if (product.ref_crn) {
@@ -90,14 +86,12 @@ export default function RefFiltersSection({
     const refExtList = useMemo(() => {
         const refExtSet = new Set();
 
-        // Extraire ref_ext depuis details et matches
         data.details.forEach(product => {
             if (product.ref_ext) {
                 refExtSet.add(product.ref_ext);
             }
         });
 
-        // Ajouter depuis matches si disponible
         if (data.matches) {
             data.matches.forEach(match => {
                 if (match.ref_ext) {
@@ -109,12 +103,10 @@ export default function RefFiltersSection({
         return Array.from(refExtSet).sort();
     }, [data.details, data.matches]);
 
-    // ✅ STATS DE FILTRAGE
     const getFilteredCount = () => {
         let count = data.details.length;
 
         if (selectedRefCrn || selectedRefExt) {
-            // Compter les produits qui matchent les filtres
             count = data.details.filter(product => {
                 const matchRefCrn = !selectedRefCrn || (
                     data.matches?.some(match =>
@@ -137,52 +129,37 @@ export default function RefFiltersSection({
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.35 }}
         >
-            <Paper
-                elevation={1}
-                sx={{
-                    p: 2,
-                    mb: 3,
-                    bgcolor: '#f8f9fa',
-                    border: '1px solid #e0e0e0'
-                }}
-            >
+            <Paper elevation={1} sx={{ p: 2, mb: 3, bgcolor: '#f8f9fa', border: '1px solid #e0e0e0' }}>
                 <Typography variant="h6" sx={{ mb: 2, fontSize: '1rem', fontWeight: 600 }}>
-                    🔍 Filtres de Références
+                    🔍 {t('dashboard.filters.title', 'Filtres de Références')}
                 </Typography>
 
                 <Grid container spacing={3} alignItems="center">
-                    {/* Sélecteur Ref CRN */}
                     <Grid item xs={12} sm={4}>
                         <RefCrnList
                             list={refCrnList}
                             value={selectedRefCrn}
                             onChange={onRefCrnChange}
+                            t={t}
                         />
                     </Grid>
 
-                    {/* Sélecteur Ref Ext */}
                     <Grid item xs={12} sm={4}>
                         <RefExtList
                             list={refExtList}
                             value={selectedRefExt}
                             onChange={onRefExtChange}
+                            t={t}
                         />
                     </Grid>
 
-                    {/* Statistiques */}
                     <Grid item xs={12} sm={4}>
-                        <Box sx={{
-                            textAlign: 'center',
-                            p: 1,
-                            bgcolor: 'white',
-                            borderRadius: 1,
-                            border: '1px solid #e0e0e0'
-                        }}>
+                        <Box sx={{ textAlign: 'center', p: 1, bgcolor: 'white', borderRadius: 1, border: '1px solid #e0e0e0' }}>
                             <Typography variant="h6" sx={{ color: '#1976d2', fontWeight: 600 }}>
                                 {getFilteredCount()}
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
-                                produit(s) affiché(s)
+                                {t('dashboard.filters.products_displayed', 'produit(s) affiché(s)')}
                             </Typography>
 
                             {(selectedRefCrn || selectedRefExt) && (
@@ -195,13 +172,6 @@ export default function RefFiltersSection({
                         </Box>
                     </Grid>
                 </Grid>
-
-                {/* Debug info (à retirer en prod) */}
-                {process.env.NODE_ENV === 'development' && (
-                    <Box sx={{ mt: 2, p: 1, bgcolor: 'white', borderRadius: 1, fontSize: '0.75rem' }}>
-                        <strong>Debug:</strong> ref_crn: {refCrnList.length} • ref_ext: {refExtList.length} • matches: {data.matches?.length || 0}
-                    </Box>
-                )}
             </Paper>
         </motion.div>
     );

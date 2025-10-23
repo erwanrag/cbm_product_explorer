@@ -1,11 +1,7 @@
 // ===================================
-// 📁 frontend/src/shared/components/ui/index.js - CRÉER
+// 📁 frontend/src/shared/components/ui/index.js
 // ===================================
 
-export { default as LoadingSpinner } from '@/shared/components/ui/LoadingSpinner';
+// Core UI
 
-// Charts
-export { default as EnterpriseChart } from '@/shared/components/ui/Charts/EnterpriseChart';
-
-// Filters
-export { default as AdvancedFilterPanel } from '@/shared/components/ui/Filters/AdvancedFilterPanel';
+export { default as ErrorBoundary } from './ErrorBoundary';

@@ -1,18 +1,34 @@
 // ===================================
-// 📁 frontend/src/lib/colors.js - REMPLACER VOTRE EXISTANT
+// 📁 frontend/src/lib/colors.js - VERSION COMPLÈTE
 // ===================================
 
-// Import des constantes
+// Import des constantes et fonctions depuis constants/colors.js
 import {
   QUALITE_COLORS,
   STATUT_COLORS,
+  QUALITE_LABELS,
+  STATUT_LABELS,
   getQualiteColor,
   getStatutColor,
+  getQualiteLabel,
+  getStatutLabel,
   getMargeColor,
+  getMatchPercentColor,
 } from '@/constants/colors';
 
-// Ré-export pour compatibilité
-export { QUALITE_COLORS, STATUT_COLORS, getQualiteColor, getStatutColor, getMargeColor, getMatchPercentColor };
+// ✅ Ré-export COMPLET
+export {
+  QUALITE_COLORS,
+  STATUT_COLORS,
+  QUALITE_LABELS,
+  STATUT_LABELS,
+  getQualiteColor,
+  getStatutColor,
+  getQualiteLabel,
+  getStatutLabel,
+  getMargeColor,
+  getMatchPercentColor,
+};
 
 // Couleurs étendues pour graphiques
 export const CHART_COLORS = [
@@ -60,3 +76,34 @@ export function getPerformanceColor(value) {
   const hue = Math.max(0, Math.min(120, (value / 100) * 120));
   return `hsl(${hue}, 70%, 45%)`;
 }
+
+/**
+ * ✨ NOUVELLE : Label textuel pour la marge selon qualité
+ */
+export function getMargeLabel(marge, qualite) {
+  const color = getMargeColor(marge, qualite);
+  
+  if (color === '#43a047') return 'Bonne marge';     // Vert
+  if (color === '#f9a825') return 'Marge moyenne';   // Orange/Jaune
+  if (color === '#e53935') return 'Marge faible';    // Rouge
+  
+  return 'N/A';
+}
+
+// Export par défaut
+export default {
+  QUALITE_COLORS,
+  STATUT_COLORS,
+  QUALITE_LABELS,
+  STATUT_LABELS,
+  getQualiteColor,
+  getStatutColor,
+  getQualiteLabel,
+  getStatutLabel,
+  getMargeColor,
+  getMargeLabel,
+  getMatchPercentColor,
+  getChartColor,
+  getColorFromString,
+  getPerformanceColor,
+};

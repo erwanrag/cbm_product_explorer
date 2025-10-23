@@ -1,8 +1,13 @@
+// ===================================
+// 📁 DashboardPage.jsx - VERSION FINALE
+// ===================================
+
 import React, { useState, useMemo, useCallback } from 'react';
 import { Box, Typography, Alert } from '@mui/material';
 import { motion } from 'framer-motion';
 import { useLayout } from '@/store/hooks/useLayout';
 import { useDashboardData } from '@/features/dashboard/hooks/useDashboardData';
+import { useTranslation } from '@/store/contexts/LanguageContext';
 
 // Components
 import DashboardKPISection from '@/features/dashboard/components/DashboardKPISection';
@@ -14,7 +19,9 @@ import DashboardDetailPanel from '@/features/dashboard/components/DashboardDetai
 import StockAdvancedModal from '@/features/dashboard/components/StockAdvancedModal';
 
 export default function DashboardPage() {
-    // ✅ 1. TOUS LES HOOKS DANS L'ORDRE STRICT - NE JAMAIS CHANGER
+    const { t } = useTranslation();
+    
+    // ✅ 1. TOUS LES HOOKS DANS L'ORDRE STRICT
     const { filters } = useLayout();
     const { dashboardData, isLoading, isError } = useDashboardData(filters);
 
@@ -81,12 +88,35 @@ export default function DashboardPage() {
         return filtered;
     }, [dashboardData, selectedRefCrn, selectedRefExt]);
 
-    // ✅ 5. FONCTIONS DE RENDU (pas de hooks ici)
+    // ✅ CALCULER LES KPIs
+    const kpis = useMemo(() => {
+        if (!filteredData?.details || filteredData.details.length === 0) {
+            return {
+                totalProducts: 0,
+                totalRevenue: 0,
+                averageMargin: 0,
+                totalQuantity: 0,
+            };
+        }
+
+        const details = filteredData.details;
+        
+        return {
+            totalProducts: details.length,
+            totalRevenue: details.reduce((sum, p) => sum + (p.ca_total || 0), 0),
+            averageMargin: details.length > 0 
+                ? details.reduce((sum, p) => sum + (p.marge_percent_total || 0), 0) / details.length 
+                : 0,
+            totalQuantity: details.reduce((sum, p) => sum + (p.quantite_total || 0), 0),
+        };
+    }, [filteredData]);
+
+    // ✅ 5. FONCTIONS DE RENDU
     const renderContent = () => {
         if (isLoading) {
             return (
                 <Alert severity="info" sx={{ mb: 3 }}>
-                    Chargement des données...
+                    {t('common.loading', 'Chargement des données...')}
                 </Alert>
             );
         }
@@ -94,7 +124,7 @@ export default function DashboardPage() {
         if (isError) {
             return (
                 <Alert severity="error" sx={{ mb: 3 }}>
-                    Erreur lors du chargement des données. Veuillez réessayer.
+                    {t('dashboard.error.loading', 'Erreur lors du chargement des données. Veuillez réessayer.')}
                 </Alert>
             );
         }
@@ -102,14 +132,14 @@ export default function DashboardPage() {
         if (!hasData) {
             return (
                 <Alert severity="info" sx={{ mb: 3 }}>
-                    Aucune donnée disponible pour les filtres sélectionnés.
+                    {t('dashboard.no_data', 'Aucune donnée disponible pour les filtres sélectionnés.')}
                 </Alert>
             );
         }
 
         return (
             <>
-                <DashboardKPISection data={filteredData} isLoading={isLoading} />
+                <DashboardKPISection kpis={kpis} loading={isLoading} />
                 
                 <RefFiltersSection
                     selectedRefCrn={selectedRefCrn}
@@ -136,6 +166,7 @@ export default function DashboardPage() {
                     <DashboardDetailPanel
                         product={selectedProduct}
                         onClose={() => setSelectedProduct(null)}
+                        open={Boolean(selectedProduct)}
                         dashboardData={filteredData}
                     />
                 )}
@@ -160,10 +191,10 @@ export default function DashboardPage() {
             >
                 <Box sx={{ mb: 4 }}>
                     <Typography variant="h4" component="h1" gutterBottom>
-                        Tableau de Bord CBM
+                        {t('dashboard.title', 'Tableau de Bord CBM')}
                     </Typography>
                     <Typography variant="subtitle1" color="text.secondary">
-                        Vue d'ensemble des données produits, ventes et stocks
+                        {t('dashboard.subtitle', 'Vue d\'ensemble des données produits, ventes et stocks')}
                     </Typography>
                 </Box>
 

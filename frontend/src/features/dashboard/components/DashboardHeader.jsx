@@ -1,8 +1,12 @@
-// frontend/src/features/dashboard/components/DashboardHeader.jsx
+// ===================================
+// 📁 DashboardHeader.jsx - AVEC TRADUCTIONS
+// ===================================
+
 import React from 'react';
 import { Box, Typography, Chip, IconButton, Tooltip, Alert } from '@mui/material';
 import { Refresh, Download, FilterList, Close, OpenInNew } from '@mui/icons-material';
 import { motion } from 'framer-motion';
+import { useTranslation } from '@/store/contexts/LanguageContext';
 
 export default function DashboardHeader({
     data,
@@ -12,6 +16,8 @@ export default function DashboardHeader({
     selectedProduct,
     onClearSelection
 }) {
+    const { t } = useTranslation();
+
     return (
         <motion.div
             initial={{ opacity: 0, y: -10 }}
@@ -38,10 +44,10 @@ export default function DashboardHeader({
                         mb: 1,
                         color: selectedProduct ? '#1976d2' : 'primary.main'
                     }}>
-                        📊 Dashboard Produits CBM
+                        📊 {t('dashboard.title', 'Dashboard Produits CBM')}
                         {selectedProduct && (
                             <Chip
-                                label="FOCUS MODE"
+                                label={t('dashboard.header.focus_mode', 'FOCUS MODE')}
                                 color="primary"
                                 size="small"
                                 sx={{ ml: 2, fontWeight: 700 }}
@@ -51,17 +57,16 @@ export default function DashboardHeader({
 
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
                         <Typography variant="body1" color="text.secondary">
-                            {data?.details?.length || 0} produit(s) •
-                            CA total: {new Intl.NumberFormat('fr-FR', {
+                            {data?.details?.length || 0} {t('dashboard.header.products', 'produit(s)')} •
+                            {t('dashboard.header.total_revenue', 'CA total')}: {new Intl.NumberFormat('fr-FR', {
                                 style: 'currency',
                                 currency: 'EUR',
                                 minimumFractionDigits: 0,
                             }).format(data?.kpis?.totalRevenue || 0)} •
-                            Dernière MAJ: {new Date().toLocaleTimeString('fr-FR')}
+                            {t('dashboard.header.last_update', 'Dernière MAJ')}: {new Date().toLocaleTimeString('fr-FR')}
                         </Typography>
                     </Box>
 
-                    {/* Produit sélectionné */}
                     {selectedProduct && (
                         <Alert
                             severity="info"
@@ -73,18 +78,17 @@ export default function DashboardHeader({
                             }
                         >
                             <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                Focus sur: <strong>{selectedProduct.refint}</strong> - {selectedProduct.designation}
+                                {t('dashboard.header.focus_on', 'Focus sur')}: <strong>{selectedProduct.refint}</strong> - {selectedProduct.designation}
                                 <br />
-                                CA: <strong>{new Intl.NumberFormat('fr-FR', {
+                                {t('dashboard.header.revenue', 'CA')}: <strong>{new Intl.NumberFormat('fr-FR', {
                                     style: 'currency',
                                     currency: 'EUR',
                                 }).format(selectedProduct.ca_total || 0)}</strong> •
-                                Qualité: <strong>{selectedProduct.qualite}</strong>
+                                {t('dashboard.header.quality', 'Qualité')}: <strong>{selectedProduct.qualite}</strong>
                             </Typography>
                         </Alert>
                     )}
 
-                    {/* Filtres actifs */}
                     <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                         {Object.entries(filters).map(([key, value]) => (
                             <Chip
@@ -100,7 +104,7 @@ export default function DashboardHeader({
                 </Box>
 
                 <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Tooltip title="Actualiser les données">
+                    <Tooltip title={t('dashboard.header.refresh', 'Actualiser les données')}>
                         <IconButton
                             onClick={onRefresh}
                             disabled={loading}
@@ -112,13 +116,13 @@ export default function DashboardHeader({
                             <Refresh />
                         </IconButton>
                     </Tooltip>
-                    <Tooltip title="Exporter vers Excel">
+                    <Tooltip title={t('dashboard.header.export', 'Exporter vers Excel')}>
                         <IconButton color="primary">
                             <Download />
                         </IconButton>
                     </Tooltip>
                     {selectedProduct && (
-                        <Tooltip title="Ouvrir dans Matrix">
+                        <Tooltip title={t('dashboard.header.open_matrix', 'Ouvrir dans Matrix')}>
                             <IconButton color="secondary">
                                 <OpenInNew />
                             </IconButton>

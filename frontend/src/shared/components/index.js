@@ -1,31 +1,34 @@
 // ===================================
-// 📁 frontend/src/shared/components/index.js - INDEX PRINCIPAL
+// 📁 frontend/src/shared/components/index.js - VERSION FINALE PROPRE
 // ===================================
 
-// Layout Components
-export * from '@/shared/components/layout';
+// Layout
+export { default as Layout } from './layout/Layout';
 
-// UI Components
-export * from '@/shared/components/badges';
-export * from '@/shared/components/buttons';
-export * from '@/shared/components/cards';
-export * from '@/shared/components/inputs';
-export * from '@/shared/components/tables';
+// Cards
+export { default as KPICard } from './cards/KPICard';
+export * from './cards';
 
-// Specialized Components
-export * from '@/shared/components/error';
-export * from '@/shared/components/export';
-export * from '@/shared/components/filters';
-export * from '@/shared/components/page';
-export * from '@/shared/components/skeleton';
-export * from '@/shared/components/ui';
+// Export
+export { default as ExportExcelButton } from './export/ExportExcelButton';
+export * from './export';
 
-// Default exports for common components
-export { default as Layout } from '@/shared/components/layout/Layout';
-export { default as ErrorBoundary } from '@/shared/components/error/ErrorBoundary';
-export { default as CBMButton } from '@/shared/components/buttons/CBMButton';
-export { default as CBMCard } from '@/shared/components/cards/CBMCard';
-export { default as PageTitle } from '@/shared/components/page/PageTitle';
-export { default as PageWrapper } from '@/shared/components/page/PageWrapper';
-export { default as LoadingSpinner } from '@/shared/components/ui/LoadingSpinner';
-export { default as ExportExcelButton } from '@/shared/components/export/ExportExcelButton';
+// Filters
+export { default as FilterPanel } from './filters/FilterPanel';
+export * from './filters';
+
+// Tables
+export { DataTable } from './tables/DataTable';
+
+// Error
+export { default as ErrorBoundary } from './ui/ErrorBoundary';
+
+// Page
+export { default as PageTitle } from './page/PageTitle';
+
+// Badges
+export * from './badges';
+
+// Inputs
+export * from './inputs';
+

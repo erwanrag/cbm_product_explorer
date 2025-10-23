@@ -1,6 +1,6 @@
-// frontend/src/hooks/useDebounce.js - GARDER ET AMÉLIORER
+// frontend/src/hooks/useDebounce.js - VERSION COMPLÈTE OPTIMISÉE
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { config } from '@/config/environment';
 
 /**
@@ -26,35 +26,115 @@ export function useDebounce(value, delay = config.performance.debounceDelay) {
 }
 
 /**
- * Hook de debounce pour callbacks
+ * Hook de debounce pour callbacks - VERSION AMÉLIORÉE
  * @param {Function} callback - Fonction à debouncer
  * @param {number} delay - Délai en ms
  * @returns {Function} Callback debouncé
  */
 export function useDebouncedCallback(callback, delay = config.performance.debounceDelay) {
-  const [timeoutId, setTimeoutId] = useState(null);
+  const timeoutRef = useRef(null);
+  const callbackRef = useRef(callback);
 
-  const debouncedCallback = (...args) => {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
+  // Garder la ref à jour
+  useEffect(() => {
+    callbackRef.current = callback;
+  }, [callback]);
 
-    const newTimeoutId = setTimeout(() => {
-      callback(...args);
-    }, delay);
-
-    setTimeoutId(newTimeoutId);
-  };
-
+  // Cleanup au démontage
   useEffect(() => {
     return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
       }
     };
-  }, [timeoutId]);
+  }, []);
 
-  return debouncedCallback;
+  return useCallback((...args) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    timeoutRef.current = setTimeout(() => {
+      callbackRef.current(...args);
+    }, delay);
+  }, [delay]);
+}
+
+/**
+ * ✨ NOUVEAU: Hook de recherche avec debounce optimisé
+ * Évite les requêtes API inutiles lors de la saisie
+ * 
+ * @param {string} initialValue - Valeur initiale
+ * @param {number} delay - Délai en ms
+ * @returns {Object} { searchTerm, setSearchTerm, debouncedValue, isSearching, clearSearch }
+ */
+export function useSearchDebounce(initialValue = '', delay = config.performance.debounceDelay) {
+  const [searchTerm, setSearchTerm] = useState(initialValue);
+  const [debouncedValue, setDebouncedValue] = useState(initialValue);
+  const [isSearching, setIsSearching] = useState(false);
+
+  useEffect(() => {
+    // Indiquer qu'on est en train de chercher
+    if (searchTerm !== debouncedValue) {
+      setIsSearching(true);
+    }
+
+    const handler = setTimeout(() => {
+      setDebouncedValue(searchTerm);
+      setIsSearching(false);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+      setIsSearching(false);
+    };
+  }, [searchTerm, delay, debouncedValue]);
+
+  const clearSearch = useCallback(() => {
+    setSearchTerm('');
+    setDebouncedValue('');
+    setIsSearching(false);
+  }, []);
+
+  return {
+    searchTerm,        // Valeur actuelle du champ
+    setSearchTerm,     // Setter pour le champ
+    debouncedValue,    // Valeur debouncée (pour API)
+    isSearching,       // true pendant le debounce
+    clearSearch,       // Fonction pour reset
+  };
+}
+
+/**
+ * ✨ NOUVEAU: Hook de debounce avec état de chargement
+ * Utile pour afficher un loader pendant le debounce
+ * 
+ * @param {any} value - Valeur à debouncer
+ * @param {number} delay - Délai en ms
+ * @returns {Object} { debouncedValue, isPending }
+ */
+export function useDebounceWithStatus(value, delay = config.performance.debounceDelay) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+  const [isPending, setIsPending] = useState(false);
+
+  useEffect(() => {
+    setIsPending(true);
+
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+      setIsPending(false);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+      setIsPending(false);
+    };
+  }, [value, delay]);
+
+  return {
+    debouncedValue,
+    isPending,
+  };
 }
 
 export default useDebounce;

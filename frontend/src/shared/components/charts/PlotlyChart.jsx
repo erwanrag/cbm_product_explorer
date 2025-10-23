@@ -1,15 +1,10 @@
-// ===================================
-// 📁 shared/components/charts/PlotlyChart.jsx
-// Wrapper Plotly mutualisé avec configs prédéfinies
-// ===================================
-
 import React, { useMemo } from 'react';
 import Plot from 'react-plotly.js';
-import { useTheme } from '@mui/material';
+import { Box, CircularProgress, Typography, useTheme } from '@mui/material';
 import { useTranslation } from '@/store/contexts/LanguageContext';
 
 export const PlotlyChart = ({
-    type = 'bar', // 'bar', 'line', 'pie', 'scatter', 'heatmap'
+    type = 'bar',
     data,
     title,
     height = 400,
@@ -86,7 +81,9 @@ export const PlotlyChart = ({
     if (error) {
         return (
             <Box sx={{ height, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Typography color="error">{t('charts.error')}</Typography>
+                <Typography color="error">
+                    {t('common.error', 'Erreur')}
+                </Typography>
             </Box>
         );
     }
@@ -94,7 +91,9 @@ export const PlotlyChart = ({
     if (!data || data.length === 0) {
         return (
             <Box sx={{ height, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Typography color="text.secondary">{t('charts.noData')}</Typography>
+                <Typography color="text.secondary">
+                    {t('common.no_data', 'Aucune donnée')}
+                </Typography>
             </Box>
         );
     }
@@ -109,3 +108,5 @@ export const PlotlyChart = ({
         />
     );
 };
+
+export default PlotlyChart;

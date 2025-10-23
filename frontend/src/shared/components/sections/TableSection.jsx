@@ -1,33 +1,28 @@
-// ===================================
-// 📁 frontend/src/shared/components/sections/TableSection.jsx  
-// ===================================
-
 import React from 'react';
 import { Box, Typography, Paper, Alert } from '@mui/material';
 import { motion } from 'framer-motion';
+import { useTranslation } from '@/store/contexts/LanguageContext';
 
-/**
- * Section pour afficher une table de manière standardisée
- * Wrapper générique pour vos *TableSection existants
- */
 export default function TableSection({
     title = "📋 Tableau",
     subtitle,
-    table, // Votre composant table existant (DashboardTableSection, etc.)
+    table,
     isLoading = false,
     error = null,
     actions,
     containerSx = {}
 }) {
+    const { t } = useTranslation();
+
     if (error) {
         return (
             <Paper sx={{ p: 3, mb: 4 }}>
                 <Alert severity="error">
                     <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                        Erreur lors du chargement du tableau
+                        {t('common.table_error', 'Erreur lors du chargement du tableau')}
                     </Typography>
                     <Typography variant="body2">
-                        {error.message || 'Une erreur est survenue'}
+                        {error.message || t('common.error', 'Une erreur est survenue')}
                     </Typography>
                 </Alert>
             </Paper>

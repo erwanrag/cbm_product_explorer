@@ -20,6 +20,7 @@ import { toast } from 'react-toastify';
 import ProjectionQualityIndicator from './indicators/ProjectionQualityIndicator';
 
 const OptimizationDetailPanel = ({ optimization, onClose, optimizationData }) => {
+    if (!optimization) return null;
     const [activeTab, setActiveTab] = useState(0);
     const [expandedSection, setExpandedSection] = useState('historique');
     const [selectedMetric, setSelectedMetric] = useState('marge');

@@ -1,29 +1,25 @@
+import { BaseApiService } from '@/api/core';
 
-// ===================================
-// 📁 frontend/src/api/services/dashboardService.js 
-// ===================================
+class DashboardService extends BaseApiService {
+  constructor() {
+    super('/dashboard', {
+      cacheTTL: 2 * 60 * 1000,  // ✨ AJOUTER : Cache de 2 minutes
+      enableCache: true,         // ✨ AJOUTER : Activer le cache
+    });
+  }
 
-import BaseApiService from '@/api/core/BaseApiService';
+  async getFiche(filters) {
+    const payload = this.buildPayload(filters);
+    
+    // Le cache est maintenant actif automatiquement !
+    return this.post('fiche', payload, {
+      useCache: true,              // ✨ OPTIONNEL : utiliser le cache
+      cacheTTL: 2 * 60 * 1000,    // ✨ OPTIONNEL : TTL spécifique
+    });
+  }
 
-export class DashboardService extends BaseApiService {
-    constructor() {
-        super('/dashboard');
-    }
-
-    /**
-     * Récupère la fiche dashboard
-     * @param {Object} filters - Filtres de recherche
-     * @returns {Promise<Object>}
-     */
-    async getFiche(filters = {}) {
-        const payload = this.buildPayload(filters);
-        //console.log('🚀 Dashboard API call with filters:', payload);
-
-        const data = await this.post('fiche', payload);
-        //console.log('✅ Dashboard response:', data);
-
-        return data;
-    }
+  // Reste du code inchangé...
 }
 
 export const dashboardService = new DashboardService();
+export default DashboardService;

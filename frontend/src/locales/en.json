@@ -1,11 +1,15 @@
 {
   "app": {
     "title": "CBM Product Explorer",
-    "subtitle": "Product Analysis and Matching System"
+    "subtitle": "Product Analysis and Matching System",
+    "version": "2.0.0"
   },
   "common": {
     "loading": "Loading...",
     "error": "Error",
+    "success": "Success",
+    "warning": "Warning",
+    "info": "Information",
     "no_data": "No data available",
     "search": "Search",
     "filter": "Filter",
@@ -22,7 +26,31 @@
     "refresh": "Refresh",
     "reset": "Reset",
     "apply": "Apply",
-    "clear": "Clear"
+    "clear": "Clear",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "all": "All",
+    "none": "None",
+    "select": "Select",
+    "selected": "Selected",
+    "total": "Total",
+    "average": "Average",
+    "sum": "Sum",
+    "count": "Count",
+    "min": "Minimum",
+    "max": "Maximum",
+    "yes": "Yes",
+    "no": "No",
+    "ok": "OK",
+    "help": "Help",
+    "settings": "Settings",
+    "logout": "Logout",
+    "login": "Login",
+    "not_defined": "Not defined",
+    "table_error": "Error loading table",
+    "rows_per_page": "Rows per page:",
+    "of": "of"
   },
   "navigation": {
     "dashboard": "Dashboard",
@@ -31,41 +59,108 @@
     "settings": "Settings",
     "help": "Help"
   },
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "dashboard_desc": "Overview and KPIs",
+    "matrix": "Matrix",
+    "matrix_desc": "Correspondence analysis",
+    "optimization": "Optimization",
+    "optimization_desc": "Optimization tools",
+    "settings": "Settings",
+    "help": "Help"
+  },
+  "filters": {
+    "title": "Search Filters",
+    "cod_pro": "Product Code",
+    "ref_crn": "Manufacturer Reference",
+    "ref_ext": "External Reference",
+    "refint": "Internal Reference",
+    "qualite": "Quality",
+    "grouping": "Group by",
+    "use_grouping": "Enable grouping (grouping_crn)",
+    "apply": "Apply Filters",
+    "reset": "Reset",
+    "clear_all": "Clear All",
+    "save_preset": "Save Filter Preset",
+    "load_preset": "Load Preset",
+    "active_filters": "Active Filters",
+    "no_active_filters": "No active filters",
+    "preset_saved": "Filter preset saved",
+    "preset_loaded": "Filter preset loaded"
+  },
   "dashboard": {
     "title": "Product Dashboard",
     "subtitle": "Overview of products and KPIs",
     "loading": "Loading dashboard...",
     "no_data": "No product data available for the selected filters.",
-    "error": {
-      "title": "Error loading dashboard",
-      "message": "Unable to load product data"
-    },
+    "error_title": "Error loading dashboard",
+    "error_message": "Unable to load product data",
+    "refresh": "Refresh Data",
+    "export": "Export Dashboard",
     "kpis": {
       "total_products": "Total Products",
       "total_revenue": "Total Revenue",
       "total_stock": "Total Stock",
-      "avg_price": "Average Price"
+      "avg_price": "Average Price",
+      "total_margin": "Total Margin",
+      "avg_margin": "Average Margin",
+      "turnover_rate": "Turnover Rate",
+      "stock_value": "Stock Value"
     },
     "charts": {
       "sales_history": "Sales History",
       "stock_evolution": "Stock Evolution",
-      "revenue_by_quality": "Revenue by Quality"
+      "revenue_by_quality": "Revenue by Quality",
+      "top_products": "Top Products",
+      "margin_analysis": "Margin Analysis",
+      "monthly_trend": "Monthly Trend"
     },
-    "filters": {
-      "cod_pro": "Product Code",
-      "ref_crn": "Manufacturer Reference",
-      "ref_ext": "External Reference",
-      "qualite": "Quality",
-      "grouping": "Group by"
+    "filters_section": {
+      "title": "Reference Filters",
+      "ref_crn_label": "Manufacturer Reference",
+      "ref_ext_label": "External Reference",
+      "select_ref_crn": "Select a manufacturer reference",
+      "select_ref_ext": "Select an external reference",
+      "no_ref_crn": "No manufacturer references available",
+      "no_ref_ext": "No external references available"
     },
     "table": {
+      "title": "Product Details",
       "cod_pro": "Product Code",
       "ref_crn": "Manufacturer Ref",
       "ref_ext": "External Ref",
+      "refint": "Internal Ref",
       "qualite": "Quality",
       "stock": "Stock",
       "price": "Price",
-      "revenue": "Revenue"
+      "revenue": "Revenue",
+      "margin": "Margin",
+      "quantity": "Quantity",
+      "designation": "Designation",
+      "family": "Family",
+      "supplier": "Supplier",
+      "status": "Status",
+      "actions": "Actions",
+      "view_details": "View Details",
+      "no_products": "No products found",
+      "rows_per_page": "Rows per page",
+      "of": "of"
+    },
+    "detail_panel": {
+      "title": "Product Details",
+      "general_info": "General Information",
+      "sales_info": "Sales Information",
+      "stock_info": "Stock Information",
+      "purchase_info": "Purchase Information",
+      "history": "History",
+      "close": "Close"
+    },
+    "stock_modal": {
+      "title": "Advanced Stock Analysis",
+      "by_depot": "Stock by Depot",
+      "evolution": "Stock Evolution",
+      "alerts": "Stock Alerts",
+      "close": "Close"
     }
   },
   "matrix": {
@@ -73,23 +168,47 @@
     "subtitle": "Product correspondence matrix",
     "loading": "Loading matrix...",
     "no_data": "No matrix data available.",
-    "error": {
-      "title": "Error loading matrix",
-      "message": "Unable to load correspondence data"
-    },
+    "error_title": "Error loading matrix",
+    "error_message": "Unable to load correspondence data",
+    "refresh": "Refresh Matrix",
+    "export": "Export Matrix",
+    "no_results": "No results for your search",
+    "use_filters": "Use filters to load data",
+    "legend_title": "📍 Correspondence Legend:",
     "legend": {
-      "title": "Legend",
+      "title": "Quality Legend",
       "oem": "OEM - Original Equipment Manufacturer",
       "pmq": "PMQ - Premium Aftermarket",
       "pmv": "PMV - Standard Aftermarket",
-      "oe": "OE - Original Equipment"
+      "oe": "OE - Original Equipment",
+      "double": "Double correspondence (CRN + EXT)",
+      "crn_only": "CRN correspondence only",
+      "ext_only": "EXT correspondence only",
+      "no_match": "No correspondence"
     },
     "filters": {
       "quality": "Filter by quality",
-      "group": "Filter by group"
+      "group": "Filter by group",
+      "all_qualities": "All Qualities"
     },
-    "export": {
-      "button": "Export Matrix",
+    "table": {
+      "products": "Products",
+      "references": "References",
+      "correspondences": "Correspondences",
+      "match_rate": "Match Rate",
+      "no_matches": "No correspondences found"
+    },
+    "insights": {
+      "title": "Matrix Insights",
+      "total_products": "Total Products",
+      "total_columns": "Total Columns",
+      "total_correspondences": "Total Correspondences",
+      "coverage_rate": "Coverage Rate"
+    },
+    "export_options": {
+      "csv": "Export as CSV",
+      "json": "Export as JSON",
+      "html": "Export as HTML",
       "filename": "matrix_export"
     }
   },
@@ -98,219 +217,167 @@
     "subtitle": "Analysis of potential savings through range rationalization",
     "loading": "Loading optimization analysis...",
     "no_data": "No optimization data available for the selected filters.",
-    "error": {
-      "title": "Error loading optimization data",
-      "message": "Unable to load optimization analysis"
-    },
+    "error_title": "Error loading optimization",
+    "error_message": "Unable to load optimization data",
+    "refresh": "Refresh Analysis",
+    "export": "Export Analysis",
     "kpis": {
       "total_groups": "Total Groups",
-      "total_gain": "Total Potential Gain",
-      "gain_6m": "6-Month Gain",
-      "avg_growth": "Average Growth Rate"
+      "total_immediate_gain": "Total Immediate Gain",
+      "total_6m_gain": "Total 6-Month Gain",
+      "total_refs": "Total References",
+      "avg_growth_rate": "Average Growth Rate"
     },
-    "summary": {
-      "title": "Optimization Summary",
-      "total_gain": "Total Immediate Gain",
-      "gain_6m": "Total 6M Gain",
-      "groups": "{{count}} groups analyzed",
-      "refs_to_keep": "{{count}} references to keep",
-      "refs_to_remove": "{{count}} references to remove"
-    },
-    "charts": {
-      "gain_by_group": "Potential Gain by Group (Top 15)",
-      "refs_kept_vs_total": "📦 References Kept vs Total",
-      "margin_comparison": "💰 Current vs Optimized Margin (6M)",
-      "temporal_evolution": "📈 Timeline Evolution - History + Projections",
-      "gain_distribution": "Gain Distribution by Quality",
-      "quality_stats": "Statistics by Quality"
+    "filters": {
+      "quality": "Filter by quality",
+      "min_gain": "Minimum Gain",
+      "min_refs": "Minimum References",
+      "all_qualities": "All Qualities"
     },
     "table": {
-      "group": "Group",
-      "quality": "Quality",
-      "total_refs": "Total Refs",
-      "kept_refs": "Kept",
+      "grouping_crn": "CRN Group",
+      "qualite": "Quality",
+      "refs_total": "Total Refs",
+      "refs_to_keep": "Refs to Keep",
+      "refs_to_delete": "Refs to Delete",
       "immediate_gain": "Immediate Gain",
-      "gain_6m": "6M Gain",
-      "current_margin_6m": "Current 6M Margin",
-      "optimized_margin_6m": "Optimized 6M Margin",
+      "gain_6m": "6-Month Gain",
       "growth_rate": "Growth Rate",
       "actions": "Actions",
-      "view_details": "Details",
-      "simulate": "Simulate"
+      "view_details": "View Details",
+      "simulate": "Simulate",
+      "no_optimizations": "No optimization opportunities found"
     },
-    "detail": {
-      "title": "Group {{group}} Optimization",
-      "subtitle": "Quality {{quality}} • {{refs}} references",
-      "immediate_gain": "Immediate gain",
-      "growth": "Growth",
-      "projection_reliability": "Projection reliability",
-      "tabs": {
-        "overview": "Overview",
-        "references": "References",
-        "timeline": "Timeline",
-        "simulation": "Simulation"
-      },
-      "economic_metrics": "💰 Economic Metrics",
-      "min_purchase_price": "Min purchase price:",
-      "weighted_sale_price": "Weighted sale price:",
-      "immediate_gain_label": "Immediate gain:",
-      "gain_6m_label": "6-month gain:",
-      "current_margin_6m_label": "Current 6M margin:",
-      "optimized_margin_6m_label": "Optimized 6M margin:",
-      "projection_quality": "🎯 Projection Quality",
-      "score": "Score: {{score}}%",
-      "data_points": "{{count}} data points",
-      "warnings": "Warnings:",
-      "recommendations": "💡 Recommendations:",
-      "refs_distribution": "📦 References Distribution",
-      "to_keep": "✅ To Keep ({{count}})",
-      "low_sales": "⚠️ Low Sales ({{count}})",
-      "no_sales": "❌ No Sales ({{count}})",
-      "dead_stock": "Dead stock",
-      "refs_detail": "📋 References Detail",
-      "to_keep_refs": "✅ References to keep ({{count}})",
-      "low_sales_refs": "⚠️ Low sales references ({{count}})",
-      "no_sales_refs": "❌ No sales references ({{count}})",
-      "internal_ref": "Internal Ref",
-      "purchase_price": "Purchase Price",
-      "revenue": "Revenue",
-      "quantity": "Quantity",
-      "potential_gain": "Potential Gain",
-      "status": "Status",
-      "no_keep_refs": "No references to keep",
-      "no_low_sales_refs": "No low sales references",
-      "no_no_sales_refs": "No references without sales",
-      "timeline_evolution": "📈 Timeline Evolution",
-      "quantities": "Quantities",
-      "margins": "Margins",
-      "historical_margin": "Historical Margin",
-      "projected_current_margin": "Projected Current Margin",
-      "projected_optimized_margin": "Projected Optimized Margin",
-      "projection_info": "📊 Projection information:",
-      "method": "Method",
-      "confidence": "Confidence",
-      "trend": "Trend",
-      "units_per_month": "units/month",
-      "detailed_data": "📋 Detailed Data",
-      "period": "Period",
-      "optimized_margin": "Opt. Margin",
-      "type": "Type",
-      "historical": "historical",
-      "projection": "projection",
-      "simulation": "🎮 Optimization Simulation",
-      "rationalization_scenario": "Rationalization Scenario",
-      "current_situation": "📊 Current Situation",
-      "total_references": "Total references:",
-      "current_6m_margin": "Current 6M margin:",
-      "management_cost": "Management cost:",
+    "detail_panel": {
+      "title": "Optimization Details",
+      "group": "Group",
+      "current_situation": "Current Situation",
+      "after_optimization": "After Optimization",
+      "total_refs": "Total References",
+      "current_margin_6m": "Current 6-Month Margin",
+      "management_cost": "Management Cost",
       "high_dispersed": "High (dispersed)",
-      "after_optimization": "🎯 After Optimization",
-      "kept_references": "References kept:",
-      "optimized_6m_margin": "Optimized 6M margin:",
-      "reduced_focused": "Reduced (focused)",
-      "financial_impact": "💰 Financial Impact",
-      "projected_gain_6m": "Projected 6M gain",
-      "margin_improvement": "Margin improvement",
-      "recommended_actions": "🎯 Recommended Actions:",
-      "keep_main_refs": "Keep {{count}} main references",
-      "evaluate_low_sales": "Evaluate {{count}} low sales references",
-      "remove_no_sales": "Remove {{count}} references without sales",
+      "refs_to_keep": "References to Keep",
+      "projected_margin_6m": "Projected 6-Month Margin",
+      "management_cost_optimized": "Optimized Management Cost",
+      "low_focused": "Low (focused)",
+      "key_actions": "Key Actions",
+      "keep_refs": "Keep {{count}} high-performing references",
+      "delete_refs": "Remove {{count}} references without sales",
+      "immediate_gain": "Immediate Gain",
+      "additional_gain_6m": "Additional 6-Month Gain",
+      "cost_reduction": "Management Cost Reduction",
+      "projection_reliability": "Projection Reliability",
+      "reliability_excellent": "Excellent - Very reliable model",
+      "reliability_good": "Good - Reliable model",
+      "reliability_fair": "Fair - Basic model",
+      "reliability_basic": "Basic - Simple projection",
+      "reliability_poor": "Poor - Unreliable model",
+      "reliability_na": "N/A - No projection available",
+      "technical_details": "Technical Details",
+      "data_points": "{{count}} data points",
+      "confidence": "Confidence: {{level}}",
+      "warnings": "Attention Points:",
+      "recommendations": "Recommendations:",
       "actions": {
         "export_csv": "Export CSV",
         "close": "Close",
-        "simulate_optimization": "Simulate this Optimization"
+        "simulate": "Simulate this Optimization"
       }
     },
-    "projection": {
-      "quality": {
-        "title": "Projection Quality",
-        "excellent": "Excellent",
-        "good": "Good",
-        "fair": "Fair",
-        "basic": "Basic",
-        "poor": "Poor",
-        "unknown": "Unknown",
-        "excellent_desc": "Very reliable model with rich history",
-        "good_desc": "Reliable model with sufficient data",
-        "fair_desc": "Basic model, limited data",
-        "basic_desc": "Simple projection without advanced modeling",
-        "poor_desc": "Unreliable model, insufficient data",
-        "na": "N/A",
-        "available": "Projection available",
-        "reliability_score": "Reliability Score",
-        "technical_details": "Technical Details",
-        "data_points": "{{count}} data points",
-        "confidence": "Confidence: {{level}}",
-        "warnings_title": "Attention points:",
-        "recommendations_title": "💡 Recommendations:",
-        "debug_info": "Debug: {{timestamp}}",
-        "validator_ok": "Validator OK",
-        "validator_missing": "Validator missing"
-      },
-      "methods": {
-        "linear_regression": "Linear Regression",
-        "seasonal_decomposition": "Seasonal Decomposition",
-        "moving_average": "Moving Average",
-        "exponential_smoothing": "Exponential Smoothing",
-        "linear_fallback": "Simple Linear",
-        "empty_forced": "No Sales",
-        "constant_fallback": "Constant",
-        "unknown": "Unknown Method",
-        "linear_regression_desc": "Projection based on linear trend",
-        "seasonal_decomposition_desc": "Projection accounting for seasonality",
-        "moving_average_desc": "Projection based on moving average",
-        "exponential_smoothing_desc": "Projection with exponential smoothing",
-        "linear_fallback_desc": "Basic linear projection (fallback)",
-        "empty_forced_desc": "No sales detected",
-        "constant_fallback_desc": "Constant projection based on 1 point",
-        "unknown_desc": "Unspecified projection method"
-      }
+    "simulation_modal": {
+      "title": "Optimization Simulation",
+      "scenario": "Simulation Scenario",
+      "impact": "Expected Impact",
+      "timeline": "Implementation Timeline",
+      "risks": "Identified Risks",
+      "close": "Close",
+      "apply": "Apply Optimization"
+    },
+    "charts": {
+      "gains_by_quality": "Gains by Quality",
+      "refs_distribution": "References Distribution",
+      "growth_analysis": "Growth Analysis"
     }
   },
   "settings": {
     "title": "Settings",
     "subtitle": "Configure application preferences",
+    "saved": "Settings saved successfully",
+    "reset": "Settings reset to defaults",
     "sections": {
       "ui": "User Interface",
       "performance": "Performance",
       "display": "Display",
       "api": "API",
-      "system": "System"
+      "system": "System",
+      "language": "Language & Region",
+      "export": "Export Options"
     },
     "ui": {
       "theme": "Theme",
+      "theme_light": "Light",
+      "theme_dark": "Dark",
+      "theme_auto": "Auto (system)",
       "language": "Language",
+      "language_french": "French",
+      "language_english": "English",
       "animations": "Animations",
-      "compact_mode": "Compact Mode"
+      "animations_enabled": "Enable animations",
+      "animations_disabled": "Disable animations",
+      "compact_mode": "Compact Mode",
+      "compact_mode_enabled": "Enable compact mode",
+      "compact_mode_disabled": "Disable compact mode"
+    },
+    "display": {
+      "show_kpi_cards": "Show KPI cards on dashboard",
+      "show_charts": "Show charts",
+      "default_view": "Default View",
+      "default_view_table": "Table",
+      "default_view_cards": "Cards",
+      "default_view_charts": "Charts",
+      "export_format": "Default Export Format",
+      "export_format_csv": "CSV",
+      "export_format_json": "JSON",
+      "export_format_html": "HTML",
+      "rows_per_page": "Rows per Page",
+      "date_format": "Date Format"
     },
     "performance": {
-      "cache_timeout": "Cache Timeout",
-      "request_timeout": "Request Timeout",
-      "page_size": "Page Size"
+      "cache_timeout": "Cache Timeout (seconds)",
+      "request_timeout": "Request Timeout (seconds)",
+      "page_size": "Page Size",
+      "enable_pagination": "Enable Pagination",
+      "lazy_loading": "Enable Lazy Loading"
+    },
+    "api": {
+      "base_url": "API Base URL",
+      "timeout": "Timeout (ms)",
+      "retry_attempts": "Retry Attempts",
+      "enable_cache": "Enable API Cache"
     },
     "actions": {
       "save": "Save Settings",
       "reset": "Reset to Defaults",
       "export": "Export Settings",
-      "import": "Import Settings"
+      "import": "Import Settings",
+      "cancel": "Cancel"
     }
   },
   "help": {
     "title": "Help & Documentation",
     "subtitle": "Complete guide to using CBM Product Explorer",
     "purpose": {
-      "title": "🧭 What is CBM Product Explorer for?",
+      "title": "🧭 What is CBM Product Explorer?",
       "text": "CBM Product Explorer is a product analysis and matching tool based on various keys (manufacturer, internal and external references). It allows grouping, filtering and comparing products by quality, CRN group, and sales or stock history."
     },
     "features": {
       "title": "📌 Main Features",
-      "list": [
-        "🔎 Search by cod_pro, ref_crn, refint, ref_ext",
-        "🧩 Smart grouping via grouping_crn",
-        "📊 Full dashboard: KPIs, stock, history, turnover",
-        "📥 Excel export, combined filters",
-        "⚡ Fast resolution using Grouping_crn_table (no more slow stored procedures)"
-      ]
+      "search": "🔎 Search by cod_pro, ref_crn, refint, ref_ext",
+      "grouping": "🧩 Smart grouping via grouping_crn",
+      "dashboard": "📊 Full dashboard: KPIs, stock, history, turnover",
+      "export": "📥 Excel export, combined filters",
+      "performance": "⚡ Fast resolution using Grouping_crn_table"
     },
     "filters": {
       "title": "🧪 Available Filters",
@@ -323,10 +390,116 @@
     },
     "grouping": {
       "title": "🧩 Understanding grouping_crn",
-      "text1": "The grouping_crn field is a logical key that links multiple CBM products (cod_pro) together, even if they don't directly share the same ref_crn, as long as they are connected via transitive links.",
-      "text2": "Example: product A is linked to ref_crn X, product B to X and Y, and product C to Y → A, B and C are grouped under the same grouping_crn.",
-      "text3": "This grouping is automatically computed from Bridge_cod_pro_ref_crn and propagated into Grouping_crn_table (with quality, refint, and ref_ext included)."
+      "description": "The grouping_crn field is a logical key that links multiple CBM products (cod_pro) together, even if they don't directly share the same ref_crn, as long as they are connected via transitive links.",
+      "example": "Example: product A is linked to ref_crn X, product B to X and Y, and product C to Y → A, B and C are grouped under the same grouping_crn.",
+      "calculation": "This grouping is automatically computed from Bridge_cod_pro_ref_crn and propagated into Grouping_crn_table (with quality, refint, and ref_ext included)."
     },
-    "contact": "For technical issues, contact: e.ragueneau@cbmcompany.com"
+    "contact": "For technical issues, contact: e.ragueneau@cbmcompany.com",
+    "documentation": "Full Documentation",
+    "tutorials": "Tutorials",
+    "faq": "FAQ",
+    "support": "Support"
+  },
+  "errors": {
+    "generic": "An error occurred",
+    "network": "Network error. Please check your connection.",
+    "server": "Server error. Please try again later.",
+    "not_found": "Resource not found",
+    "unauthorized": "Unauthorized access",
+    "forbidden": "Access forbidden",
+    "timeout": "Request timeout",
+    "invalid_data": "Invalid data",
+    "unknown": "Unknown error"
+  },
+  "validation": {
+    "required": "This field is required",
+    "invalid_format": "Invalid format",
+    "min_length": "Minimum length: {{min}} characters",
+    "max_length": "Maximum length: {{max}} characters",
+    "min_value": "Minimum value: {{min}}",
+    "max_value": "Maximum value: {{max}}",
+    "invalid_email": "Invalid email address",
+    "invalid_number": "Invalid number",
+    "invalid_date": "Invalid date"
+  },
+  "formats": {
+    "currency": "€{{value}}",
+    "percentage": "{{value}}%",
+    "date_short": "MM/DD/YYYY",
+    "date_long": "MMMM DD, YYYY",
+    "datetime": "MM/DD/YYYY HH:mm"
+  },
+  "qualities": {
+    "OEM": "OEM - Original Equipment Manufacturer",
+    "PMQ": "PMQ - Premium Aftermarket Quality",
+    "PMV": "PMV - Standard Aftermarket Quality",
+    "OE": "OE - Original Equipment",
+    "all": "All Qualities"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "pending": "Pending",
+    "archived": "Archived"
+  },
+  "projection": {
+    "quality": {
+      "excellent": "Excellent",
+      "good": "Good",
+      "fair": "Fair",
+      "basic": "Basic",
+      "poor": "Poor",
+      "unknown": "Unknown",
+      "excellent_desc": "Very reliable model with rich history",
+      "good_desc": "Reliable model with sufficient data",
+      "fair_desc": "Basic model, limited data",
+      "basic_desc": "Simple projection without advanced modeling",
+      "poor_desc": "Unreliable model, insufficient data",
+      "na": "N/A",
+      "available": "Projection available",
+      "reliability_score": "Reliability Score",
+      "technical_details": "Technical Details",
+      "data_points": "{{count}} data points",
+      "confidence": "Confidence: {{level}}",
+      "warnings_title": "Attention points:",
+      "recommendations_title": "💡 Recommendations:",
+      "debug_info": "Debug: {{timestamp}}",
+      "validator_ok": "Validator OK",
+      "validator_missing": "Validator missing"
+    },
+    "methods": {
+      "linear_regression": "Linear Regression",
+      "seasonal_decomposition": "Seasonal Decomposition",
+      "moving_average": "Moving Average",
+      "exponential_smoothing": "Exponential Smoothing",
+      "linear_fallback": "Simple Linear",
+      "empty_forced": "No Sales",
+      "constant_fallback": "Constant",
+      "unknown": "Unknown Method",
+      "linear_regression_desc": "Projection based on linear trend",
+      "seasonal_decomposition_desc": "Projection accounting for seasonality",
+      "moving_average_desc": "Projection based on moving average",
+      "exponential_smoothing_desc": "Projection with exponential smoothing",
+      "linear_fallback_desc": "Basic linear projection (fallback)",
+      "empty_forced_desc": "No sales detected",
+      "constant_fallback_desc": "Constant projection based on 1 point",
+      "unknown_desc": "Unspecified projection method"
+    }
+  },
+  "export": {
+    "title": "Export Data",
+    "formats": {
+      "csv": "CSV - Excel Compatible",
+      "json": "JSON - Technical Format",
+      "html": "HTML - Formatted Report"
+    },
+    "csv_description": "Comma-separated values, Excel compatible",
+    "json_description": "JSON format for technical integration",
+    "html_description": "Formatted HTML report with styling",
+    "exporting": "Exporting...",
+    "success": "{{format}} export successful",
+    "error": "Export error",
+    "no_data": "No data to export",
+    "filename": "{{name}}_{{date}}"
   }
 }
