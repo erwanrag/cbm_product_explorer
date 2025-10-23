@@ -1,8 +1,3 @@
-// ===================================
-// 📁 frontend/src/features/matrix/components/MatrixTable.jsx
-// Version corrigée compatible avec le nouveau DataTable
-// ===================================
-
 import React, { useMemo, useState } from 'react';
 import {
     Paper, Table, TableBody, TableCell, TableContainer,
@@ -12,6 +7,11 @@ import {
 } from '@mui/material';
 import { ViewColumn, Search } from '@mui/icons-material';
 import { getQualiteColor, getStatutColor, getStatutLabel } from '@/lib/colors';
+import { 
+    getColumnColor, 
+    COLUMN_TYPES,
+    MATCH_TYPES 
+} from '@/features/matrix/constants/matrixConstants'; // ✅ IMPORT CONSTANTES
 
 export default function MatrixTable({
     products = [],
@@ -24,6 +24,17 @@ export default function MatrixTable({
     const [rowsPerPage, setRowsPerPage] = useState(25);
     const [search, setSearch] = useState('');
     const [anchorEl, setAnchorEl] = useState(null);
+
+    // ✅ TRI PRODUITS PAR ORDRE QUALITÉ: OE > OEM > PMQ > PMV
+    const QUALITE_ORDER = { 'OE': 1, 'OEM': 2, 'PMQ': 3, 'PMV': 4 };
+
+    const sortedProducts = useMemo(() => {
+        return [...products].sort((a, b) => {
+            const orderA = QUALITE_ORDER[a.qualite] || 999;
+            const orderB = QUALITE_ORDER[b.qualite] || 999;
+            return orderA - orderB;
+        });
+    }, [products]);
 
     // ✅ Colonnes de base
     const baseColumns = [
@@ -38,14 +49,14 @@ export default function MatrixTable({
 
     // ✅ Filtrage par recherche
     const filteredProducts = useMemo(() => {
-        if (!search) return products;
+        if (!search) return sortedProducts;
 
-        return products.filter(product =>
+        return sortedProducts.filter(product =>
             Object.values(product).some(value =>
                 String(value).toLowerCase().includes(search.toLowerCase())
             )
         );
-    }, [products, search]);
+    }, [sortedProducts, search]);
 
     // ✅ Pagination
     const paginatedProducts = useMemo(() => {
@@ -53,11 +64,12 @@ export default function MatrixTable({
         return filteredProducts.slice(start, start + rowsPerPage);
     }, [filteredProducts, page, rowsPerPage]);
 
-    // ✅ Rendu cellule correspondance
+    // ✅ Rendu cellule correspondance - UTILISE CONSTANTES
     const renderMatchCell = (product, columnRef) => {
+        const refValue = columnRef.ref;
         const productMatches = matches.filter(m => m.cod_pro === product.cod_pro);
-        const inCrn = productMatches.some(m => m.ref_crn === columnRef.ref);
-        const inExt = productMatches.some(m => m.ref_ext === columnRef.ref);
+        const inCrn = productMatches.some(m => m.ref_crn === refValue);
+        const inExt = productMatches.some(m => m.ref_ext === refValue);
 
         if (inCrn && inExt) {
             return (
@@ -119,6 +131,24 @@ export default function MatrixTable({
         }
 
         return <span style={{ color: '#999' }}>-</span>;
+    };
+
+    // ✅ UTILISE CONSTANTES pour coloration headers
+    const getColumnHeaderBgColor = (columnRef) => {
+        return getColumnColor(columnRef.type); // Fonction depuis matrixConstants.js
+    };
+
+    const getColumnIcon = (columnRef) => {
+        switch (columnRef.type) {
+            case COLUMN_TYPES.BOTH:
+                return '🟢';
+            case COLUMN_TYPES.CRN_ONLY:
+                return '🔵';
+            case COLUMN_TYPES.EXT_ONLY:
+                return '🟠';
+            default:
+                return '⚪';
+        }
     };
 
     const handleChangePage = (event, newPage) => {
@@ -210,21 +240,21 @@ export default function MatrixTable({
                                 </TableCell>
                             ))}
 
-                            {columnRefs.map(ref => (
+                            {columnRefs.map(columnRef => (
                                 <TableCell 
-                                    key={ref.ref} 
+                                    key={columnRef.ref} 
                                     align="center" 
                                     sx={{ 
                                         minWidth: 80,
-                                        bgcolor: ref.type === 'CRN' ? '#e3f2fd' : '#fff3e0'
+                                        bgcolor: getColumnHeaderBgColor(columnRef) // ✅ CONSTANTES
                                     }}
                                 >
                                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
                                         <span style={{ fontSize: '0.9rem' }}>
-                                            {ref.type === 'CRN' ? '🔵' : '🟠'}
+                                            {getColumnIcon(columnRef)}
                                         </span>
                                         <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
-                                            {ref.ref}
+                                            {columnRef.ref}
                                         </Typography>
                                     </Box>
                                 </TableCell>
@@ -233,7 +263,7 @@ export default function MatrixTable({
                     </TableHead>
 
                     <TableBody>
-                        {paginatedProducts.map((product, index) => (
+                        {paginatedProducts.map((product) => (
                             <TableRow 
                                 key={product.cod_pro}
                                 hover
@@ -289,9 +319,9 @@ export default function MatrixTable({
                                     );
                                 })}
 
-                                {columnRefs.map(ref => (
-                                    <TableCell key={ref.ref} align="center">
-                                        {renderMatchCell(product, ref)}
+                                {columnRefs.map(columnRef => (
+                                    <TableCell key={columnRef.ref} align="center">
+                                        {renderMatchCell(product, columnRef)}
                                     </TableCell>
                                 ))}
                             </TableRow>
@@ -325,7 +355,12 @@ export default function MatrixTable({
                             control={
                                 <Checkbox 
                                     checked={col.visible} 
-                                    onChange={() => handleColumnToggle(col.id === 'cod_pro' || col.id === 'refint' ? 'details' : col.id.replace('nom_', ''))} 
+                                    onChange={() => handleColumnToggle(
+                                        col.id === 'cod_pro' || col.id === 'refint' ? 'details' : 
+                                        col.id === 'nom_pro' ? 'designation' :
+                                        col.id === 'nom_fou' ? 'fournisseur' :
+                                        col.id
+                                    )} 
                                 />
                             }
                             label={col.label}

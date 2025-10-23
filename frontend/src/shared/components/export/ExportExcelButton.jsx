@@ -25,6 +25,7 @@ import { exportToCSV, exportToJSON } from '@/lib/exportUtils';
 export default function ExportExcelButton({
     data = [],
     filename = 'export_cbm',
+    sheetName = 'Export',
     formats = ['csv', 'json', 'html'],
     disabled = false,
     variant = 'outlined',

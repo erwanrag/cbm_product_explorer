@@ -1,43 +1,28 @@
-// ===================================
-// 📁 frontend/src/features/matrix/components/MatrixLegend.jsx - VERSION COMPACTE
-// ===================================
-
 import React from 'react';
-import {
-    Paper,
-    Typography,
-    Box,
-    Chip,
-    Stack
-} from '@mui/material';
+import { Paper, Typography, Box, Chip, Stack } from '@mui/material';
+import { 
+    COLUMN_COLORS, 
+    COLUMN_TYPES,
+    getColumnTypeLabel 
+} from '@/features/matrix/constants/matrixConstants'; // ✅ IMPORT
 
-/**
- * Légende compacte pour la vue matricielle
- */
 export default function MatrixLegend({ compact = false, sx = {} }) {
     const columnLegendItems = [
         {
-            color: '#bbdefb',
+            color: COLUMN_COLORS.CRN_ONLY, // ✅ CONSTANTE
             label: 'CRN seul',
-            description: 'Référence constructeur uniquement'
+            type: COLUMN_TYPES.CRN_ONLY,
         },
         {
-            color: '#c8e6c9',
+            color: COLUMN_COLORS.BOTH, // ✅ CONSTANTE
             label: 'CRN + EXT',
-            description: 'Constructeur + Externe'
+            type: COLUMN_TYPES.BOTH,
         },
         {
-            color: '#ffcc80',
+            color: COLUMN_COLORS.EXT_ONLY, // ✅ CONSTANTE
             label: 'EXT seul',
-            description: 'Référence externe uniquement'
+            type: COLUMN_TYPES.EXT_ONLY,
         }
-    ];
-
-    const cellLegendItems = [
-        { color: '#a5d6a7', label: 'Match CRN' },
-        { color: '#90caf9', label: 'Match EXT' },
-        { color: '#d1c4e9', label: 'Match Double' },
-        { color: '#ffcdd2', label: 'Pas de match' }
     ];
 
     if (compact) {
@@ -53,114 +38,57 @@ export default function MatrixLegend({ compact = false, sx = {} }) {
                 }}
             >
                 <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>
-                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
-                        Colonnes:
+                    <Typography variant="caption" fontWeight={600} color="text.secondary">
+                        Légende:
                     </Typography>
                     {columnLegendItems.map((item, index) => (
-                        <Chip
-                            key={index}
-                            label={item.label}
-                            size="small"
-                            sx={{
-                                bgcolor: item.color,
-                                color: '#000',
-                                fontWeight: 500,
-                                fontSize: '0.75rem',
-                                height: 24
-                            }}
-                        />
-                    ))}
-
-                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500, ml: 2 }}>
-                        Cellules:
-                    </Typography>
-                    {cellLegendItems.map((item, index) => (
-                        <Chip
-                            key={index}
-                            label={item.label}
-                            size="small"
-                            sx={{
-                                bgcolor: item.color,
-                                color: '#000',
-                                fontWeight: 500,
-                                fontSize: '0.75rem',
-                                height: 24
-                            }}
-                        />
+                        <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <Box
+                                sx={{
+                                    width: 16,
+                                    height: 16,
+                                    bgcolor: item.color,
+                                    borderRadius: 0.5,
+                                    border: '1px solid #ddd'
+                                }}
+                            />
+                            <Typography variant="caption">
+                                {item.label}
+                            </Typography>
+                        </Box>
                     ))}
                 </Stack>
             </Paper>
         );
     }
 
-    // Version complète (pour les cas où compact=false)
     return (
-        <Paper
-            elevation={1}
-            sx={{
-                p: 3,
-                bgcolor: '#fafafa',
-                border: '1px solid #e0e0e0',
-                ...sx
-            }}
-        >
-            <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
-                🎨 Légende de la Matrice
+        <Paper elevation={1} sx={{ p: 2, ...sx }}>
+            <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                📍 Légende de la Matrice
             </Typography>
-
-            <Stack spacing={3}>
-                {/* Légende des colonnes */}
-                <Box>
-                    <Typography variant="subtitle2" gutterBottom color="primary">
-                        Couleurs des colonnes (références)
-                    </Typography>
-                    <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
-                        {columnLegendItems.map((item, index) => (
-                            <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Box
-                                    sx={{
-                                        width: 16,
-                                        height: 16,
-                                        bgcolor: item.color,
-                                        borderRadius: 0.5,
-                                        border: '1px solid #ccc'
-                                    }}
-                                />
-                                <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                    {item.label}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                    - {item.description}
-                                </Typography>
-                            </Box>
-                        ))}
-                    </Stack>
-                </Box>
-
-                {/* Légende des cellules */}
-                <Box>
-                    <Typography variant="subtitle2" gutterBottom color="primary">
-                        Couleurs des cellules (correspondances)
-                    </Typography>
-                    <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
-                        {cellLegendItems.map((item, index) => (
-                            <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Box
-                                    sx={{
-                                        width: 16,
-                                        height: 16,
-                                        bgcolor: item.color,
-                                        borderRadius: 0.5,
-                                        border: '1px solid #ccc'
-                                    }}
-                                />
-                                <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                    {item.label}
-                                </Typography>
-                            </Box>
-                        ))}
-                    </Stack>
-                </Box>
+            <Stack spacing={1} sx={{ mt: 1 }}>
+                {columnLegendItems.map((item, index) => (
+                    <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box
+                            sx={{
+                                width: 24,
+                                height: 24,
+                                bgcolor: item.color,
+                                borderRadius: 1,
+                                border: '1px solid #ddd'
+                            }}
+                        />
+                        <Box>
+                            <Typography variant="body2" fontWeight={600}>
+                                {item.label}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                                {getColumnTypeLabel(item.type)} {/* ✅ CONSTANTE */}
+                            </Typography>
+                        </Box>
+                    </Box>
+                ))}
             </Stack>
         </Paper>
     );

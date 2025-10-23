@@ -5,19 +5,25 @@ export class OptimizationService extends BaseApiService {
         super('/optimization');
     }
 
-    async getAnalysis(filters = {}) {
-        const payload = this.buildPayload(filters);
-        return await this.post('analysis', payload);
+    /**
+     * Récupère les données d'optimisation
+     * @param {Object} filters - Critères d'identification
+     * @returns {Promise<Object>} Données d'optimisation
+     */
+    async getOptimizationData(filters = {}) {
+        const payload = this.buildPayload(filters); // ✅ this est bien défini
+        return await this.post('analyze', payload);
     }
 
-    async getSimulation(filters = {}, scenario = {}) {
-        const payload = {
-            ...this.buildPayload(filters),
-            ...scenario
-        };
-        return await this.post('simulation', payload);
+    /**
+     * Simule une optimisation
+     * @param {Object} data - Données de simulation
+     * @returns {Promise<Object>}
+     */
+    async simulateOptimization(data = {}) {
+        return await this.post('simulate', data);
     }
 }
 
-// ✅ EXPORT SINGLETON
 export const optimizationService = new OptimizationService();
+
