@@ -1,14 +1,18 @@
 // ===================================
-// 📁 frontend/src/features/optimization/components/OptimizationFiltersSection.jsx - VERSION SIMPLIFIÉE
+// 📁 frontend/src/features/optimization/components/OptimizationFiltersSection.jsx
+// ✅ VERSION FINALE SIMPLIFIÉE
+// - Pas d'exports (dans le header)
+// - Pas de choix méthode (données déjà calculées backend)
+// - 2 blocs références VISIBLES et GRANDS
 // ===================================
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState  } from 'react';
 import {
-    Box, Paper, Grid, Typography, ToggleButtonGroup, ToggleButton,
+    Collapse, Box, Paper, Grid, Typography, ToggleButtonGroup, ToggleButton,
     FormControl, InputLabel, Select, MenuItem, Button, Stack, Chip, Alert
 } from '@mui/material';
 import {
-    TableChart, BarChart, ViewList, FilterList, Clear
+    TableChart, BarChart, FilterList, Clear, Dashboard
 } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getQualiteColor } from '@/constants/colors';
@@ -20,6 +24,9 @@ const OptimizationFiltersSection = ({
     viewMode,
     onViewModeChange
 }) => {
+
+    const [showMethodology, setShowMethodology] = useState(false);
+
     // Options qualités disponibles
     const availableQualites = useMemo(() => {
         if (!data?.items) return [];
@@ -27,13 +34,10 @@ const OptimizationFiltersSection = ({
         const qualites = [...new Set(data.items.map(item => item.qualite))].sort();
         const options = [];
 
-        // Ajouter option "Toutes"
         options.push({ value: '', label: 'Toutes les qualités', color: 'default' });
 
-        // Ajouter qualités individuelles
         qualites.forEach(qualite => {
-            if (qualite === 'PMV') return; // PMV sera inclus dans PMQ
-
+            if (qualite === 'PMV') return;
             const label = qualite === 'PMQ' ? 'PMQ + PMV (Marché)' : qualite;
             options.push({
                 value: qualite,
@@ -45,53 +49,63 @@ const OptimizationFiltersSection = ({
         return options;
     }, [data]);
 
-    // Statistiques dynamiques basées sur les filtres
-    const filteredStats = useMemo(() => {
-        if (!data?.items) return null;
+    // ✅ Références internes PAR QUALITÉ
+    const internalReferencesByQuality = useMemo(() => {
+        if (!data?.items) return { PMQ_PMV: [], OEM: [] };
 
-        let filtered = data.items;
+        const pmqPmvRefs = new Set();
+        const oemRefs = new Set();
 
-        if (selectedQualite) {
-            if (selectedQualite === 'PMQ') {
-                filtered = filtered.filter(item =>
-                    item.qualite === 'PMQ' || item.qualite === 'PMV'
-                );
-            } else {
-                filtered = filtered.filter(item =>
-                    item.qualite === selectedQualite
-                );
+        data.items.forEach(item => {
+            if (item.refs_to_keep) {
+                item.refs_to_keep.forEach(ref => {
+                    if (ref.ref_int) {
+                        if (item.qualite === 'PMQ' || item.qualite === 'PMV') {
+                            pmqPmvRefs.add(ref.ref_int);
+                        } else if (item.qualite === 'OEM') {
+                            oemRefs.add(ref.ref_int);
+                        }
+                    }
+                });
             }
-        }
+        });
 
         return {
-            total: data.items.length,
-            filtered: filtered.length,
-            totalGain: filtered.reduce((sum, item) => sum + (item.gain_potentiel || 0), 0),
-            totalGain6m: filtered.reduce((sum, item) => sum + (item.gain_potentiel_6m || 0), 0),
-            refsTotal: filtered.reduce((sum, item) => sum + (item.refs_total || 0), 0),
-            refsToDelete: filtered.reduce((sum, item) =>
-                sum + (item.refs_to_delete_low_sales?.length || 0) +
-                (item.refs_to_delete_no_sales?.length || 0), 0
-            )
+            PMQ_PMV: Array.from(pmqPmvRefs).sort(),
+            OEM: Array.from(oemRefs).sort()
         };
-    }, [data, selectedQualite]);
-
-    // Formatage des devises
-    const formatCurrency = (value) => {
-        if (!value) return '0 €';
-        return new Intl.NumberFormat('fr-FR', {
-            style: 'currency',
-            currency: 'EUR',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0
-        }).format(value);
-    };
+    }, [data]);
 
     const handleClearFilters = () => {
         onQualiteChange('');
     };
 
     const hasActiveFilters = selectedQualite;
+
+    // Explications par qualité
+    const getQualityExplanation = (qualite) => {
+        const explanations = {
+            'OEM': {
+                title: 'OEM (Original Equipment Manufacturer)',
+                strategy: 'Conserver les références avec les meilleures marges et volumes stables',
+                priority: 'Priorité : Qualité premium et fidélisation client'
+            },
+            'PMQ': {
+                title: 'PMQ + PMV (Pièces Marché - Qualité & Volume)',
+                strategy: 'PMV prioritaire si disponible, sinon PMQ. Optimiser selon le meilleur prix d\'achat',
+                priority: 'Priorité : Meilleur rapport qualité/prix pour le client'
+            },
+            'OE': {
+                title: 'OE (Original Equipment)',
+                strategy: 'Conserver les références stratégiques et marges élevées',
+                priority: 'Priorité : Balance entre qualité OEM et prix compétitif'
+            }
+        };
+
+        return explanations[qualite] || null;
+    };
+
+    const currentExplanation = selectedQualite ? getQualityExplanation(selectedQualite) : null;
 
     return (
         <Paper elevation={1} sx={{ mb: 3 }}>
@@ -108,6 +122,10 @@ const OptimizationFiltersSection = ({
                         onChange={(e, newMode) => newMode && onViewModeChange(newMode)}
                         size="small"
                     >
+                        <ToggleButton value="all">
+                            <Dashboard fontSize="small" sx={{ mr: 1 }} />
+                            Tout
+                        </ToggleButton>
                         <ToggleButton value="table">
                             <TableChart fontSize="small" sx={{ mr: 1 }} />
                             Tableau
@@ -116,15 +134,11 @@ const OptimizationFiltersSection = ({
                             <BarChart fontSize="small" sx={{ mr: 1 }} />
                             Graphiques
                         </ToggleButton>
-                        <ToggleButton value="summary">
-                            <ViewList fontSize="small" sx={{ mr: 1 }} />
-                            Résumé
-                        </ToggleButton>
                     </ToggleButtonGroup>
                 </Box>
 
                 <Grid container spacing={3} alignItems="center">
-                    {/* Filtre Qualité SEUL */}
+                    {/* Filtre Qualité */}
                     <Grid item xs={12} sm={6} md={4}>
                         <FormControl fullWidth size="small">
                             <InputLabel>Qualité Produit</InputLabel>
@@ -167,9 +181,9 @@ const OptimizationFiltersSection = ({
                         </Button>
                     </Grid>
 
-                    {/* Espace pour équilibrer */}
+                    {/* Espace */}
                     <Grid item xs={12} md={6}>
-                        {/* Vide pour équilibrer */}
+                        {/* Vide */}
                     </Grid>
                 </Grid>
 
@@ -205,65 +219,171 @@ const OptimizationFiltersSection = ({
                     </Box>
                 )}
 
-                {/* Explications importantes */}
-                <Alert severity="info" sx={{ mt: 3 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
-                        📊 Comprendre les gains d'optimisation
-                    </Typography>
-                    <Typography variant="body2" component="div">
-                        • <strong>Économie immédiate</strong> : Réduction coûts d'achat si rationalisation appliquée aujourd'hui<br />
-                        • <strong>Projection 6 mois</strong> : Basée sur tendance historique (⚠️ données du mois en cours partielles)<br />
-                        • <strong>PMQ + PMV</strong> : Analysés ensemble, priorité PMV si disponible<br />
-                        • <strong>Calcul</strong> : (Prix vente moyen - Prix achat minimum) × Volume total
-                    </Typography>
-                </Alert>
+                {/* ✅ 2 BLOCS RÉFÉRENCES SÉPARÉS - BIEN VISIBLES */}
+                {(internalReferencesByQuality.PMQ_PMV.length > 0 || internalReferencesByQuality.OEM.length > 0) && (
+                    <Box sx={{ mt: 3 }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
+                            📦 Références Internes Conservées
+                        </Typography>
+                        
+                        <Grid container spacing={2}>
+                            {/* Bloc PMQ/PMV */}
+                            {internalReferencesByQuality.PMQ_PMV.length > 0 && (
+                                <Grid item xs={12} md={6}>
+                                    <Paper 
+                                        elevation={2} 
+                                        sx={{ 
+                                            p: 2.5, 
+                                            bgcolor: 'success.50', 
+                                            border: '2px solid', 
+                                            borderColor: 'success.main',
+                                            borderRadius: 2
+                                        }}
+                                    >
+                                        <Typography variant="h6" sx={{ fontWeight: 600, mb: 1.5, color: 'success.main' }}>
+                                            🟢 PMQ/PMV ({internalReferencesByQuality.PMQ_PMV.length} références)
+                                        </Typography>
+                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
+                                            {internalReferencesByQuality.PMQ_PMV.slice(0, 15).map((ref, index) => (
+                                                <Chip
+                                                    key={index}
+                                                    label={ref}
+                                                    size="medium"
+                                                    sx={{ 
+                                                        bgcolor: 'success.main', 
+                                                        color: 'white',
+                                                        fontWeight: 600,
+                                                        fontSize: '0.875rem'
+                                                    }}
+                                                />
+                                            ))}
+                                            {internalReferencesByQuality.PMQ_PMV.length > 15 && (
+                                                <Chip
+                                                    label={`+${internalReferencesByQuality.PMQ_PMV.length - 15} autres`}
+                                                    size="medium"
+                                                    sx={{ 
+                                                        bgcolor: 'success.dark', 
+                                                        color: 'white',
+                                                        fontWeight: 700
+                                                    }}
+                                                />
+                                            )}
+                                        </Box>
+                                    </Paper>
+                                </Grid>
+                            )}
 
-                {/* Statistiques filtrées */}
-                {filteredStats && (
-                    <Box sx={{
-                        mt: 3,
-                        p: 2,
-                        bgcolor: 'grey.50',
-                        borderRadius: 2,
-                        border: 1,
-                        borderColor: 'divider'
-                    }}>
-                        <Grid container spacing={2} alignItems="center">
-                            <Grid item xs={12} sm={6} md={3}>
-                                <Typography variant="body2" color="text.secondary">
-                                    Groupes analysés
-                                </Typography>
-                                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                                    {filteredStats.filtered} / {filteredStats.total}
-                                </Typography>
-                            </Grid>
-                            <Grid item xs={12} sm={6} md={3}>
-                                <Typography variant="body2" color="text.secondary">
-                                    Économie immédiate
-                                </Typography>
-                                <Typography variant="h6" sx={{ fontWeight: 600, color: 'success.main' }}>
-                                    {formatCurrency(filteredStats.totalGain)}
-                                </Typography>
-                            </Grid>
-                            <Grid item xs={12} sm={6} md={3}>
-                                <Typography variant="body2" color="text.secondary">
-                                    Projection 6 mois
-                                </Typography>
-                                <Typography variant="h6" sx={{ fontWeight: 600, color: 'info.main' }}>
-                                    {formatCurrency(filteredStats.totalGain6m)}
-                                </Typography>
-                            </Grid>
-                            <Grid item xs={12} sm={6} md={3}>
-                                <Typography variant="body2" color="text.secondary">
-                                    Références à rationaliser
-                                </Typography>
-                                <Typography variant="h6" sx={{ fontWeight: 600, color: 'warning.main' }}>
-                                    {filteredStats.refsToDelete} / {filteredStats.refsTotal}
-                                </Typography>
-                            </Grid>
+                            {/* Bloc OEM */}
+                            {internalReferencesByQuality.OEM.length > 0 && (
+                                <Grid item xs={12} md={6}>
+                                    <Paper 
+                                        elevation={2} 
+                                        sx={{ 
+                                            p: 2.5, 
+                                            bgcolor: 'primary.50', 
+                                            border: '2px solid', 
+                                            borderColor: 'primary.main',
+                                            borderRadius: 2
+                                        }}
+                                    >
+                                        <Typography variant="h6" sx={{ fontWeight: 600, mb: 1.5, color: 'primary.main' }}>
+                                            🔵 OEM ({internalReferencesByQuality.OEM.length} références)
+                                        </Typography>
+                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
+                                            {internalReferencesByQuality.OEM.slice(0, 15).map((ref, index) => (
+                                                <Chip
+                                                    key={index}
+                                                    label={ref}
+                                                    size="medium"
+                                                    sx={{ 
+                                                        bgcolor: 'primary.main', 
+                                                        color: 'white',
+                                                        fontWeight: 600,
+                                                        fontSize: '0.875rem'
+                                                    }}
+                                                />
+                                            ))}
+                                            {internalReferencesByQuality.OEM.length > 15 && (
+                                                <Chip
+                                                    label={`+${internalReferencesByQuality.OEM.length - 15} autres`}
+                                                    size="medium"
+                                                    sx={{ 
+                                                        bgcolor: 'primary.dark', 
+                                                        color: 'white',
+                                                        fontWeight: 700
+                                                    }}
+                                                />
+                                            )}
+                                        </Box>
+                                    </Paper>
+                                </Grid>
+                            )}
                         </Grid>
                     </Box>
                 )}
+
+                {/* Explication par qualité */}
+                {currentExplanation && (
+                    <Alert severity="info" icon={false} sx={{ mt: 3, bgcolor: 'primary.50', borderColor: 'primary.main' }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600, mb: 1, color: 'primary.main' }}>
+                            📋 {currentExplanation.title}
+                        </Typography>
+                        <Typography variant="body2" sx={{ mb: 0.5 }}>
+                            <strong>Stratégie :</strong> {currentExplanation.strategy}
+                        </Typography>
+                        <Typography variant="body2">
+                            <strong>{currentExplanation.priority}</strong>
+                        </Typography>
+                    </Alert>
+                )}
+
+                {/* Explications générales déroulantes */}
+                <Box sx={{ mt: 3 }}>
+                <Paper 
+                    variant="outlined" 
+                    sx={{ 
+                    bgcolor: 'info.50', 
+                    borderColor: 'info.main', 
+                    borderWidth: 1.5, 
+                    borderStyle: 'solid', 
+                    p: 2, 
+                    borderRadius: 2 
+                    }}
+                >
+                    <Box 
+                    onClick={() => setShowMethodology(prev => !prev)} 
+                    sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'space-between', 
+                        cursor: 'pointer' 
+                    }}
+                    >
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'info.main' }}>
+                        📊 Méthodologie de calcul des gains
+                    </Typography>
+                    <Typography 
+                        variant="body2" 
+                        sx={{ color: 'info.main', fontWeight: 500 }}
+                    >
+                        {showMethodology ? 'Masquer ▲' : 'Afficher ▼'}
+                    </Typography>
+                    </Box>
+
+                    <Collapse in={showMethodology} timeout="auto" unmountOnExit>
+                    <Box sx={{ mt: 2 }}>
+                        <Typography variant="body2" component="div" sx={{ lineHeight: 1.6 }}>
+                        • <strong>Manque à gagner 12M</strong> : Gains non réalisés sur les 12 derniers mois (historique réel)<br />
+                        • <strong>Gain potentiel 6M</strong> : Gains projetés sur les 6 prochains mois (prévision ML)<br />
+                        • <strong>Gain total 18M</strong> : Somme des 2 périodes (12M passés + 6M futurs)<br />
+                        • <strong>Formule</strong> : (Prix vente moyen - Prix achat optimisé) × Volume × Coverage Factor<br />
+                        • <strong>Références conservées</strong> : Sélection basée sur volume, marge et stabilité des ventes
+                        </Typography>
+                    </Box>
+                    </Collapse>
+                </Paper>
+                </Box>
+
             </Box>
         </Paper>
     );

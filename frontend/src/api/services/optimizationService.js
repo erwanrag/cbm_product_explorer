@@ -23,7 +23,38 @@ export class OptimizationService extends BaseApiService {
     async simulateOptimization(data = {}) {
         return await this.post('simulate', data);
     }
+
+    /**
+     * Récupère les groupes d'optimisation (optionnel: par grouping_crn)
+     */
+    async getOptimizationGroups(grouping_crn = null) {
+        const params = grouping_crn ? { grouping_crn } : {};
+        return await this.get('groups', params, { 
+            useCache: true, 
+            cacheTTL: 10 * 60 * 1000 // 10min
+        });
+    }
+
+    /**
+     * Lance le batch complet d'optimisation
+     */
+    async runBatch() {
+        return await this.post('batch/run', {}, { 
+            invalidateCache: ['/optimisation'] 
+        });
+    }
+
+    /**
+     * Récupère le statut du dernier batch
+     */
+    async getBatchStatus() {
+        return await this.get('batch/status', {}, { 
+            useCache: false 
+        });
+    }
 }
+
+
 
 export const optimizationService = new OptimizationService();
 

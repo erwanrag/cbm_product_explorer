@@ -124,7 +124,8 @@ async def evaluate_group_optimization(payload: ProductIdentifierRequest, db: Asy
                    ISNULL(a.px_achat,0) AS px_achat,
                    ISNULL(s.ca_total,0) AS ca_total,
                    ISNULL(s.quantite_total,0) AS qte_total
-            FROM (SELECT DISTINCT cod_pro, refint, grouping_crn, qualite FROM [CBM_DATA].[Pricing].[Grouping_crn_table] WITH (NOLOCK)) dp
+            FROM (SELECT DISTINCT cod_pro, refint, grouping_crn, qualite 
+                  FROM [CBM_DATA].[Pricing].[Grouping_crn_table] WITH (NOLOCK)) dp
             JOIN CodProList c ON dp.cod_pro = c.cod_pro
             LEFT JOIN Achat a ON dp.cod_pro = a.cod_pro
             LEFT JOIN Sales s ON dp.cod_pro = s.cod_pro
@@ -134,10 +135,14 @@ async def evaluate_group_optimization(payload: ProductIdentifierRequest, db: Asy
         result = await db.execute(text(query), params)
         rows = result.fetchall()
 
+        # =====================================================
+        # 🧩 Fusion PMQ/PMV → PM cohérente
+        # =====================================================
         groups = {}
         for g, qual, cod, refint, px, ca, qte in rows:
-            if not g: continue
-            qual_group = "PM" if qual in ("PMQ","PMV") else qual
+            if not g:
+                continue
+            qual_group = "PM" if qual in ("PMQ", "PMV") else qual
             key = (g, qual_group)
             groups.setdefault(key, {})
             groups[key][cod] = {
@@ -154,110 +159,110 @@ async def evaluate_group_optimization(payload: ProductIdentifierRequest, db: Asy
         items = []
         for (g, qual_group), prod_dict in groups.items():
             products = list(prod_dict.values())
-            if len(products)<2: continue
-            qualite_originale = products[0]["qualite_originale"] if products else qual_group
+            if len(products) < 1:
+                continue
 
-            # Métriques groupe
+            # 🧠 ici : on garde la version fusionnée (PM) comme clé JSON
+            qualite_originale = qual_group
+            qualites_combinees = list({p["qualite_originale"] for p in products})
+
+            # ========= Métriques du groupe =========
             px_vente_pondere, px_achat_pondere, pmp_pondere, px_min, pmp_min, qtot, ca_tot = _compute_group_weights(products)
 
-            # Sélection ref à garder
+            # Sélection de la meilleure référence
             kept = sorted(products, key=lambda x: x["px_achat"])[:1]
             kept_ids = {k["cod_pro"] for k in kept}
             refs_to_delete = [p for p in products if p["cod_pro"] not in kept_ids]
             refs_low_sales = [p for p in refs_to_delete if p["ca"] > 0]
             refs_no_sales = [p for p in refs_to_delete if p["ca"] == 0]
+
             for r in refs_low_sales:
                 r["gain_potentiel_par_ref"] = round((px_vente_pondere - px_min) * r["qte"], 2)
             for r in refs_no_sales:
                 r["gain_potentiel_par_ref"] = 0.0
 
-            # part_12m_kept pour C_global
+            # ========= Facteur de couverture =========
             kept_qte_12m = sum(
-                entry['qte']
+                entry["qte"]
                 for (grp, ql), entries in history.items()
-                if (grp, ql)==(g, qual_group)
+                if (grp, ql) == (g, qual_group)
                 for entry in entries
-                if entry['cod_pro'] in kept_ids
+                if entry["cod_pro"] in kept_ids
             )
             group_qte_12m = sum(
-                entry['qte']
+                entry["qte"]
                 for (grp, ql), entries in history.items()
-                if (grp, ql)==(g, qual_group)
+                if (grp, ql) == (g, qual_group)
                 for entry in entries
             ) or 0.0
-            part_kept = (kept_qte_12m / group_qte_12m) if group_qte_12m>0 else 0.0
+            part_kept = (kept_qte_12m / group_qte_12m) if group_qte_12m > 0 else 0.0
             C_global = _coverage_factor_global(part_kept)
 
-            # Historique enrichi
+            # ========= Historique + Projection =========
             historique_12m = _format_historique_12m(
                 history, g, qual_group,
-                px_vente_pondere,
-                px_achat_pondere, px_min,
-                pmp_pondere, pmp_min,
-                C_global
+                px_vente_pondere, px_achat_pondere, px_min,
+                pmp_pondere, pmp_min, C_global
             )
 
-            # Projection enrichie
             projection_6m = _project_next_6_months_with_scoring(
                 history, g, qual_group,
-                px_vente_pondere,
-                px_achat_pondere, px_min,
-                pmp_pondere, pmp_min,
-                C_global
+                px_vente_pondere, px_achat_pondere, px_min,
+                pmp_pondere, pmp_min, C_global
             )
 
-            # Synthèse totale (18m)
+            # ========= Synthèse 18M =========
             htot = historique_12m["totaux_12m"]
             ptot = projection_6m.get("totaux", {})
 
-            gain_manque_achat_12m = htot.get("gain_manque_achat", 0.0)
-            gain_manque_pmp_12m   = htot.get("gain_manque_pmp", 0.0)
-
-            gain_pot_achat_6m = ptot.get("gain_potentiel_achat", 0.0)
-            gain_pot_pmp_6m   = ptot.get("gain_potentiel_pmp", 0.0)
+            gain_total_achat_18 = htot.get("gain_manque_achat", 0.0) + ptot.get("gain_potentiel_achat", 0.0)
+            gain_total_pmp_18 = htot.get("gain_manque_pmp", 0.0) + ptot.get("gain_potentiel_pmp", 0.0)
 
             marge_achat_act_18 = htot.get("marge_achat_actuelle", 0.0) + ptot.get("marge_achat_actuelle", 0.0)
             marge_achat_opt_18 = htot.get("marge_achat_optimisee", 0.0) + ptot.get("marge_achat_optimisee", 0.0)
-            marge_pmp_act_18   = htot.get("marge_pmp_actuelle", 0.0) + ptot.get("marge_pmp_actuelle", 0.0)
-            marge_pmp_opt_18   = htot.get("marge_pmp_optimisee", 0.0) + ptot.get("marge_pmp_optimisee", 0.0)
 
-            gain_total_achat_18 = gain_manque_achat_12m + gain_pot_achat_6m
-            gain_total_pmp_18   = gain_manque_pmp_12m   + gain_pot_pmp_6m
-
-            amelioration_pct = ( (gain_total_achat_18) / marge_achat_act_18 * 100 ) if marge_achat_act_18>0 else 0.0
+            amelioration_pct = (gain_total_achat_18 / marge_achat_act_18 * 100) if marge_achat_act_18 > 0 else 0.0
 
             synthese_totale = {
-                "gain_manque_achat_12m": round(gain_manque_achat_12m, 2),
-                "gain_manque_pmp_12m":   round(gain_manque_pmp_12m, 2),
-                "gain_potentiel_achat_6m": round(gain_pot_achat_6m, 2),
-                "gain_potentiel_pmp_6m":   round(gain_pot_pmp_6m, 2),
+                "gain_manque_achat_12m": round(htot.get("gain_manque_achat", 0.0), 2),
+                "gain_manque_pmp_12m": round(htot.get("gain_manque_pmp", 0.0), 2),
+                "gain_potentiel_achat_6m": round(ptot.get("gain_potentiel_achat", 0.0), 2),
+                "gain_potentiel_pmp_6m": round(ptot.get("gain_potentiel_pmp", 0.0), 2),
                 "gain_total_achat_18m": round(gain_total_achat_18, 2),
-                "gain_total_pmp_18m":   round(gain_total_pmp_18, 2),
+                "gain_total_pmp_18m": round(gain_total_pmp_18, 2),
+
+                # ✅ Ces deux lignes étaient manquantes
+                "marge_pmp_actuelle_18m": round(
+                    htot.get("marge_pmp_actuelle", 0.0) + ptot.get("marge_pmp_actuelle", 0.0), 2
+                ),
+                "marge_pmp_optimisee_18m": round(
+                    htot.get("marge_pmp_optimisee", 0.0) + ptot.get("marge_pmp_optimisee", 0.0), 2
+                ),
+
                 "marge_achat_actuelle_18m": round(marge_achat_act_18, 2),
                 "marge_achat_optimisee_18m": round(marge_achat_opt_18, 2),
-                "marge_pmp_actuelle_18m": round(marge_pmp_act_18, 2),
-                "marge_pmp_optimisee_18m": round(marge_pmp_opt_18, 2),
                 "amelioration_pct": round(amelioration_pct, 2)
             }
 
-            # ancienne métrique gain_potentiel (immédiat) conservée
+
+            # ========= Ancienne métrique gain_potentiel (immédiat) =========
             marge_actuelle = sum([p["ca"] - p["px_achat"] * p["qte"] for p in products])
-            marge_simulee  = px_vente_pondere * qtot - px_min * qtot
+            marge_simulee = px_vente_pondere * qtot - px_min * qtot
             gain_potentiel = marge_simulee - marge_actuelle
 
+            # ========= Construction finale item =========
             items.append({
                 "grouping_crn": int(g),
-                "qualite": qualite_originale,
+                "qualite": qualite_originale,              # ✅ cohérente (OEM, PM, etc.)
+                "qualites_combinees": qualites_combinees,  # ✅ PMQ/PMV listées
                 "refs_total": len(products),
                 "px_achat_min": px_min,
                 "px_vente_pondere": round(px_vente_pondere, 2),
                 "taux_croissance": projection_6m["taux_croissance"],
                 "gain_potentiel": round(gain_potentiel, 2),
-
                 "historique_12m": historique_12m,
-                "synthese_totale": synthese_totale,
                 "projection_6m": projection_6m,
-
+                "synthese_totale": synthese_totale,
                 "refs_to_keep": kept,
                 "refs_to_delete_low_sales": refs_low_sales,
                 "refs_to_delete_no_sales": refs_no_sales
@@ -317,7 +322,8 @@ async def _get_sales_history_for_trend(cod_pro_list, db: AsyncSession):
 
         history = {}
         for row in rows:
-            key = (row.grouping_crn, row.qualite)
+            qualite_norm = "PM" if row.qualite in ("PMQ","PMV") else row.qualite
+            key = (row.grouping_crn, qualite_norm)
             history.setdefault(key, [])
             history[key].append({
                 'cod_pro': row.cod_pro,
