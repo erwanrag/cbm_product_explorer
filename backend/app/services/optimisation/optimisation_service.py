@@ -1,7 +1,3 @@
-# ===================================
-# 📁 backend/app/services/optimisation/optimisation_service.py - COMPLET AVEC SCORING
-# ===================================
-
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
@@ -10,127 +6,106 @@ from app.services.identifiers.identifier_service import get_codpro_list_from_ide
 from app.schemas.optimisation.optimisation_schema import GroupOptimizationListResponse
 from app.common.payload_utils import is_payload_empty
 from app.common.logger import logger
-from app.cache.cache_keys import optimisation_key
-from app.common.redis_client import redis_client
+# from app.cache.cache_keys import optimisation_key
+# from app.common.redis_client import redis_client
 import json
-
 import numpy as np
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from time import perf_counter
 
-# Import du ProjectionEngine amélioré
+# Projection engine
 try:
     from app.services.optimisation.projection_service import ProjectionEngine
     PROJECTION_ENGINE_AVAILABLE = True
-    logger.info("✅ ProjectionEngine importé avec succès")
-except ImportError as e:
+except ImportError:
     PROJECTION_ENGINE_AVAILABLE = False
-    logger.warning(f"⚠️ ProjectionEngine non disponible: {e}")
-    
-    # Créer une classe de fallback simple
     class ProjectionEngine:
         @staticmethod
         def project_sales(history_data, periods=6, method='auto'):
-            """Fallback simple en cas d'import raté"""
-            values = [float(qte) for _, qte in history_data] if history_data else []
-            
-            if not values:
-                return {
-                    'method': 'empty',
-                    'predictions': [0] * periods,
-                    'model_quality': 'none'
-                }
-            
-            if len(values) == 1:
-                return {
-                    'method': 'constant',
-                    'predictions': [values[0]] * periods,
-                    'model_quality': 'basic'
-                }
-            
-            # Régression linéaire simple avec numpy
-            x = np.arange(len(values))
-            try:
-                slope, intercept = np.polyfit(x, values, 1)
-            except:
-                slope, intercept = 0, np.mean(values)
-            
-            # Projections futures
-            future_x = np.arange(len(values), len(values) + periods)
-            predictions = np.maximum(slope * future_x + intercept, 0)
-            
-            # Contrainte de croissance raisonnable
-            for i in range(1, len(predictions)):
-                if predictions[i] > predictions[i-1] * 1.5:
-                    predictions[i] = predictions[i-1] * 1.2
-            
-            return {
-                'method': 'linear_fallback',
-                'predictions': predictions.tolist(),
-                'slope': slope,
-                'model_quality': 'basic'
-            }
+            vals = [float(q) for _,q in history_data] if history_data else []
+            if not vals:
+                return {'method':'empty','predictions':[0]*periods,'model_quality':'none'}
+            if len(vals)==1:
+                return {'method':'constant','predictions':[vals[0]]*periods,'model_quality':'basic'}
+            x=np.arange(len(vals))
+            try: slope,inter=np.polyfit(x,vals,1)
+            except: slope,inter=0, np.mean(vals)
+            fx=np.arange(len(vals),len(vals)+periods)
+            pred=np.maximum(slope*fx+inter,0)
+            for i in range(1,len(pred)):
+                if pred[i]>pred[i-1]*1.5: pred[i]=pred[i-1]*1.2
+            return {'method':'linear_fallback','predictions':pred.tolist(),'slope':float(slope),'model_quality':'basic'}
 
-# ✅ NOUVEAU: Import du système de scoring
+# Validator (optionnel)
 try:
     from app.services.optimisation.projection_validator import ProjectionValidator
     VALIDATOR_AVAILABLE = True
-    logger.info("✅ ProjectionValidator importé avec succès")
-except ImportError as e:
+except ImportError:
     VALIDATOR_AVAILABLE = False
-    logger.warning(f"⚠️ ProjectionValidator non disponible: {e}")
 
 
-async def evaluate_group_optimization(
-    payload: ProductIdentifierRequest, db: AsyncSession
-) -> GroupOptimizationListResponse:
-    """
-    ✅ FONCTION PRINCIPALE avec noms harmonisés + scoring
-    Évalue les opportunités d'optimisation pour des groupes de produits
-    """
+# ========================= Helpers =========================
+
+def _bounded(v, lo, hi):
+    return float(max(lo, min(hi, v)))
+
+def _compute_group_weights(products):
+    """poids quantités + prix achat pondéré (achat & pmp approximé)"""
+    qtot = sum(p["qte"] for p in products) or 0.0
+    ca_tot = sum(p["ca"] for p in products) or 0.0
+    px_vente_pondere = (ca_tot / qtot) if qtot>0 else 0.0
+
+    # Achat pondéré (actuel)
+    px_achat_pondere = (sum(p["px_achat"]*p["qte"] for p in products) / qtot) if qtot>0 else 0.0
+
+    # PMP pondéré (si distinct dispo : à brancher ici). A défaut = achat pondéré.
+    pmp_pondere = px_achat_pondere
+
+    # ref min (optimisation hypothétique)
+    px_min = min([p["px_achat"] for p in products if p["px_achat"]>0] or [0.0])
+    pmp_min = px_min  # TODO: remplacer si PMP ref est disponible
+
+    return px_vente_pondere, px_achat_pondere, pmp_pondere, px_min, pmp_min, qtot, ca_tot
+
+
+def _coverage_factor_global(part_kept):
+    """C_global = 0.6 + 0.4 * sqrt(part_kept)  ⇒ borné [0.5, 1.0]"""
+    return _bounded(0.6 + 0.4*np.sqrt(max(0.0, min(1.0, part_kept))), 0.5, 1.0)
+
+
+def _coverage_factor_month(C_global, qte_m, qte_avg12):
+    """C_m = C_global * sqrt(qte_m / qte_avg12)  ⇒ borné [0.5, 1.0]"""
+    if qte_avg12 <= 0:
+        return C_global
+    ratio = np.sqrt(max(0.0, qte_m / qte_avg12))
+    return _bounded(C_global * ratio, 0.5, 1.0)
+
+
+# ========================= Service =========================
+
+async def evaluate_group_optimization(payload: ProductIdentifierRequest, db: AsyncSession) -> GroupOptimizationListResponse:
     logger.info("Démarrage evaluate_group_optimization")
-
     if is_payload_empty(payload):
-        logger.warning("Payload vide")
         return GroupOptimizationListResponse(items=[])
 
-    # ✅ 1. RÉSOLUTION DES IDENTIFIANTS
     resolve_start = perf_counter()
     cod_pro_list = payload.cod_pro_list or await get_codpro_list_from_identifier(payload, db)
     if hasattr(cod_pro_list, "cod_pro_list"):
         cod_pro_list = cod_pro_list.cod_pro_list
     if not cod_pro_list:
-        logger.warning("Aucun cod_pro trouvé après résolution")
         return GroupOptimizationListResponse(items=[])
-
     logger.info(f"cod_pro_list résolue: {len(cod_pro_list)} éléments en {perf_counter() - resolve_start:.2f}s")
 
-    # ✅ 2. CACHE REDIS
-    redis_key = optimisation_key(payload)
     try:
-        cached = await redis_client.get(redis_key)
-        if cached:
-            logger.debug(f"✅ Cache hit optimisation pour {redis_key}")
-            return GroupOptimizationListResponse(**json.loads(cached))
-    except Exception:
-        logger.exception("[Redis] fallback optimisation:group")
-
-    try:
-        # ✅ 3. REQUÊTE SQL PRINCIPALE
-        logger.info("Lancement requête SQL principale avec CTE CodProList")
-        sql_start = perf_counter()
-
-        # Construction CTE dynamique pour performance
+        # ========= SQL principale (profil simple) =========
         cte_lines = [f"SELECT CAST(:p0 AS INT) AS cod_pro"]
         cte_lines += [f"UNION ALL SELECT CAST(:p{i} AS INT)" for i in range(1, len(cod_pro_list))]
         codpro_cte = "\n".join(cte_lines)
         params = {f"p{i}": int(cod) for i, cod in enumerate(cod_pro_list)}
 
         query = f"""
-            WITH CodProList AS (
-                {codpro_cte}
-            ),
+            WITH CodProList AS ({codpro_cte}),
             Achat AS (
                 SELECT a.cod_pro, MIN(a.px_net_eur) AS px_achat
                 FROM CBM_DATA.Pricing.Px_achat_net a WITH (NOLOCK)
@@ -141,8 +116,8 @@ async def evaluate_group_optimization(
                 SELECT v.cod_pro, SUM(v.tot_vte_eur) AS ca_total, SUM(v.qte) AS quantite_total
                 FROM CBM_DATA.Pricing.Px_vte_mouvement v WITH (NOLOCK)
                 JOIN CodProList c ON v.cod_pro = c.cod_pro
-                WHERE v.dat_mvt >= DATEADD(MONTH,-12,DATEADD(DAY, 1-DAY(CONVERT(DATE, GETDATE())), CONVERT(DATE, GETDATE())))
-                AND v.dat_mvt < DATEADD(DAY, 1-DAY(CONVERT(DATE, GETDATE())), CONVERT(DATE, GETDATE()))
+                WHERE v.dat_mvt >= '2024-01-01'
+                  AND v.dat_mvt < DATEADD(DAY, 1-DAY(CONVERT(DATE, GETDATE())), CONVERT(DATE, GETDATE()))
                 GROUP BY v.cod_pro
             )
             SELECT dp.grouping_crn, dp.qualite, dp.cod_pro, dp.refint,
@@ -156,415 +131,484 @@ async def evaluate_group_optimization(
             WHERE dp.qualite IN ('OEM','PMQ','PMV')
             OPTION (RECOMPILE)
         """
-        
         result = await db.execute(text(query), params)
         rows = result.fetchall()
-        logger.info(f"SQL principale exécutée en {perf_counter() - sql_start:.2f}s, {len(rows)} lignes")
 
-        # ✅ 4. AGRÉGATION PAR GROUPE/QUALITÉ
         groups = {}
         for g, qual, cod, refint, px, ca, qte in rows:
-            if not g:
-                continue
-            
-            key = (g, qual)
+            if not g: continue
+            qual_group = "PM" if qual in ("PMQ","PMV") else qual
+            key = (g, qual_group)
             groups.setdefault(key, {})
             groups[key][cod] = {
                 "cod_pro": int(cod),
                 "refint": refint,
                 "px_achat": float(px or 0),
                 "ca": float(ca or 0),
-                "qte": float(qte or 0)
+                "qte": float(qte or 0),
+                "qualite_originale": qual
             }
-        logger.info(f"{len(groups)} groupes trouvés après agrégation")
 
-        # ✅ 5. RÉCUPÉRATION HISTORIQUE
         history = await _get_sales_history_for_trend(cod_pro_list, db)
-        logger.info(f"Historique récupéré pour {len(history)} groupes")
 
-        # ✅ 6. CALCULS D'OPTIMISATION AVEC SCORING
         items = []
-        for (g, qual), prod_dict in groups.items():
+        for (g, qual_group), prod_dict in groups.items():
             products = list(prod_dict.values())
-            
-            # Skip groupes avec trop peu de produits
-            if len(products) <= 2:
-                continue
+            if len(products)<2: continue
+            qualite_originale = products[0]["qualite_originale"] if products else qual_group
 
-            # Calculs économiques de base
-            px_min = min([p["px_achat"] for p in products if p["px_achat"] > 0] or [0])
-            qte_total = sum(p["qte"] for p in products)
-            ca_total = sum(p["ca"] for p in products)
-            px_vente_pondere = (ca_total / qte_total) if qte_total > 0 else 0
-            pmp_pondere = (
-                sum(p["px_achat"] * p["qte"] for p in products if p["qte"] > 0) / qte_total
-                if qte_total > 0 else px_min
-            )
-            # Calcul gain de marge
-            marge_actuelle = sum([p["ca"] - p["px_achat"] * p["qte"] for p in products])
-            marge_simulee = px_vente_pondere * qte_total - px_min * qte_total
-            gain_potentiel = marge_simulee - marge_actuelle
+            # Métriques groupe
+            px_vente_pondere, px_achat_pondere, pmp_pondere, px_min, pmp_min, qtot, ca_tot = _compute_group_weights(products)
 
-            # ✅ PROJECTIONS AVEC SCORING INTÉGRÉ
-            historique_6m = _format_historique_6m(history, g, qual, px_vente_pondere, px_min)
-            projection_6m = _project_next_6_months_with_scoring(
-                history, g, qual, px_vente_pondere, px_min, pmp_pondere
-            )
-
-            # Sélection des références
-            kept = sorted(products, key=lambda x: (-x["ca"] / max(x["px_achat"], 1)))[:2]
+            # Sélection ref à garder
+            kept = sorted(products, key=lambda x: x["px_achat"])[:1]
             kept_ids = {k["cod_pro"] for k in kept}
             refs_to_delete = [p for p in products if p["cod_pro"] not in kept_ids]
-            
-            # Séparation refs avec/sans ventes
             refs_low_sales = [p for p in refs_to_delete if p["ca"] > 0]
             refs_no_sales = [p for p in refs_to_delete if p["ca"] == 0]
-
-            # Calcul gain par référence
             for r in refs_low_sales:
                 r["gain_potentiel_par_ref"] = round((px_vente_pondere - px_min) * r["qte"], 2)
             for r in refs_no_sales:
-                r["gain_potentiel_par_ref"] = 0
+                r["gain_potentiel_par_ref"] = 0.0
 
-            # ✅ CONSTRUCTION ITEM - FORMAT JSON AVEC SCORING
+            # part_12m_kept pour C_global
+            kept_qte_12m = sum(
+                entry['qte']
+                for (grp, ql), entries in history.items()
+                if (grp, ql)==(g, qual_group)
+                for entry in entries
+                if entry['cod_pro'] in kept_ids
+            )
+            group_qte_12m = sum(
+                entry['qte']
+                for (grp, ql), entries in history.items()
+                if (grp, ql)==(g, qual_group)
+                for entry in entries
+            ) or 0.0
+            part_kept = (kept_qte_12m / group_qte_12m) if group_qte_12m>0 else 0.0
+            C_global = _coverage_factor_global(part_kept)
+
+            # Historique enrichi
+            historique_12m = _format_historique_12m(
+                history, g, qual_group,
+                px_vente_pondere,
+                px_achat_pondere, px_min,
+                pmp_pondere, pmp_min,
+                C_global
+            )
+
+            # Projection enrichie
+            projection_6m = _project_next_6_months_with_scoring(
+                history, g, qual_group,
+                px_vente_pondere,
+                px_achat_pondere, px_min,
+                pmp_pondere, pmp_min,
+                C_global
+            )
+
+            # Synthèse totale (18m)
+            htot = historique_12m["totaux_12m"]
+            ptot = projection_6m.get("totaux", {})
+
+            gain_manque_achat_12m = htot.get("gain_manque_achat", 0.0)
+            gain_manque_pmp_12m   = htot.get("gain_manque_pmp", 0.0)
+
+            gain_pot_achat_6m = ptot.get("gain_potentiel_achat", 0.0)
+            gain_pot_pmp_6m   = ptot.get("gain_potentiel_pmp", 0.0)
+
+            marge_achat_act_18 = htot.get("marge_achat_actuelle", 0.0) + ptot.get("marge_achat_actuelle", 0.0)
+            marge_achat_opt_18 = htot.get("marge_achat_optimisee", 0.0) + ptot.get("marge_achat_optimisee", 0.0)
+            marge_pmp_act_18   = htot.get("marge_pmp_actuelle", 0.0) + ptot.get("marge_pmp_actuelle", 0.0)
+            marge_pmp_opt_18   = htot.get("marge_pmp_optimisee", 0.0) + ptot.get("marge_pmp_optimisee", 0.0)
+
+            gain_total_achat_18 = gain_manque_achat_12m + gain_pot_achat_6m
+            gain_total_pmp_18   = gain_manque_pmp_12m   + gain_pot_pmp_6m
+
+            amelioration_pct = ( (gain_total_achat_18) / marge_achat_act_18 * 100 ) if marge_achat_act_18>0 else 0.0
+
+            synthese_totale = {
+                "gain_manque_achat_12m": round(gain_manque_achat_12m, 2),
+                "gain_manque_pmp_12m":   round(gain_manque_pmp_12m, 2),
+                "gain_potentiel_achat_6m": round(gain_pot_achat_6m, 2),
+                "gain_potentiel_pmp_6m":   round(gain_pot_pmp_6m, 2),
+                "gain_total_achat_18m": round(gain_total_achat_18, 2),
+                "gain_total_pmp_18m":   round(gain_total_pmp_18, 2),
+                "marge_achat_actuelle_18m": round(marge_achat_act_18, 2),
+                "marge_achat_optimisee_18m": round(marge_achat_opt_18, 2),
+                "marge_pmp_actuelle_18m": round(marge_pmp_act_18, 2),
+                "marge_pmp_optimisee_18m": round(marge_pmp_opt_18, 2),
+                "amelioration_pct": round(amelioration_pct, 2)
+            }
+
+            # ancienne métrique gain_potentiel (immédiat) conservée
+            marge_actuelle = sum([p["ca"] - p["px_achat"] * p["qte"] for p in products])
+            marge_simulee  = px_vente_pondere * qtot - px_min * qtot
+            gain_potentiel = marge_simulee - marge_actuelle
+
             items.append({
                 "grouping_crn": int(g),
-                "qualite": qual,
+                "qualite": qualite_originale,
                 "refs_total": len(products),
                 "px_achat_min": px_min,
                 "px_vente_pondere": round(px_vente_pondere, 2),
                 "taux_croissance": projection_6m["taux_croissance"],
-                
-                # ✅ NOMS HARMONISÉS AVEC LE FRONTEND
-                "gain_potentiel": round(gain_potentiel, 2),                              # Gain immédiat
-                "gain_potentiel_6m": round(projection_6m["totaux"]["marge_optimisee"], 2),       # Gain projeté 6M
-                "marge_optimisee_6m": round(projection_6m["totaux"]["marge_optimisee"], 2),
-                "marge_actuelle_6m": round(projection_6m["totaux"]["marge_actuelle"], 2),
-                "historique_6m": historique_6m,
-                "projection_6m": projection_6m,  # ✅ MAINTENANT AVEC MÉTADONNÉES DE SCORING
+                "gain_potentiel": round(gain_potentiel, 2),
+
+                "historique_12m": historique_12m,
+                "synthese_totale": synthese_totale,
+                "projection_6m": projection_6m,
+
                 "refs_to_keep": kept,
                 "refs_to_delete_low_sales": refs_low_sales,
                 "refs_to_delete_no_sales": refs_no_sales
             })
 
-        # ✅ 7. MISE EN CACHE
-        try:
-            await redis_client.set(redis_key, json.dumps({"items": items}), ex=1800)
-            logger.debug(f"✅ Cache set optimisation pour {redis_key}")
-        except Exception:
-            logger.exception("[Redis] set optimisation:group")
-
-        logger.info(f"Optimisation calculée: {len(items)} groupes analysés")
         return GroupOptimizationListResponse(items=items)
 
     except SQLAlchemyError as e:
-        logger.error(f"Erreur SQL evaluate_group_optimization pour cod_pro_list={cod_pro_list}: {e}")
+        logger.error(f"Erreur SQL evaluate_group_optimization: {e}")
         return GroupOptimizationListResponse(items=[])
     except Exception as e:
-        logger.error(f"Erreur inattendue evaluate_group_optimization pour cod_pro_list={cod_pro_list}: {e}")
+        logger.error(f"Erreur inattendue evaluate_group_optimization: {e}")
         return GroupOptimizationListResponse(items=[])
 
 
 async def _get_sales_history_for_trend(cod_pro_list, db: AsyncSession):
-    """✅ Récupère l'historique des ventes sur 12 mois, incluant les mois sans ventes"""
+    """
+    Récupère l’historique des ventes mensuelles depuis janvier 2024
+    avec les marges réelles (PA & PMP).
+    """
     try:
         placeholders = ", ".join([f":p{i}" for i in range(len(cod_pro_list))])
         params = {f"p{i}": int(cod) for i, cod in enumerate(cod_pro_list)}
 
         query = f"""
-            SELECT dp.grouping_crn, dp.qualite,
-                   CONVERT(VARCHAR(7), v.dat_mvt, 120) AS periode,
-                   SUM(v.qte) AS qte
+            SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+            SELECT 
+                dp.grouping_crn, 
+                dp.qualite,
+                dp.cod_pro,
+                CONVERT(VARCHAR(7), v.dat_mvt, 120) AS periode,
+                SUM(v.qte) AS qte,
+                SUM(v.tot_vte_eur) AS ca,
+                SUM(v.tot_pa_eur) AS total_pa,
+                SUM(v.tot_marge_pa_eur) AS marge_pa,
+                SUM(v.tot_pmp_eur) AS total_pmp,
+                SUM(v.tot_marge_pmp_eur) AS marge_pmp,
+                MIN(a.px_net_eur) AS px_achat
             FROM CBM_DATA.Pricing.Px_vte_mouvement v WITH (NOLOCK)
-            INNER JOIN (SELECT DISTINCT cod_pro, grouping_crn, qualite FROM [CBM_DATA].[Pricing].[Grouping_crn_table] WITH (NOLOCK)) dp
-            ON v.cod_pro = dp.cod_pro
+            INNER JOIN (
+                SELECT DISTINCT cod_pro, grouping_crn, qualite 
+                FROM [CBM_DATA].[Pricing].[Grouping_crn_table] WITH (NOLOCK)
+            ) dp ON v.cod_pro = dp.cod_pro
+            LEFT JOIN CBM_DATA.Pricing.Px_achat_net a WITH (NOLOCK) 
+                ON v.cod_pro = a.cod_pro
             WHERE v.cod_pro IN ({placeholders})
-              AND v.dat_mvt >= DATEADD(MONTH,-12,DATEADD(DAY, 1-DAY(CONVERT(DATE, GETDATE())), CONVERT(DATE, GETDATE())))
+              AND v.dat_mvt >= '2024-01-01'
               AND v.dat_mvt < DATEADD(DAY, 1-DAY(CONVERT(DATE, GETDATE())), CONVERT(DATE, GETDATE()))
               AND dp.qualite IN ('OEM','PMQ','PMV')
-            GROUP BY dp.grouping_crn, dp.qualite, CONVERT(VARCHAR(7), v.dat_mvt, 120)
+            GROUP BY dp.grouping_crn, dp.qualite, dp.cod_pro, 
+                     CONVERT(VARCHAR(7), v.dat_mvt, 120)
             ORDER BY dp.grouping_crn, dp.qualite, periode
         """
-        
+
         result = await db.execute(text(query), params)
         rows = result.fetchall()
 
-        # Liste des 12 derniers mois (YYYY-MM)
-        today = datetime.today()
-        mois_ref = [
-            (today.replace(day=1) - relativedelta(months=i + 1)).strftime("%Y-%m")
-            for i in reversed(range(12))
-        ]
+        history = {}
+        for row in rows:
+            key = (row.grouping_crn, row.qualite)
+            history.setdefault(key, [])
+            history[key].append({
+                'cod_pro': row.cod_pro,
+                'periode': row.periode,
+                'qte': float(row.qte or 0),
+                'ca': float(row.ca or 0),
+                'total_pa': float(row.total_pa or 0),
+                'marge_pa': float(row.marge_pa or 0),
+                'total_pmp': float(row.total_pmp or 0),
+                'marge_pmp': float(row.marge_pmp or 0),
+                'px_achat': float(row.px_achat or 0)
+            })
 
+        return history
 
-        # Groupes détectés
-        data = {}
-        for g, qual, periode, qte in rows:
-            key = (g, qual)
-            data.setdefault(key, {})[periode] = float(qte or 0)
-
-        # Complétion des mois manquants à zéro
-        completed_data = {}
-        for key, periode_qte_dict in data.items():
-            completed_series = [(mois, periode_qte_dict.get(mois, 0.0)) for mois in mois_ref]
-            completed_data[key] = completed_series
-
-        logger.debug(f"✅ Historique completé: {len(completed_data)} groupes avec 12 mois chacun")
-        return completed_data
-
-    except SQLAlchemyError as e:
-        logger.error(f"Erreur SQL _get_sales_history_for_trend: {e}")
-        return {}
     except Exception as e:
-        logger.error(f"Erreur inattendue _get_sales_history_for_trend: {e}")
+        logger.error(f"Erreur _get_sales_history_for_trend: {e}")
         return {}
 
 
-def _format_historique_6m(history, grouping_crn, qualite, px_vente_pondere, px_achat_min):
-    """✅ FONCTION FORMATAGE HISTORIQUE"""
-    key = (grouping_crn, qualite)
-    series = history.get(key, [])
-    series_sorted = sorted(series, key=lambda x: x[0])
 
-    historique = []
-    for periode, qte in series_sorted:
-        qte = max(0, qte)  # ✅ Éliminer les retours négatifs
-        ca = qte * px_vente_pondere
-        marge = (px_vente_pondere - px_achat_min) * qte
-        historique.append({
-            "periode": periode,
-            "qte": round(qte),
-            "ca": round(ca, 2),
-            "marge": round(marge, 2)
-        })
-    
-    return historique
-
-
-def _project_next_6_months_with_scoring(history, grouping_crn, qualite, px_vente_pondere, px_achat_min, pmp_pondere):
-
+def _format_historique_12m(history, grouping_crn, qualite,
+                           px_vte_pond, px_achat_pond, px_min,
+                           pmp_pond, pmp_min,
+                           C_global):
     """
-    ✅ PROJECTION AVEC SCORING INTÉGRÉ - NOUVELLE FONCTION
+    Formate l’historique 12 mois en utilisant les marges réelles (achat & PMP)
+    + calcule le scénario optimisé avec facteur de couverture.
     """
     key = (grouping_crn, qualite)
-    series = history.get(key, [])
-    
-    if not series or all(qte <= 0 for _, qte in series):
-        logger.warning(f"📉 Historique vide ou nul pour {grouping_crn}-{qualite} → projections nulles forcées")
+    data = history.get(key, [])
+    if not data:
         return {
-            "taux_croissance": 0.0,
-            "mois": [
-                {
-                    "periode": (datetime.today().replace(day=1) + relativedelta(months=i)).strftime("%Y-%m"),
-                    "qte": 0,
-                    "ca": 0,
-                    "marge": 0
-                }
-                for i in range(6)
-            ],
-            "totaux": {"qte": 0, "ca": 0, "marge": 0},
-            "metadata": {
-                "method": "empty_forced",
-                "quality_score": 0.0,
-                "confidence_level": "none",
-                "data_points": len(series),
-                "summary": "Aucune vente significative",
-                "warnings": ["Toutes les ventes sont nulles sur la période"],
-                "recommendations": ["Vérifier les ventes sur 12 mois", "Supprimer si inactive"],
-                "evaluation_timestamp": datetime.now().isoformat(),
-                "validator_available": VALIDATOR_AVAILABLE
+            "mois": [],
+            "totaux_12m": {
+                "qte_totale": 0, "ca_reel": 0,
+                "marge_achat_actuelle": 0, "marge_achat_optimisee": 0, "gain_manque_achat": 0,
+                "marge_pmp_actuelle": 0, "marge_pmp_optimisee": 0, "gain_manque_pmp": 0
             }
         }
 
-    
-    # Validation des données d'entrée
-    if len(series) > 50:
-        logger.warning(f"⚠️ Série trop longue ({len(series)} mois) pour {grouping_crn}-{qualite}, troncature à 24 mois")
+    # agrégation mensuelle groupe
+    mois_data = {}
+    for e in data:
+        p = e['periode']
+        d = mois_data.setdefault(p, {'qte':0,'ca':0,'m_pa':0,'m_pmp':0})
+        d['qte'] += e['qte']
+        d['ca'] += e['ca']
+        d['m_pa'] += e['marge_pa']
+        d['m_pmp'] += e['marge_pmp']
+
+    # moyenne 12m pour C_m
+    qtes = [d['qte'] for _,d in sorted(mois_data.items())][-12:]
+    qte_avg12 = np.mean(qtes) if qtes else 0
+
+    mois_list = []
+    t_qte=t_ca=0.0
+    t_m_achat_act=t_m_achat_opt=t_gain_achat=0.0
+    t_m_pmp_act=t_m_pmp_opt=t_gain_pmp=0.0
+
+    for periode in sorted(mois_data.keys())[-12:]:
+        d = mois_data[periode]
+        q = d['qte']; ca = d['ca']
+        C_m = _coverage_factor_month(C_global, q, qte_avg12)
+
+        # marges réelles (issues de la base)
+        m_achat_act = d['m_pa']
+        m_pmp_act = d['m_pmp']
+
+        # marges optimisées (hypothétiques)
+        m_achat_opt = (px_vte_pond - px_min) * q * C_m
+        gain_achat = m_achat_opt - m_achat_act
+
+        m_pmp_opt = (px_vte_pond - pmp_min) * q * C_m
+        gain_pmp = m_pmp_opt - m_pmp_act
+
+        mois_list.append({
+            "periode": periode,
+            "qte_reelle": round(q,2),
+            "ca_reel": round(ca,2),
+
+            "marge_achat_actuelle": round(m_achat_act,2),
+            "marge_achat_optimisee": round(m_achat_opt,2),
+            "gain_manque_achat": round(gain_achat,2),
+
+            "marge_pmp_actuelle": round(m_pmp_act,2),
+            "marge_pmp_optimisee": round(m_pmp_opt,2),
+            "gain_manque_pmp": round(gain_pmp,2),
+
+            "ca_optimise_theorique": round(px_vte_pond*q*C_m,2),
+            "facteur_couverture": round(C_m,3)
+        })
+
+        t_qte += q; t_ca += ca
+        t_m_achat_act += m_achat_act; t_m_achat_opt += m_achat_opt; t_gain_achat += gain_achat
+        t_m_pmp_act += m_pmp_act; t_m_pmp_opt += m_pmp_opt; t_gain_pmp += gain_pmp
+
+    return {
+        "mois": mois_list,
+        "totaux_12m": {
+            "qte_totale": round(t_qte,2),
+            "ca_reel": round(t_ca,2),
+
+            "marge_achat_actuelle": round(t_m_achat_act,2),
+            "marge_achat_optimisee": round(t_m_achat_opt,2),
+            "gain_manque_achat": round(t_gain_achat,2),
+
+            "marge_pmp_actuelle": round(t_m_pmp_act,2),
+            "marge_pmp_optimisee": round(t_m_pmp_opt,2),
+            "gain_manque_pmp": round(t_gain_pmp,2)
+        }
+    }
+
+
+def _project_next_6_months_with_scoring(history, grouping_crn, qualite,
+                                        px_vte_pond,
+                                        px_achat_pond, px_min,
+                                        pmp_pond, pmp_min,
+                                        C_global):
+    key = (grouping_crn, qualite)
+    data = history.get(key, [])
+    if not data:
+        # structure vide
+        now = datetime.today().replace(day=1)
+        return {
+            "taux_croissance": 0.0,
+            "mois": [{
+                "periode": (now+relativedelta(months=i)).strftime("%Y-%m"),
+                "qte": 0,"ca":0.0,
+                "marge_achat_actuelle":0.0,"marge_achat_optimisee":0.0,"gain_potentiel_achat":0.0,
+                "marge_pmp_actuelle":0.0,"marge_pmp_optimisee":0.0,"gain_potentiel_pmp":0.0,
+                "facteur_couverture": float(C_global)
+            } for i in range(6)],
+            "totaux": {
+                "qte":0,"ca":0.0,
+                "marge_achat_actuelle":0.0,"marge_achat_optimisee":0.0,"gain_potentiel_achat":0.0,
+                "marge_pmp_actuelle":0.0,"marge_pmp_optimisee":0.0,"gain_potentiel_pmp":0.0
+            },
+            "metadata": {
+                "method":"empty_forced","model_quality":"none",
+                "quality_score":0.0,"confidence_level":"none","data_points":0,
+                "warnings":["Pas de données historiques"],"recommendations":["Vérifier les ventes depuis 2024-01"],
+                "summary":"Aucune vente","evaluation_timestamp":datetime.now().isoformat(),"validator_available":VALIDATOR_AVAILABLE
+            }
+        }
+
+    # série mensuelle qte
+    monthly = {}
+    for e in data:
+        monthly[e['periode']] = monthly.get(e['periode'],0.0) + e['qte']
+    series = sorted(monthly.items())  # [(YYYY-MM, qte)]
+
+    if all(q<=0 for _,q in series):
+        now = datetime.today().replace(day=1)
+        return {
+            "taux_croissance": 0.0,
+            "mois": [{
+                "periode": (now+relativedelta(months=i)).strftime("%Y-%m"),
+                "qte": 0,"ca":0.0,
+                "marge_achat_actuelle":0.0,"marge_achat_optimisee":0.0,"gain_potentiel_achat":0.0,
+                "marge_pmp_actuelle":0.0,"marge_pmp_optimisee":0.0,"gain_potentiel_pmp":0.0,
+                "facteur_couverture": float(C_global)
+            } for i in range(6)],
+            "totaux": {
+                "qte":0,"ca":0.0,
+                "marge_achat_actuelle":0.0,"marge_achat_optimisee":0.0,"gain_potentiel_achat":0.0,
+                "marge_pmp_actuelle":0.0,"marge_pmp_optimisee":0.0,"gain_potentiel_pmp":0.0
+            },
+            "metadata": {
+                "method":"empty_forced","model_quality":"none",
+                "quality_score":0.0,"confidence_level":"none","data_points":len(series),
+                "warnings":["Ventes nulles"],"recommendations":["Désactiver si inactif"],
+                "summary":"Ventes nulles","evaluation_timestamp":datetime.now().isoformat(),"validator_available":VALIDATOR_AVAILABLE
+            }
+        }
+
+    # tronquer si trop long
+    if len(series)>50:
         series = series[-24:]
-    
-    logger.debug(f"🚀 Projection avec scoring {grouping_crn}-{qualite} avec {len(series)} mois")
-    
-    # ✅ UTILISATION DU PROJECTIONENGINE
+
+    # projection
     if PROJECTION_ENGINE_AVAILABLE:
         try:
             projection_result = ProjectionEngine.project_sales(series, periods=6, method='auto')
         except Exception as e:
-            logger.error(f"❌ ProjectionEngine échoué: {e}, fallback simple")
-            projection_result = _simple_linear_fallback(series, 6)
+            logger.error(f"ProjectionEngine error: {e}")
+            projection_result = {'method':'linear_fallback','predictions':[0]*6,'model_quality':'none'}
     else:
-        logger.warning("⚠️ ProjectionEngine non disponible, fallback simple")
-        projection_result = _simple_linear_fallback(series, 6)
-    
-    # ✅ ÉVALUATION QUALITÉ AVEC PROJECTIONVALIDATOR
-    quality_evaluation = {}
+        projection_result = {'method':'linear_fallback','predictions':[0]*6,'model_quality':'none'}
+
+    # qualité
     if VALIDATOR_AVAILABLE:
         try:
-            # Contexte business pour améliorer l'évaluation
-            business_context = {
-                'price_range': {'min': px_achat_min, 'avg': px_vente_pondere},
-                'quality_segment': qualite,
-                'grouping_crn': grouping_crn
-            }
-            
-            quality_evaluation = ProjectionValidator.evaluate_projection_quality(
-                projection_result, 
-                series, 
-                business_context
-            )
-            
-            logger.info(f"🔍 Scoring {grouping_crn}-{qualite}: {quality_evaluation.get('summary', 'N/A')}")
-            
+            business_context = {'price_range': {'min': px_min,'avg': px_vte_pond},
+                                'quality_segment': qualite, 'grouping_crn': grouping_crn}
+            quality_eval = ProjectionValidator.evaluate_projection_quality(projection_result, series, business_context)
         except Exception as e:
-            logger.error(f"❌ Erreur évaluation qualité: {e}")
-            quality_evaluation = {
-                'quality_score': 0.5,
-                'confidence_level': 'unknown',
-                'method_used': projection_result.get('method', 'unknown'),
-                'data_points': len(series),
-                'warnings': ['Erreur lors de l\'évaluation qualité'],
-                'recommendations': ['Vérifier les paramètres de projection'],
-                'summary': f"Méthode {projection_result.get('method', 'unknown')} utilisée"
-            }
+            logger.error(f"Qual eval error: {e}")
+            quality_eval = {'quality_score':0.6,'confidence_level':'medium','warnings':[],'recommendations':[],
+                            'summary': f"{projection_result.get('method','unknown')} • {len(series)} mois"}
     else:
-        # Fallback simple si ProjectionValidator indisponible
-        quality_evaluation = {
-            'quality_score': 0.6,  # Score par défaut
-            'confidence_level': 'medium',
-            'method_used': projection_result.get('method', 'unknown'),
-            'data_points': len(series),
-            'warnings': [],
-            'recommendations': ['Activer ProjectionValidator pour scoring avancé'],
-            'summary': f"Méthode {projection_result.get('method', 'unknown')} • {len(series)} mois"
-        }
-    
-    # Conversion vers format CBM
-    predictions = projection_result['predictions']
-    method_used = projection_result['method']
-    quality = projection_result.get('model_quality', 'unknown')
-    
-    # Construction des mois de projection
-    projections = []
-    total_qte = total_ca = total_marge_optimisee = total_marge_actuelle = 0
+        quality_eval = {'quality_score':0.6,'confidence_level':'medium','warnings':[],'recommendations':[],
+                        'summary': f"{projection_result.get('method','unknown')} • {len(series)} mois"}
+
+    preds = projection_result['predictions']
+    method_used = projection_result.get('method','unknown')
+    quality = projection_result.get('model_quality','unknown')
+
+    # C_m basé sur moyenne 12m la plus récente
+    last12 = [q for _,q in series][-12:] or [q for _,q in series]
+    qte_avg12 = np.mean(last12) if last12 else 0.0
+
+    months=[]; tq=0; tca=0
+    t_m_achat_act=t_m_achat_opt=t_gain_achat=0.0
+    t_m_pmp_act=t_m_pmp_opt=t_gain_pmp=0.0
+
     current_month = datetime.today().replace(day=1)
-    logger.debug(f"💡 Proj {grouping_crn}-{qualite} | predictions={predictions} | vente_pond={px_vente_pondere} | achat_min={px_achat_min}")
-    for i, qte_pred in enumerate(predictions):
-        qte_pred = max(0, round(qte_pred))  # Entier positif
-        ca = qte_pred * px_vente_pondere
-        marge_optimisee = (px_vente_pondere - px_achat_min) * qte_pred
-        marge_actuelle  = (px_vente_pondere - pmp_pondere) * qte_pred
-        
+    for i, q in enumerate(preds):
+        q = int(max(0, round(q)))
+        C_m = _coverage_factor_month(C_global, q, qte_avg12)
+
+        ca = q*px_vte_pond
+
+        m_achat_act = (px_vte_pond - px_achat_pond) * q
+        m_achat_opt = (px_vte_pond - px_min) * q * C_m
+        gain_achat  = m_achat_opt - m_achat_act
+
+        m_pmp_act = (px_vte_pond - pmp_pond) * q
+        m_pmp_opt = (px_vte_pond - pmp_min) * q * C_m
+        gain_pmp  = m_pmp_opt - m_pmp_act
+
         periode = (current_month + relativedelta(months=i)).strftime("%Y-%m")
-        projections.append({
+        months.append({
             "periode": periode,
-            "qte": qte_pred,
-            "ca": round(ca, 2),
-            "marge_optimisee": round(marge_optimisee, 2),
-            "marge_actuelle": round(marge_actuelle, 2)
+            "qte": q,
+            "ca": round(ca,2),
+
+            "marge_achat_actuelle": round(m_achat_act,2),
+            "marge_achat_optimisee": round(m_achat_opt,2),
+            "gain_potentiel_achat": round(gain_achat,2),
+
+            "marge_pmp_actuelle": round(m_pmp_act,2),
+            "marge_pmp_optimisee": round(m_pmp_opt,2),
+            "gain_potentiel_pmp": round(gain_pmp,2),
+
+            "facteur_couverture": round(C_m,3)
         })
-        
-        total_qte += qte_pred
-        total_ca += ca
-        total_marge_optimisee += marge_optimisee
-        total_marge_actuelle += marge_actuelle
-    
-    # Calcul du taux de croissance
-    if method_used == 'linear_regression' and 'slope' in projection_result:
-        historical_avg = np.mean([qte for _, qte in series])
-        taux_croissance = projection_result['slope'] / max(historical_avg, 1)
+
+        tq+=q; tca+=ca
+        t_m_achat_act+=m_achat_act; t_m_achat_opt+=m_achat_opt; t_gain_achat+=gain_achat
+        t_m_pmp_act+=m_pmp_act; t_m_pmp_opt+=m_pmp_opt; t_gain_pmp+=gain_pmp
+
+    # taux de croissance (simple)
+    if method_used=='linear_regression' and 'slope' in projection_result:
+        hist_avg = np.mean([q for _,q in series]) or 1
+        taux_croissance = projection_result['slope']/hist_avg
     else:
-        if len(predictions) >= 2:
-            trend_slope = (predictions[-1] - predictions[0]) / (len(predictions) - 1)
-            pred_avg = np.mean(predictions) if predictions else 1
-            taux_croissance = trend_slope / max(pred_avg, 1)
+        if len(preds)>=2:
+            slope = (preds[-1]-preds[0])/(len(preds)-1)
+            avg   = np.mean(preds) or 1
+            taux_croissance = slope/avg
         else:
-            taux_croissance = 0
-    
-    # Validation finale du taux de croissance
-    taux_croissance = max(-0.5, min(0.5, taux_croissance))
-    
-    # ✅ CONSTRUCTION MÉTADONNÉES ENRICHIES
+            taux_croissance = 0.0
+    taux_croissance = _bounded(taux_croissance, -0.5, 0.5)
+
     metadata = {
-        # Métriques techniques du modèle
         "method": method_used,
         "model_quality": quality,
-        
-        # Scoring et évaluation qualité
-        "quality_score": quality_evaluation.get('quality_score', 0.5),
-        "confidence_level": quality_evaluation.get('confidence_level', 'medium'),
+        "quality_score": quality_eval.get('quality_score',0.5),
+        "confidence_level": quality_eval.get('confidence_level','medium'),
         "data_points": len(series),
-        
-        # Détails spécifiques selon la méthode
-        **{k: v for k, v in projection_result.items() 
-           if k in ['r_squared', 'slope', 'confidence_interval', 'lower_bound', 'upper_bound']},
-        
-        # Alertes et recommandations
-        "warnings": quality_evaluation.get('warnings', []),
-        "recommendations": quality_evaluation.get('recommendations', []),
-        
-        # Résumé pour l'utilisateur
-        "summary": quality_evaluation.get('summary', f"{method_used} • {len(series)} mois"),
-        
-        # Métadonnées d'évaluation
+        **{k: v for k, v in projection_result.items() if k in ['r_squared','slope','confidence_interval','lower_bound','upper_bound']},
+        "warnings": quality_eval.get('warnings', []),
+        "recommendations": quality_eval.get('recommendations', []),
+        "summary": quality_eval.get('summary', f"{method_used} • {len(series)} mois"),
         "evaluation_timestamp": datetime.now().isoformat(),
         "validator_available": VALIDATOR_AVAILABLE
     }
-    
-    # Log de suivi enrichi
-    logger.info(f"📈 Projection {grouping_crn}-{qualite}: {metadata['summary']} (Score: {metadata['quality_score']:.1%})")
-    
+
     return {
-        "taux_croissance": round(taux_croissance, 4),
-        "mois": projections,
+        "taux_croissance": round(taux_croissance,4),
+        "mois": months,
         "totaux": {
-            "qte": int(total_qte),
-            "ca": round(total_ca, 2),
-            "marge_optimisee": round(total_marge_optimisee, 2),
-            "marge_actuelle": round(total_marge_actuelle, 2)
+            "qte": int(tq),
+            "ca": round(tca,2),
+            "marge_achat_actuelle": round(t_m_achat_act,2),
+            "marge_achat_optimisee": round(t_m_achat_opt,2),
+            "gain_potentiel_achat": round(t_gain_achat,2),
+            "marge_pmp_actuelle": round(t_m_pmp_act,2),
+            "marge_pmp_optimisee": round(t_m_pmp_opt,2),
+            "gain_potentiel_pmp": round(t_gain_pmp,2)
         },
-        "metadata": metadata  # ✅ MÉTADONNÉES ENRICHIES AVEC SCORING
-    }
-
-
-def _simple_linear_fallback(series, periods):
-    """✅ Fallback simple en cas d'échec du ProjectionEngine"""
-    values = [max(0, qte) for _, qte in series]  # ✅ Éliminer les négatifs
-    
-    if not values:
-        return {
-            'method': 'empty_fallback',
-            'predictions': [0] * periods,
-            'model_quality': 'none'
-        }
-    
-    if len(values) == 1:
-        return {
-            'method': 'constant_fallback',
-            'predictions': [values[0]] * periods,
-            'model_quality': 'basic'
-        }
-    
-    # Régression linéaire simple avec numpy
-    x = np.arange(len(values))
-    try:
-        slope, intercept = np.polyfit(x, values, 1)
-    except:
-        slope, intercept = 0, np.mean(values)
-    
-    # Projections futures avec contraintes
-    future_x = np.arange(len(values), len(values) + periods)
-    predictions = np.maximum(slope * future_x + intercept, 0)
-    
-    # Contrainte de croissance raisonnable
-    historical_avg = np.mean(values)
-    for i in range(len(predictions)):
-        if predictions[i] > historical_avg * 2:
-            predictions[i] = historical_avg * 1.5
-        elif predictions[i] < historical_avg * 0.1:
-            predictions[i] = historical_avg * 0.3
-    
-    return {
-        'method': 'linear_fallback',
-        'predictions': predictions.tolist(),
-        'slope': slope,
-        'model_quality': 'basic'
+        "metadata": metadata
     }

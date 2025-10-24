@@ -46,6 +46,7 @@ click>=8.1.7,<9.0.0
 
 # === PREDICTION (OPTIONAL) ===
 prophet>=1.1.5,<2.0.0
+statsmodels
 
 # === TESTING ===
 pytest>=7.4,<8
